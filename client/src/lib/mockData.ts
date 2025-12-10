@@ -9,7 +9,7 @@ export type User = {
   createdAt: string;
 };
 
-export type HospitalType = "Public" | "Private" | "Teaching" | "Specialist";
+export type HospitalType = "Public" | "Private" | "Teaching" | "Specialist" | "Federal";
 
 export type Hospital = {
   id: string;
@@ -57,20 +57,8 @@ export type EmployeeReview = {
   date: string;
 };
 
-export type LoginCredentials = {
-  email: string;
-  password?: string;
-};
-
-export type RegisterCredentials = {
-  name: string;
-  email: string;
-  password?: string;
-  role: UserRole;
-};
-
 // Seed Data - Lagos Hospitals
-export const MOCK_HOSPITALS: Hospital[] = [
+const LAGOS_HOSPITALS: Hospital[] = [
   {
     id: "luth",
     name: "Lagos University Teaching Hospital (LUTH)",
@@ -104,6 +92,22 @@ export const MOCK_HOSPITALS: Hospital[] = [
     ratingEmployee: 3.3,
     reviewCountPatient: 98,
     reviewCountEmployee: 30
+  },
+  {
+    id: "evercare",
+    name: "Evercare Hospital Lekki",
+    state: "Lagos",
+    city: "Lekki",
+    address: "Bisola Durosinmi Etti Dr, Lekki Phase 1, Lagos",
+    website: "https://evercare.ng",
+    type: "Private",
+    description: "A 165-bed multispecialty tertiary care facility offering international standards of healthcare.",
+    images: ["https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&q=80&w=1000"],
+    tags: ["Private", "International", "Multispecialty"],
+    ratingPatient: 4.6,
+    ratingEmployee: 4.3,
+    reviewCountPatient: 52,
+    reviewCountEmployee: 18
   },
   {
     id: "lagoon-vi",
@@ -342,6 +346,144 @@ export const MOCK_HOSPITALS: Hospital[] = [
   }
 ];
 
+const ABUJA_HOSPITALS: Hospital[] = [
+  {
+    id: "national-hospital-abuja",
+    name: "National Hospital Abuja",
+    state: "FCT",
+    city: "Abuja",
+    address: "265 Independence Ave, Central Business Dis, Abuja",
+    phone: "+234 9 234 1234",
+    type: "Federal",
+    description: "A major referral centre designed to cater for the needs of women and children in Nigeria and the West African sub-region.",
+    images: ["https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=1000"],
+    tags: ["Public", "Federal", "Tertiary", "Referral"],
+    ratingPatient: 3.8,
+    ratingEmployee: 3.2,
+    reviewCountPatient: 210,
+    reviewCountEmployee: 67
+  },
+  {
+    id: "nisa-premier",
+    name: "Nisa Premier Hospital",
+    state: "FCT",
+    city: "Abuja",
+    address: "15/21 Alex Ekwueme Way, Jabi, Abuja",
+    website: "https://nisa.com.ng",
+    type: "Private",
+    description: "One of the most prestigious private hospitals in Abuja, known for fertility services and maternity care.",
+    images: ["https://images.unsplash.com/photo-1587351021759-3e566b9af953?auto=format&fit=crop&q=80&w=1000"],
+    tags: ["Private", "Fertility", "Maternity"],
+    ratingPatient: 4.5,
+    ratingEmployee: 4.1,
+    reviewCountPatient: 150,
+    reviewCountEmployee: 40
+  },
+  {
+    id: "cedarcrest-abuja",
+    name: "Cedarcrest Hospitals",
+    state: "FCT",
+    city: "Abuja",
+    address: "2 Sam Mbakwe St, Apo, Abuja",
+    website: "https://cedarcresthospitals.com",
+    type: "Private",
+    description: "A modern specialist hospital known for orthopedics, trauma care, and surgical services.",
+    images: ["https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&q=80&w=1000"],
+    tags: ["Private", "Orthopedics", "Trauma"],
+    ratingPatient: 4.4,
+    ratingEmployee: 4.0,
+    reviewCountPatient: 95,
+    reviewCountEmployee: 30
+  },
+  {
+    id: "nizamiye",
+    name: "Nizamiye Hospital",
+    state: "FCT",
+    city: "Abuja",
+    address: "Plot 113, Cadastral Zone, Life Camp, Abuja",
+    website: "https://nizamiye.ng",
+    type: "Private",
+    description: "A world-class medical facility established by the Nigerian-Turkish Nile University, known for excellent facilities.",
+    images: ["https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&q=80&w=1000"],
+    tags: ["Private", "International", "Luxury"],
+    ratingPatient: 4.8,
+    ratingEmployee: 4.5,
+    reviewCountPatient: 120,
+    reviewCountEmployee: 45
+  },
+  {
+    id: "limi-hospital",
+    name: "The Limi Hospital",
+    state: "FCT",
+    city: "Abuja",
+    address: "Plot 1487, Lee Moses Iseko Street, CBD, Abuja",
+    website: "https://limihospital.org",
+    type: "Private",
+    description: "A multispecialty hospital providing patient-centered care in the Central Business District.",
+    images: ["https://images.unsplash.com/photo-1538108149393-fbbd81895907?auto=format&fit=crop&q=80&w=1000"],
+    tags: ["Private", "General Care"],
+    ratingPatient: 4.0,
+    ratingEmployee: 3.8,
+    reviewCountPatient: 80,
+    reviewCountEmployee: 25
+  }
+];
+
+const PH_HOSPITALS: Hospital[] = [
+  {
+    id: "upth",
+    name: "University of Port Harcourt Teaching Hospital",
+    state: "Rivers",
+    city: "Port Harcourt",
+    address: "East-West Rd, Alakahia, Port Harcourt",
+    type: "Teaching",
+    description: "A major tertiary health institution in the Niger Delta region, providing specialized medical services.",
+    images: ["https://images.unsplash.com/photo-1586773860418-d37222d8fce3?auto=format&fit=crop&q=80&w=1000"],
+    tags: ["Teaching", "Public", "Tertiary"],
+    ratingPatient: 3.1,
+    ratingEmployee: 3.0,
+    reviewCountPatient: 180,
+    reviewCountEmployee: 60
+  },
+  {
+    id: "meridian",
+    name: "Meridian Hospitals",
+    state: "Rivers",
+    city: "Port Harcourt",
+    address: "21 Igbodo St, Old GRA, Port Harcourt",
+    website: "https://meridianhospitals.net",
+    type: "Private",
+    description: "A leading private hospital in Port Harcourt known for quality care and modern facilities.",
+    images: ["https://images.unsplash.com/photo-1512678080530-7760d81faba6?auto=format&fit=crop&q=80&w=1000"],
+    tags: ["Private", "General Care"],
+    ratingPatient: 4.0,
+    ratingEmployee: 3.7,
+    reviewCountPatient: 65,
+    reviewCountEmployee: 20
+  },
+  {
+    id: "braitwaite",
+    name: "Braithwaite Memorial Specialist Hospital",
+    state: "Rivers",
+    city: "Port Harcourt",
+    address: "Old GRA, Port Harcourt",
+    type: "Public",
+    description: "A state-owned specialist hospital named after a British pioneer surgeon, serving the Rivers state community.",
+    images: ["https://images.unsplash.com/photo-1587351021759-3e566b9af953?auto=format&fit=crop&q=80&w=1000"],
+    tags: ["Public", "Specialist"],
+    ratingPatient: 3.3,
+    ratingEmployee: 3.1,
+    reviewCountPatient: 90,
+    reviewCountEmployee: 35
+  }
+];
+
+export const MOCK_HOSPITALS: Hospital[] = [
+  ...LAGOS_HOSPITALS,
+  ...ABUJA_HOSPITALS,
+  ...PH_HOSPITALS
+];
+
 // Keep existing reviews for demo purposes, mapped to new IDs where possible
 export const MOCK_PATIENT_REVIEWS: PatientReview[] = [
   {
@@ -379,6 +521,30 @@ export const MOCK_PATIENT_REVIEWS: PatientReview[] = [
     tags: ["Billing", "Quality"],
     date: "2023-12-05",
     isVisible: true
+  },
+  {
+    id: "104",
+    hospitalId: "nisa-premier",
+    userId: "u4",
+    userName: "Amina Y.",
+    rating: 5,
+    title: "Best IVF center in Abuja",
+    comment: "We had a successful IVF cycle here after trying for years. The doctors are professional and empathetic.",
+    tags: ["Fertility", "IVF"],
+    date: "2024-01-10",
+    isVisible: true
+  },
+  {
+    id: "105",
+    hospitalId: "nizamiye",
+    userId: "u5",
+    userName: "David O.",
+    rating: 5,
+    title: "World class facilities",
+    comment: "Feels like a hotel, not a hospital. Extremely clean and the staff are very polite. Expensive but worth it.",
+    tags: ["Facilities", "Cleanliness"],
+    date: "2024-02-15",
+    isVisible: true
   }
 ];
 
@@ -410,6 +576,20 @@ export const MOCK_EMPLOYEE_REVIEWS: EmployeeReview[] = [
     recommends: true,
     isVisible: true,
     date: "2023-11-22"
+  },
+  {
+    id: "203",
+    hospitalId: "cedarcrest-abuja",
+    userId: "e3",
+    jobTitle: "Medical Officer",
+    salaryMin: 300000,
+    salaryMax: 450000,
+    rating: 4,
+    pros: "Professional environment, access to modern equipment.",
+    cons: "High patient volume can be stressful.",
+    recommends: true,
+    isVisible: true,
+    date: "2024-01-20"
   }
 ];
 
