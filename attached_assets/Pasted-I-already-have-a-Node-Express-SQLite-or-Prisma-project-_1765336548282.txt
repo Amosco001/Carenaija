@@ -1,0 +1,121 @@
+I already have a Node/Express + SQLite (or Prisma) project for a hospital review platform.
+Please update the seed data / migration so that my hospitals table contains a richer list of real hospitals in Nigeria, starting with Lagos State.
+
+1. Database structure
+Assume my hospitals table has at least:
+
+id (auto)
+
+name (string)
+
+state (string)
+
+city (string)
+
+address (string, optional)
+
+type (string: “public”, “private”, “teaching”)
+
+phone (string, optional)
+
+website (string, optional)
+
+created_at (datetime)
+
+2. Task
+
+Create or update a seed script that inserts multiple real hospitals in Lagos, Nigeria into the hospitals table.
+
+Use this list as a starting point (you can fill address, type, phone, website where possible; leave blank if unknown):
+
+Lagos University Teaching Hospital (LUTH), Idi-Araba – teaching, public 
+Lagos University Teaching Hospital
++1
+
+Lagos State University Teaching Hospital (LASUTH), Ikeja – teaching, public 
+Lasuth
++1
+
+Lagoon Hospitals (Victoria Island branch), Lagos – private 
+Lagoon Hospitals
+
+Lagoon Hospitals (Ikeja branch), Lagos – private 
+Lagoon Hospitals
+
+St. Nicholas Hospital, Lagos Island – private 
+Wikipedia
++1
+
+Reddington Hospital, Victoria Island – private 
+Wikipedia
++1
+
+Eko Hospital (Ikeja), Ikeja – private 
+Wikipedia
++1
+
+Eko Hospital (Victoria Island), Victoria Island – private 
+Wikipedia
++1
+
+First Consultants Medical Centre, Obalende – private 
+Wikipedia
++2
+Lyfboat -
++2
+
+Duchess International Hospital, Ikeja – private 
+Duchess Hospital
+
+Gbagada General Hospital, Gbagada – public 
+Wikipedia
+
+Lagos Island General Hospital, Lagos Island – public 
+Wikipedia
+
+Federal Medical Centre Ebute-Metta, Ebute-Metta – public 
+Wikipedia
+
+Massey Street Children’s Hospital, Lagos Island – public/specialist children’s hospital 
+Wikipedia
+
+Paelon Memorial Hospital/Clinic, Ikeja – private 
+Reliance Health
+
+Afrimed Specialist Hospital, Gbagada – private 
+Reliance Health
+
+Healing Stripes Hospital, Victoria Island – private 
+Reliance Health
+
+3. Implementation details
+
+Put the seed data in a dedicated file (for example prisma/seed.ts, db/seed.js, or whatever fits this project).
+
+Make sure the script:
+
+Connects to the DB.
+
+Inserts these hospitals only if they don’t already exist (use name+city+state to check).
+
+Logs a short message when seeding is complete.
+
+Show me the exact command I should run in Replit to execute the seed script (e.g. add "seed": "node db/seed.js" in package.json and tell me to run npm run seed).
+
+4. Extensibility
+
+Structure the seed script so I can easily add more Nigerian states later (e.g. an array grouped by state, starting with "Lagos").
+
+At the end, briefly explain how I can extend the script to add:
+
+more hospitals in Lagos, and
+
+hospitals in other states like Oyo, Rivers, FCT, Kano, etc.
+
+Please now:
+
+Show the complete seed script code.
+
+Show any changes needed in package.json or config.
+
+Give step-by-step instructions to run it inside Replit.
