@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { MOCK_HOSPITALS } from "@/lib/mockData";
 import { Input } from "@/components/ui/input";
@@ -14,24 +14,72 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { StarRating } from "@/components/star-rating";
-import { MapPin, Search as SearchIcon, Filter, SlidersHorizontal } from "lucide-react";
+import { MapPin, Search as SearchIcon, Filter, SlidersHorizontal, Map, Navigation, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+// Haversine formula to calculate distance
+function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  var R = 6371; // Radius of the earth in km
+  var dLat = deg2rad(lat2-lat1);  // deg2rad below
+  var dLon = deg2rad(lon2-lon1); 
+  var a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2)
+    ; 
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  var d = R * c; // Distance in km
+  return d;
+}
+
+function deg2rad(deg: number) {
+  return deg * (Math.PI/180);
+}
 
 export default function SearchPage() {
   const [location] = useLocation();
   const searchParams = new URLSearchParams(window.location.search);
   const initialQuery = searchParams.get("q") || "";
+  const { toast } = useToast();
 
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("rating");
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(6); // For "Load More" simulation
 
   // Get unique states and types for filters
   const allStates = Array.from(new Set(MOCK_HOSPITALS.map(h => h.state)));
   const allTypes = Array.from(new Set(MOCK_HOSPITALS.map(h => h.type)));
 
+  const handleNearMe = () => {
+    if (!navigator.geolocation) {
+      toast({ title: "Error", description: "Geolocation is not supported by your browser", variant: "destructive" });
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+        setSortBy("distance");
+        setIsLocating(false);
+        toast({ title: "Location found", description: "Showing hospitals near you" });
+      },
+      (error) => {
+        setIsLocating(false);
+        toast({ title: "Error", description: "Unable to retrieve your location", variant: "destructive" });
+      }
+    );
+  };
+
   const filteredHospitals = useMemo(() => {
-    return MOCK_HOSPITALS.filter(hospital => {
+    let filtered = MOCK_HOSPITALS.filter(hospital => {
       const matchesSearch = 
         hospital.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         hospital.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -41,13 +89,23 @@ export default function SearchPage() {
       const matchesType = selectedTypes.length === 0 || selectedTypes.includes(hospital.type);
 
       return matchesSearch && matchesState && matchesType;
-    }).sort((a, b) => {
-      if (sortBy === "rating") return b.ratingPatient - a.ratingPatient;
-      if (sortBy === "reviews") return b.reviewCountPatient - a.reviewCountPatient;
-      if (sortBy === "name") return a.name.localeCompare(b.name);
-      return 0;
     });
-  }, [searchQuery, selectedStates, selectedTypes, sortBy]);
+
+    if (sortBy === "distance" && userLocation) {
+      return filtered.sort((a, b) => {
+        const distA = getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, a.latitude, a.longitude);
+        const distB = getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, b.latitude, b.longitude);
+        return distA - distB;
+      });
+    } else {
+      return filtered.sort((a, b) => {
+        if (sortBy === "rating") return b.ratingPatient - a.ratingPatient;
+        if (sortBy === "reviews") return b.reviewCountPatient - a.reviewCountPatient;
+        if (sortBy === "name") return a.name.localeCompare(b.name);
+        return 0;
+      });
+    }
+  }, [searchQuery, selectedStates, selectedTypes, sortBy, userLocation]);
 
   const toggleState = (state: string) => {
     setSelectedStates(prev => 
@@ -65,8 +123,16 @@ export default function SearchPage() {
     <div className="container mx-auto px-4 py-8">
       {/* Search Header */}
       <div className="mb-8 space-y-4">
-        <h1 className="text-3xl font-serif font-bold text-slate-900">Find a Hospital</h1>
-        <div className="flex gap-4 max-w-2xl">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <h1 className="text-3xl font-serif font-bold text-slate-900">Find a Hospital</h1>
+          <Link href="/suggest-hospital">
+            <Button variant="outline" className="gap-2">
+              + Suggest a Hospital
+            </Button>
+          </Link>
+        </div>
+        
+        <div className="flex flex-col md:flex-row gap-4 max-w-4xl">
           <div className="relative flex-1">
             <SearchIcon className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
             <Input 
@@ -76,6 +142,17 @@ export default function SearchPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+          
+          <Button 
+            variant={sortBy === "distance" ? "default" : "outline"}
+            onClick={handleNearMe}
+            disabled={isLocating}
+            className="gap-2 min-w-[140px]"
+          >
+            {isLocating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
+            Near Me
+          </Button>
+
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Sort by" />
@@ -83,6 +160,7 @@ export default function SearchPage() {
             <SelectContent>
               <SelectItem value="rating">Highest Rated</SelectItem>
               <SelectItem value="reviews">Most Reviews</SelectItem>
+              <SelectItem value="distance" disabled={!userLocation}>Nearest Location</SelectItem>
               <SelectItem value="name">Name (A-Z)</SelectItem>
             </SelectContent>
           </Select>
@@ -102,7 +180,7 @@ export default function SearchPage() {
 
             <div className="space-y-4">
               <h3 className="font-medium text-sm text-slate-900">State</h3>
-              <div className="space-y-2">
+              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
                 {allStates.map(state => (
                   <div key={state} className="flex items-center space-x-2">
                     <Checkbox 
@@ -142,12 +220,13 @@ export default function SearchPage() {
 
         {/* Results Grid */}
         <div className="space-y-6">
-          <div className="text-slate-500 text-sm">
-            Showing {filteredHospitals.length} results
+          <div className="flex justify-between items-center text-slate-500 text-sm">
+            <span>Showing {Math.min(visibleCount, filteredHospitals.length)} of {filteredHospitals.length} results</span>
+            {userLocation && <span className="text-primary flex items-center gap-1"><MapPin className="h-3 w-3" /> Location active</span>}
           </div>
 
           <div className="space-y-4">
-            {filteredHospitals.map(hospital => (
+            {filteredHospitals.slice(0, visibleCount).map(hospital => (
               <Link key={hospital.id} href={`/hospital/${hospital.id}`} className="block bg-white border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow group">
                 <div className="flex flex-col md:flex-row gap-6">
                   <div className="w-full md:w-48 h-32 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
@@ -165,6 +244,11 @@ export default function SearchPage() {
                               {hospital.type}
                             </span>
                             <span className="text-xs text-slate-500">{hospital.city}, {hospital.state}</span>
+                            {userLocation && (
+                              <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded ml-2">
+                                {getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, hospital.latitude, hospital.longitude).toFixed(1)} km away
+                              </span>
+                            )}
                         </div>
                         <h3 className="text-xl font-bold text-slate-900 group-hover:text-primary transition-colors">
                           {hospital.name}
@@ -206,15 +290,23 @@ export default function SearchPage() {
                 <SearchIcon className="h-10 w-10 text-slate-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-slate-900">No hospitals found</h3>
                 <p className="text-slate-500">Try adjusting your filters or search terms.</p>
+                <div className="mt-4">
+                  <Link href="/suggest-hospital">
+                    <Button variant="outline">Suggest a missing hospital</Button>
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {filteredHospitals.length > visibleCount && (
+              <div className="text-center pt-8">
                 <Button 
-                  variant="link" 
-                  onClick={() => {
-                    setSearchQuery("");
-                    setSelectedStates([]);
-                    setSelectedTypes([]);
-                  }}
+                  variant="outline" 
+                  size="lg" 
+                  className="min-w-[200px]"
+                  onClick={() => setVisibleCount(prev => prev + 6)}
                 >
-                  Clear all filters
+                  Load More Hospitals
                 </Button>
               </div>
             )}

@@ -13,6 +13,7 @@ import SearchPage from "@/pages/search";
 import HospitalDetails from "@/pages/hospital-details";
 import AuthPage from "@/pages/auth-pages";
 import WriteReview from "@/pages/write-review";
+import SuggestHospital from "@/pages/suggest-hospital";
 
 function Router() {
   return (
@@ -24,6 +25,7 @@ function Router() {
         <Route path="/login" component={AuthPage} />
         <Route path="/register" component={AuthPage} />
         <Route path="/write-review/:type/:id" component={WriteReview} />
+        <Route path="/suggest-hospital" component={SuggestHospital} />
         <Route path="/admin">
           <div className="container mx-auto py-20 text-center">
             <h1 className="text-3xl font-bold mb-4">Admin Dashboard</h1>

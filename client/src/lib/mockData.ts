@@ -27,6 +27,8 @@ export type Hospital = {
   ratingEmployee: number;
   reviewCountPatient: number;
   reviewCountEmployee: number;
+  latitude: number;
+  longitude: number;
 };
 
 export type PatientReview = {
@@ -74,7 +76,9 @@ const LAGOS_HOSPITALS: Hospital[] = [
     ratingPatient: 3.2,
     ratingEmployee: 3.5,
     reviewCountPatient: 124,
-    reviewCountEmployee: 45
+    reviewCountEmployee: 45,
+    latitude: 6.5244,
+    longitude: 3.3556
   },
   {
     id: "lasuth",
@@ -91,7 +95,9 @@ const LAGOS_HOSPITALS: Hospital[] = [
     ratingPatient: 3.4,
     ratingEmployee: 3.3,
     reviewCountPatient: 98,
-    reviewCountEmployee: 30
+    reviewCountEmployee: 30,
+    latitude: 6.5956,
+    longitude: 3.3421
   },
   {
     id: "evercare",
@@ -107,7 +113,9 @@ const LAGOS_HOSPITALS: Hospital[] = [
     ratingPatient: 4.6,
     ratingEmployee: 4.3,
     reviewCountPatient: 52,
-    reviewCountEmployee: 18
+    reviewCountEmployee: 18,
+    latitude: 6.4474,
+    longitude: 3.4731
   },
   {
     id: "lagoon-vi",
@@ -123,7 +131,9 @@ const LAGOS_HOSPITALS: Hospital[] = [
     ratingPatient: 4.1,
     ratingEmployee: 3.8,
     reviewCountPatient: 45,
-    reviewCountEmployee: 12
+    reviewCountEmployee: 12,
+    latitude: 6.4281,
+    longitude: 3.4219
   },
   {
     id: "lagoon-ikeja",
@@ -139,7 +149,9 @@ const LAGOS_HOSPITALS: Hospital[] = [
     ratingPatient: 4.0,
     ratingEmployee: 3.7,
     reviewCountPatient: 32,
-    reviewCountEmployee: 10
+    reviewCountEmployee: 10,
+    latitude: 6.5965,
+    longitude: 3.3428
   },
   {
     id: "st-nicholas",
@@ -155,7 +167,9 @@ const LAGOS_HOSPITALS: Hospital[] = [
     ratingPatient: 4.3,
     ratingEmployee: 4.0,
     reviewCountPatient: 60,
-    reviewCountEmployee: 18
+    reviewCountEmployee: 18,
+    latitude: 6.4531,
+    longitude: 3.3958
   },
   {
     id: "reddington-vi",
@@ -172,7 +186,9 @@ const LAGOS_HOSPITALS: Hospital[] = [
     ratingPatient: 4.5,
     ratingEmployee: 4.0,
     reviewCountPatient: 89,
-    reviewCountEmployee: 22
+    reviewCountEmployee: 22,
+    latitude: 6.4285,
+    longitude: 3.4225
   },
   {
     id: "eko-ikeja",
@@ -188,7 +204,9 @@ const LAGOS_HOSPITALS: Hospital[] = [
     ratingPatient: 3.6,
     ratingEmployee: 3.4,
     reviewCountPatient: 55,
-    reviewCountEmployee: 20
+    reviewCountEmployee: 20,
+    latitude: 6.5774,
+    longitude: 3.3662
   },
   {
     id: "first-consultants",
@@ -203,7 +221,9 @@ const LAGOS_HOSPITALS: Hospital[] = [
     ratingPatient: 4.2,
     ratingEmployee: 3.9,
     reviewCountPatient: 56,
-    reviewCountEmployee: 15
+    reviewCountEmployee: 15,
+    latitude: 6.4453,
+    longitude: 3.4112
   },
   {
     id: "duchess",
@@ -219,7 +239,9 @@ const LAGOS_HOSPITALS: Hospital[] = [
     ratingPatient: 4.7,
     ratingEmployee: 4.2,
     reviewCountPatient: 30,
-    reviewCountEmployee: 10
+    reviewCountEmployee: 10,
+    latitude: 6.5818,
+    longitude: 3.3562
   },
   {
     id: "gbagada-gen",
@@ -234,7 +256,9 @@ const LAGOS_HOSPITALS: Hospital[] = [
     ratingPatient: 3.0,
     ratingEmployee: 3.1,
     reviewCountPatient: 110,
-    reviewCountEmployee: 35
+    reviewCountEmployee: 35,
+    latitude: 6.5569,
+    longitude: 3.3914
   },
   {
     id: "fmc-ebute-metta",
@@ -249,7 +273,9 @@ const LAGOS_HOSPITALS: Hospital[] = [
     ratingPatient: 3.3,
     ratingEmployee: 3.2,
     reviewCountPatient: 95,
-    reviewCountEmployee: 28
+    reviewCountEmployee: 28,
+    latitude: 6.4886,
+    longitude: 3.3792
   },
   {
     id: "massey-children",
@@ -264,7 +290,9 @@ const LAGOS_HOSPITALS: Hospital[] = [
     ratingPatient: 3.5,
     ratingEmployee: 3.0,
     reviewCountPatient: 70,
-    reviewCountEmployee: 20
+    reviewCountEmployee: 20,
+    latitude: 6.4549,
+    longitude: 3.3947
   },
   {
     id: "paelon",
@@ -280,7 +308,9 @@ const LAGOS_HOSPITALS: Hospital[] = [
     ratingPatient: 4.4,
     ratingEmployee: 4.1,
     reviewCountPatient: 40,
-    reviewCountEmployee: 15
+    reviewCountEmployee: 15,
+    latitude: 6.5866,
+    longitude: 3.3553
   }
 ];
 
@@ -299,7 +329,9 @@ const ABUJA_HOSPITALS: Hospital[] = [
     ratingPatient: 3.8,
     ratingEmployee: 3.2,
     reviewCountPatient: 210,
-    reviewCountEmployee: 67
+    reviewCountEmployee: 67,
+    latitude: 9.0429,
+    longitude: 7.4653
   },
   {
     id: "nisa-premier",
@@ -315,7 +347,9 @@ const ABUJA_HOSPITALS: Hospital[] = [
     ratingPatient: 4.5,
     ratingEmployee: 4.1,
     reviewCountPatient: 150,
-    reviewCountEmployee: 40
+    reviewCountEmployee: 40,
+    latitude: 9.0625,
+    longitude: 7.4264
   },
   {
     id: "cedarcrest-abuja",
@@ -331,7 +365,9 @@ const ABUJA_HOSPITALS: Hospital[] = [
     ratingPatient: 4.4,
     ratingEmployee: 4.0,
     reviewCountPatient: 95,
-    reviewCountEmployee: 30
+    reviewCountEmployee: 30,
+    latitude: 9.0163,
+    longitude: 7.4766
   },
   {
     id: "nizamiye",
@@ -347,7 +383,9 @@ const ABUJA_HOSPITALS: Hospital[] = [
     ratingPatient: 4.8,
     ratingEmployee: 4.5,
     reviewCountPatient: 120,
-    reviewCountEmployee: 45
+    reviewCountEmployee: 45,
+    latitude: 9.0563,
+    longitude: 7.3984
   },
   {
     id: "kelina-hospital",
@@ -363,7 +401,9 @@ const ABUJA_HOSPITALS: Hospital[] = [
     ratingPatient: 4.6,
     ratingEmployee: 4.2,
     reviewCountPatient: 40,
-    reviewCountEmployee: 15
+    reviewCountEmployee: 15,
+    latitude: 9.1083,
+    longitude: 7.4042
   }
 ];
 
@@ -381,7 +421,9 @@ const PH_HOSPITALS: Hospital[] = [
     ratingPatient: 3.1,
     ratingEmployee: 3.0,
     reviewCountPatient: 180,
-    reviewCountEmployee: 60
+    reviewCountEmployee: 60,
+    latitude: 4.8967,
+    longitude: 6.9272
   },
   {
     id: "meridian",
@@ -397,7 +439,9 @@ const PH_HOSPITALS: Hospital[] = [
     ratingPatient: 4.0,
     ratingEmployee: 3.7,
     reviewCountPatient: 65,
-    reviewCountEmployee: 20
+    reviewCountEmployee: 20,
+    latitude: 4.8156,
+    longitude: 7.0498
   }
 ];
 
@@ -416,7 +460,9 @@ const OYO_HOSPITALS: Hospital[] = [
     ratingPatient: 3.5,
     ratingEmployee: 3.6,
     reviewCountPatient: 250,
-    reviewCountEmployee: 110
+    reviewCountEmployee: 110,
+    latitude: 7.4014,
+    longitude: 3.9056
   },
   {
     id: "molly-specialist",
@@ -432,7 +478,9 @@ const OYO_HOSPITALS: Hospital[] = [
     ratingPatient: 3.9,
     ratingEmployee: 3.8,
     reviewCountPatient: 45,
-    reviewCountEmployee: 15
+    reviewCountEmployee: 15,
+    latitude: 7.4031,
+    longitude: 3.9072
   },
   {
     id: "best-western-ibadan",
@@ -447,7 +495,9 @@ const OYO_HOSPITALS: Hospital[] = [
     ratingPatient: 4.2,
     ratingEmployee: 3.9,
     reviewCountPatient: 30,
-    reviewCountEmployee: 10
+    reviewCountEmployee: 10,
+    latitude: 7.4119,
+    longitude: 3.9258
   }
 ];
 
@@ -466,7 +516,9 @@ const KANO_HOSPITALS: Hospital[] = [
     ratingPatient: 3.4,
     ratingEmployee: 3.5,
     reviewCountPatient: 190,
-    reviewCountEmployee: 85
+    reviewCountEmployee: 85,
+    latitude: 11.9764,
+    longitude: 8.5256
   },
   {
     id: "national-orthopaedic-dala",
@@ -481,7 +533,9 @@ const KANO_HOSPITALS: Hospital[] = [
     ratingPatient: 3.7,
     ratingEmployee: 3.4,
     reviewCountPatient: 75,
-    reviewCountEmployee: 25
+    reviewCountEmployee: 25,
+    latitude: 12.0125,
+    longitude: 8.4914
   },
   {
     id: "makkah-eye",
@@ -496,7 +550,9 @@ const KANO_HOSPITALS: Hospital[] = [
     ratingPatient: 4.3,
     ratingEmployee: 4.0,
     reviewCountPatient: 60,
-    reviewCountEmployee: 15
+    reviewCountEmployee: 15,
+    latitude: 11.9833,
+    longitude: 8.5167
   }
 ];
 
@@ -515,7 +571,9 @@ const ENUGU_HOSPITALS: Hospital[] = [
     ratingPatient: 3.2,
     ratingEmployee: 3.3,
     reviewCountPatient: 140,
-    reviewCountEmployee: 50
+    reviewCountEmployee: 50,
+    latitude: 6.3500,
+    longitude: 7.5000
   },
   {
     id: "memfys",
@@ -531,7 +589,9 @@ const ENUGU_HOSPITALS: Hospital[] = [
     ratingPatient: 4.5,
     ratingEmployee: 4.2,
     reviewCountPatient: 55,
-    reviewCountEmployee: 20
+    reviewCountEmployee: 20,
+    latitude: 6.4584,
+    longitude: 7.5086
   },
   {
     id: "national-orthopaedic-enugu",
@@ -547,7 +607,9 @@ const ENUGU_HOSPITALS: Hospital[] = [
     ratingPatient: 3.6,
     ratingEmployee: 3.5,
     reviewCountPatient: 80,
-    reviewCountEmployee: 30
+    reviewCountEmployee: 30,
+    latitude: 6.4414,
+    longitude: 7.4981
   }
 ];
 
@@ -565,7 +627,9 @@ const KADUNA_HOSPITALS: Hospital[] = [
     ratingPatient: 3.3,
     ratingEmployee: 3.4,
     reviewCountPatient: 160,
-    reviewCountEmployee: 70
+    reviewCountEmployee: 70,
+    latitude: 11.0855,
+    longitude: 7.7199
   },
   {
     id: "ashmed",
@@ -581,7 +645,9 @@ const KADUNA_HOSPITALS: Hospital[] = [
     ratingPatient: 4.1,
     ratingEmployee: 3.9,
     reviewCountPatient: 45,
-    reviewCountEmployee: 15
+    reviewCountEmployee: 15,
+    latitude: 10.5105,
+    longitude: 7.4165
   },
   {
     id: "44-army",
@@ -596,7 +662,9 @@ const KADUNA_HOSPITALS: Hospital[] = [
     ratingPatient: 3.5,
     ratingEmployee: 3.6,
     reviewCountPatient: 60,
-    reviewCountEmployee: 25
+    reviewCountEmployee: 25,
+    latitude: 10.5400,
+    longitude: 7.4200
   }
 ];
 
