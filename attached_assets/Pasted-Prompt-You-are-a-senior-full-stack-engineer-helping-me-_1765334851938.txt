@@ -1,0 +1,197 @@
+Prompt:
+
+You are a senior full-stack engineer helping me build an MVP web platform on Replit.
+The platform is like a combination of Healthgrades (patient reviews of hospitals/doctors) and Glassdoor (employee reviews & salary info) but focused on hospitals and clinics in Nigeria.
+
+1. Tech Stack & Setup
+
+Use Node.js + Express for the backend.
+
+Use React (or plain HTML/CSS/JS if simpler) for the frontend, bundled in the same Replit project.
+
+Use SQLite (via an ORM like Prisma or a simple query layer) so it runs easily inside Replit.
+
+Organize the code into clear folders:
+
+/server for backend (Express, DB models, routes)
+
+/client for frontend (React components / pages)
+
+Provide a simple README in the project root with instructions on how to run the app inside Replit.
+
+2. Core Concept
+
+Build a platform for Nigerian hospitals and clinics where:
+
+Patients can search hospitals, view ratings, read/write reviews about care quality, wait times, cleanliness, etc.
+
+Employees (or former employees) can anonymously rate their hospital, share salary ranges, and comment on work culture, management, and work-life balance.
+
+Admins can manage hospital data and moderate reviews.
+
+3. User Roles & Auth
+
+Implement a basic auth system with:
+
+User roles: patient, employee, admin.
+
+Sign up / login with email + password (hash passwords).
+
+Simple session or JWT-based auth.
+
+Basic “My Account” page where users can see their own reviews and edit profile.
+
+4. Pages / Screens
+
+Build at least these pages:
+
+Landing/Home page
+
+Short description of what the platform does (for Nigerian hospitals).
+
+Prominent search bar: search by hospital name, city/state, or specialty.
+
+List of top-rated hospitals (by patient ratings) and top-rated employers (by employee ratings).
+
+Hospital Search & Results page
+
+Filter by Nigerian state and city.
+
+Filter by specialties (e.g., cardiology, maternity, emergency, surgery, pediatrics).
+
+Sort by overall patient rating, safety rating, number of reviews.
+
+Each result card should show: hospital name, location, average patient rating, average employee rating, and a few taglines like “Good for maternity”, “Strong emergency care” (based on review data).
+
+Hospital Profile page
+For each hospital/clinic:
+
+Basic info: name, address, state, city, phone, website (if available), type (public/private/teaching).
+
+Overall ratings section:
+
+Patient overall rating (1–5 stars).
+
+Employee overall rating (1–5 stars).
+
+Patient reviews section:
+
+Each review with: rating (1–5), title, text, category tags (e.g. “maternity”, “cardiology”, “emergency”), and date.
+
+Employee reviews section:
+
+Each review with: rating (1–5), job title, salary range, pros, cons, “would you recommend working here?” (yes/no).
+
+Buttons: “Write a patient review” and “Write an employee review” (only visible for logged-in users).
+
+Write Review pages
+
+Patient review form:
+
+Select hospital (if not already on hospital page).
+
+1–5 star rating.
+
+Short title.
+
+Detailed comment.
+
+Checkboxes for what this hospital is good for (e.g. maternity, surgery, emergency, pediatrics).
+
+Employee review form:
+
+Select hospital.
+
+1–5 star rating.
+
+Job title (text).
+
+Approx. salary range (e.g., numeric fields for min/max monthly salary in NGN).
+
+Pros, cons, advice to management.
+
+Yes/No: “Would you recommend working here?”
+
+Admin dashboard (basic)
+
+View list of hospitals.
+
+Add/edit hospitals (name, address, state, city, website, type).
+
+View list of reviews.
+
+Ability to hide or delete reviews (simulating moderation) with a “reason” field.
+
+5. Data Models (Database Schema)
+
+Design the SQLite schema with at least these tables:
+
+users: id, name, email, password_hash, role (patient, employee, admin), created_at.
+
+hospitals: id, name, state, city, address, website, phone, type, created_at.
+
+patient_reviews: id, user_id, hospital_id, rating, title, comment, is_visible, tags (maternity/emergency/etc as text array or comma-separated string), created_at.
+
+employee_reviews: id, user_id, hospital_id, rating, job_title, salary_min, salary_max, pros, cons, recommend_work (boolean), is_visible, created_at.
+
+Backend should expose REST API endpoints for:
+
+Auth: /api/auth/register, /api/auth/login, /api/auth/me.
+
+Hospitals: GET list (with filters), GET single, POST/PUT for admins.
+
+Reviews: POST patient review, POST employee review, GET reviews by hospital, admin endpoints to hide/delete reviews.
+
+6. Business Logic & Features
+
+Compute composite ratings per hospital:
+
+Average patient rating.
+
+Average employee rating.
+
+Derive “tags” like “Good for maternity” or “Good for emergency” based on patient review tags and ratings (e.g., if many high-rating reviews with “maternity” tag).
+
+For listing pages, only count reviews where is_visible = true.
+
+Add basic validation on backend and frontend (required fields, rating 1–5, etc.).
+
+7. UI/UX Requirements
+
+Clean, responsive layout that works on mobile and desktop.
+
+Use a simple, modern design:
+
+A header with logo text (e.g., “Naija Hospital Reviews”) and navigation links: Home, Search, Login, Sign Up, My Account.
+
+A footer with basic links and copyright.
+
+Show toast/alert messages on success or error (e.g., “Review submitted”, “Login failed”).
+
+8. Seed Data
+
+Create a small seed script or hardcoded seed file to insert:
+
+~5 sample hospitals in different Nigerian states and cities.
+
+A few sample patient and employee reviews for each.
+
+This is just for testing in Replit so the UI doesn’t look empty.
+
+9. What I Need From You
+
+Scaffold the project folder structure inside Replit.
+
+Implement the backend (Express server + SQLite DB + API routes).
+
+Implement the frontend (React or simple SPA) that consumes these APIs.
+
+Include clear comments in the code explaining where to change config (e.g., DB connection, seed data).
+
+Explain to me in plain language how to:
+
+Run migrations / initialize the DB.
+
+Seed the database with sample hospitals and reviews.
+
+Start the server and frontend inside Replit.
