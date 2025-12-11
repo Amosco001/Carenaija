@@ -14,6 +14,7 @@ import HospitalDetails from "@/pages/hospital-details";
 import AuthPage from "@/pages/auth-pages";
 import WriteReview from "@/pages/write-review";
 import SuggestHospital from "@/pages/suggest-hospital";
+import ClaimProfile from "@/pages/claim-profile";
 
 function Router() {
   return (
@@ -26,6 +27,7 @@ function Router() {
         <Route path="/register" component={AuthPage} />
         <Route path="/write-review/:type/:id" component={WriteReview} />
         <Route path="/suggest-hospital" component={SuggestHospital} />
+        <Route path="/claim-profile/:id" component={ClaimProfile} />
         <Route path="/admin">
           <div className="container mx-auto py-20 text-center">
             <h1 className="text-3xl font-bold mb-4">Admin Dashboard</h1>

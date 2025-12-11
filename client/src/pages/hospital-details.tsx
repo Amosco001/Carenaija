@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useParams, Link } from "wouter";
 import { getHospital, getPatientReviews, getEmployeeReviews } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,51 @@ import NotFound from "@/pages/not-found";
 export default function HospitalDetails() {
   const { id } = useParams();
   const hospital = getHospital(id || "");
+
+  // SEO: Inject Structured Data for LocalBusiness/MedicalOrganization
+  useEffect(() => {
+    if (hospital) {
+      document.title = `${hospital.name} Reviews & Ratings - CareNaija`;
+      
+      const structuredData = {
+        "@context": "https://schema.org",
+        "@type": "MedicalOrganization",
+        "name": hospital.name,
+        "image": hospital.images,
+        "@id": `https://carenaija.com/hospital/${hospital.id}`,
+        "url": `https://carenaija.com/hospital/${hospital.id}`,
+        "telephone": hospital.phone,
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": hospital.address,
+          "addressLocality": hospital.city,
+          "addressRegion": hospital.state,
+          "addressCountry": "NG"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": hospital.latitude,
+          "longitude": hospital.longitude
+        },
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": hospital.ratingPatient,
+          "reviewCount": hospital.reviewCountPatient,
+          "bestRating": "5",
+          "worstRating": "1"
+        }
+      };
+
+      const script = document.createElement('script');
+      script.type = 'application/ld+json';
+      script.text = JSON.stringify(structuredData);
+      document.head.appendChild(script);
+
+      return () => {
+        document.head.removeChild(script);
+      };
+    }
+  }, [hospital]);
 
   if (!hospital) return <NotFound />;
 
