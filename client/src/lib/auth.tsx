@@ -1,6 +1,25 @@
 import { createContext, useContext, useState, ReactNode } from "react";
-import { User, LoginCredentials, RegisterCredentials } from "./mockData";
 import { useToast } from "@/hooks/use-toast";
+
+type User = {
+  id: string;
+  name: string;
+  email: string;
+  role: "patient" | "employee" | "admin";
+  createdAt: string;
+};
+
+type LoginCredentials = {
+  email: string;
+  password: string;
+};
+
+type RegisterCredentials = {
+  name: string;
+  email: string;
+  password: string;
+  role: "patient" | "employee";
+};
 
 type AuthContextType = {
   user: User | null;
