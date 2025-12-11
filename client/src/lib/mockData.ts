@@ -42,6 +42,7 @@ export type PatientReview = {
   hospitalId: string;
   userId: string;
   userName: string; // denormalized for mock
+  reviewerRole: "Patient" | "Family Member" | "Visitor"; // Added Reviewer Role
   rating: number;
   title: string;
   comment: string;
@@ -645,6 +646,7 @@ export const MOCK_PATIENT_REVIEWS: PatientReview[] = [
     hospitalId: "reddington-vi",
     userId: "u1",
     userName: "Nneka A.",
+    reviewerRole: "Patient",
     rating: 5,
     title: "Excellent maternity experience",
     comment: "The nurses were incredibly attentive during my delivery. The facilities are top-notch and clean. Highly recommended for expectant mothers.",
@@ -657,6 +659,7 @@ export const MOCK_PATIENT_REVIEWS: PatientReview[] = [
     hospitalId: "luth",
     userId: "u2",
     userName: "Tunde B.",
+    reviewerRole: "Patient",
     rating: 2,
     title: "Long wait times",
     comment: "I waited for 4 hours to see a doctor at the emergency ward. The doctors are good but the system is overwhelmed.",
@@ -669,11 +672,25 @@ export const MOCK_PATIENT_REVIEWS: PatientReview[] = [
     hospitalId: "lagoon-vi",
     userId: "u3",
     userName: "Musa K.",
+    reviewerRole: "Patient",
     rating: 4,
     title: "Good care but expensive",
     comment: "Quality of care is comparable to private hospitals abroad, but the billing process is opaque.",
     tags: ["Billing", "Quality"],
     date: "2023-12-05",
+    isVisible: true
+  },
+  {
+    id: "104",
+    hospitalId: "st-nicholas",
+    userId: "u4",
+    userName: "Mrs. Ojo",
+    reviewerRole: "Family Member",
+    rating: 5,
+    title: "Saved my husband's life",
+    comment: "The kidney transplant team was phenomenal. They explained every step to us and the post-op care was excellent. Grateful to Dr. Bamgboye and team.",
+    tags: ["Surgery", "Staff"],
+    date: "2024-01-15",
     isVisible: true
   }
 ];

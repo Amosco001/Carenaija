@@ -13,10 +13,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { StarRating } from "@/components/star-rating";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import NotFound from "@/pages/not-found";
 
 const patientReviewSchema = z.object({
+  reviewerRole: z.enum(["Patient", "Family Member", "Visitor"], {
+    required_error: "Please select your role",
+  }),
   rating: z.number().min(1, "Rating is required"),
   title: z.string().min(5, "Title must be at least 5 characters"),
   comment: z.string().min(20, "Please provide more detail in your review"),
@@ -62,6 +66,7 @@ export default function WriteReview() {
     const form = useForm<z.infer<typeof patientReviewSchema>>({
       resolver: zodResolver(patientReviewSchema),
       defaultValues: {
+        reviewerRole: "Patient",
         rating: 0,
         tags: []
       }
@@ -80,6 +85,38 @@ export default function WriteReview() {
 
     return (
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        
+        <div className="space-y-3 bg-slate-50 p-4 rounded-lg border">
+          <Label className="text-base font-semibold">I am writing this review as a:</Label>
+          <Controller
+            control={form.control}
+            name="reviewerRole"
+            render={({ field }) => (
+              <RadioGroup
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                className="flex flex-col space-y-1"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Patient" id="role-patient" />
+                  <Label htmlFor="role-patient" className="font-normal cursor-pointer">Patient (I received care here)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Family Member" id="role-family" />
+                  <Label htmlFor="role-family" className="font-normal cursor-pointer">Family Member (I accompanied a patient)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Visitor" id="role-visitor" />
+                  <Label htmlFor="role-visitor" className="font-normal cursor-pointer">Visitor</Label>
+                </div>
+              </RadioGroup>
+            )}
+          />
+          {form.formState.errors.reviewerRole && (
+            <p className="text-xs text-red-500">{form.formState.errors.reviewerRole.message}</p>
+          )}
+        </div>
+
         <div className="space-y-2">
           <Label>Overall Rating</Label>
           <Controller

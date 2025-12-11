@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { StarRating } from "@/components/star-rating";
-import { MapPin, Phone, Globe, ShieldCheck, UserCheck, Stethoscope, Briefcase, ThumbsUp, ThumbsDown } from "lucide-react";
+import { MapPin, Phone, Globe, ShieldCheck, UserCheck, Stethoscope, Briefcase, ThumbsUp, ThumbsDown, Users } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import NotFound from "@/pages/not-found";
 
 export default function HospitalDetails() {
@@ -137,6 +138,11 @@ export default function HospitalDetails() {
                             <StarRating rating={review.rating} size={14} readonly />
                             <span className="text-slate-400 text-sm">•</span>
                             <span className="text-sm text-slate-500">{review.userName}</span>
+                            {review.reviewerRole && (
+                              <Badge variant="secondary" className="text-xs font-normal">
+                                {review.reviewerRole}
+                              </Badge>
+                            )}
                           </div>
                         </div>
                         <span className="text-xs text-slate-400">{new Date(review.date).toLocaleDateString()}</span>
