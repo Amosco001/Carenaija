@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { MOCK_HOSPITALS, Hospital } from "@/lib/mockData";
+import { useHospitals } from "@/hooks/useHospitals";
+import type { Hospital } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -44,16 +45,16 @@ export default function SearchPage() {
   const { toast } = useToast();
 
   const [searchQuery, setSearchQuery] = useState(initialQuery);
-  const [selectedStates, setSelectedStates] = useState<string[]>([]);
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState("rating");
+  const [selectedOwnership, setSelectedOwnership] = useState<string[]>([]);
+  const [selectedLGAs, setSelectedLGAs] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState("name");
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isLocating, setIsLocating] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(6); // For "Load More" simulation
 
-  // Get unique states and types for filters
-  const allStates = Array.from(new Set(MOCK_HOSPITALS.map(h => h.state)));
-  const allTypes = Array.from(new Set(MOCK_HOSPITALS.map(h => h.type)));
+  const { data: hospitals = [], isLoading } = useHospitals();
+
+  const allLGAs = Array.from(new Set(hospitals.map(h => h.lga))).sort();
+  const allOwnership = Array.from(new Set(hospitals.map(h => h.ownership))).sort();
 
   const handleNearMe = () => {
     if (!navigator.geolocation) {
@@ -80,43 +81,44 @@ export default function SearchPage() {
   };
 
   const filteredHospitals = useMemo(() => {
-    let filtered = MOCK_HOSPITALS.filter(hospital => {
+    let filtered = hospitals.filter(hospital => {
       const matchesSearch = 
         hospital.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        hospital.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        hospital.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+        hospital.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        hospital.lga.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        hospital.services.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()));
       
-      const matchesState = selectedStates.length === 0 || selectedStates.includes(hospital.state);
-      const matchesType = selectedTypes.length === 0 || selectedTypes.includes(hospital.type);
+      const matchesOwnership = selectedOwnership.length === 0 || selectedOwnership.includes(hospital.ownership);
+      const matchesLGA = selectedLGAs.length === 0 || selectedLGAs.includes(hospital.lga);
 
-      return matchesSearch && matchesState && matchesType;
+      return matchesSearch && matchesOwnership && matchesLGA;
     });
 
     if (sortBy === "distance" && userLocation) {
       return filtered.sort((a, b) => {
+        if (!a.latitude || !a.longitude || !b.latitude || !b.longitude) return 0;
         const distA = getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, a.latitude, a.longitude);
         const distB = getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, b.latitude, b.longitude);
         return distA - distB;
       });
     } else {
       return filtered.sort((a, b) => {
-        if (sortBy === "rating") return b.ratingPatient - a.ratingPatient;
-        if (sortBy === "reviews") return b.reviewCountPatient - a.reviewCountPatient;
         if (sortBy === "name") return a.name.localeCompare(b.name);
+        if (sortBy === "bedCapacity") return (b.bedCapacity || 0) - (a.bedCapacity || 0);
         return 0;
       });
     }
-  }, [searchQuery, selectedStates, selectedTypes, sortBy, userLocation]);
+  }, [hospitals, searchQuery, selectedOwnership, selectedLGAs, sortBy, userLocation]);
 
-  const toggleState = (state: string) => {
-    setSelectedStates(prev => 
-      prev.includes(state) ? prev.filter(s => s !== state) : [...prev, state]
+  const toggleLGA = (lga: string) => {
+    setSelectedLGAs(prev => 
+      prev.includes(lga) ? prev.filter(l => l !== lga) : [...prev, lga]
     );
   };
 
-  const toggleType = (type: string) => {
-    setSelectedTypes(prev => 
-      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
+  const toggleOwnership = (ownership: string) => {
+    setSelectedOwnership(prev => 
+      prev.includes(ownership) ? prev.filter(o => o !== ownership) : [...prev, ownership]
     );
   };
 
@@ -150,10 +152,9 @@ export default function SearchPage() {
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="rating">Highest Rated</SelectItem>
-                      <SelectItem value="reviews">Most Reviews</SelectItem>
-                      <SelectItem value="distance" disabled={!userLocation}>Nearest Location</SelectItem>
                       <SelectItem value="name">Name (A-Z)</SelectItem>
+                      <SelectItem value="bedCapacity">Bed Capacity</SelectItem>
+                      <SelectItem value="distance" disabled={!userLocation}>Nearest Location</SelectItem>
                     </SelectContent>
                   </Select>
               </div>
@@ -173,17 +174,18 @@ export default function SearchPage() {
               
               <div className="space-y-5">
                 <div>
-                  <h3 className="font-semibold text-sm text-slate-900 mb-3">State</h3>
-                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                    {allStates.map(state => (
-                      <div key={state} className="flex items-center space-x-2">
+                  <h3 className="font-semibold text-sm text-slate-900 mb-3">Ownership</h3>
+                  <div className="space-y-2">
+                    {allOwnership.map(ownership => (
+                      <div key={ownership} className="flex items-center space-x-2">
                         <Checkbox 
-                          id={`state-${state}`} 
-                          checked={selectedStates.includes(state)}
-                          onCheckedChange={() => toggleState(state)}
+                          id={`ownership-${ownership}`} 
+                          checked={selectedOwnership.includes(ownership)}
+                          onCheckedChange={() => toggleOwnership(ownership)}
+                          data-testid={`checkbox-ownership-${ownership}`}
                         />
-                        <Label htmlFor={`state-${state}`} className="text-sm font-normal text-slate-600 cursor-pointer">
-                          {state}
+                        <Label htmlFor={`ownership-${ownership}`} className="text-sm font-normal text-slate-600 cursor-pointer">
+                          {ownership}
                         </Label>
                       </div>
                     ))}
@@ -193,17 +195,18 @@ export default function SearchPage() {
                 <Separator />
 
                 <div>
-                  <h3 className="font-semibold text-sm text-slate-900 mb-3">Hospital Type</h3>
-                  <div className="space-y-2">
-                    {allTypes.map(type => (
-                      <div key={type} className="flex items-center space-x-2">
+                  <h3 className="font-semibold text-sm text-slate-900 mb-3">Local Government Area</h3>
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                    {allLGAs.map(lga => (
+                      <div key={lga} className="flex items-center space-x-2">
                         <Checkbox 
-                          id={`type-${type}`} 
-                          checked={selectedTypes.includes(type)}
-                          onCheckedChange={() => toggleType(type)}
+                          id={`lga-${lga}`} 
+                          checked={selectedLGAs.includes(lga)}
+                          onCheckedChange={() => toggleLGA(lga)}
+                          data-testid={`checkbox-lga-${lga}`}
                         />
-                        <Label htmlFor={`type-${type}`} className="text-sm font-normal text-slate-600 cursor-pointer">
-                          {type}
+                        <Label htmlFor={`lga-${lga}`} className="text-sm font-normal text-slate-600 cursor-pointer">
+                          {lga}
                         </Label>
                       </div>
                     ))}
@@ -226,68 +229,67 @@ export default function SearchPage() {
           {/* Results Grid */}
           <div className="space-y-6">
             <div className="flex justify-between items-center text-slate-500 text-sm bg-white p-3 rounded-lg border shadow-sm">
-              <span>Showing <span className="font-bold text-slate-900">{Math.min(visibleCount, filteredHospitals.length)}</span> of {filteredHospitals.length} hospitals</span>
+              <span>Showing <span className="font-bold text-slate-900">{filteredHospitals.length}</span> hospital{filteredHospitals.length !== 1 ? 's' : ''}</span>
               {userLocation && <span className="text-green-600 flex items-center gap-1 font-medium"><MapPin className="h-3 w-3" /> Location active</span>}
             </div>
 
-            <div className="space-y-4">
-              {filteredHospitals.slice(0, visibleCount).map(hospital => {
+            {isLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredHospitals.map(hospital => {
                 return (
-                  <Link key={hospital.id} href={`/hospital/${hospital.id}`} className="block bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-lg transition-all duration-300 group hover:border-primary/30 relative overflow-hidden">
-                    {/* Top "Best" Badge logic could go here */}
-                    {hospital.ratingPatient >= 4.5 && (
-                      <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-2 py-1 rounded-bl-lg z-10 flex items-center gap-1">
-                        <Award className="w-3 h-3" /> TOP RATED
+                  <Link key={hospital.id} href={`/hospital/${hospital.id}`} className="block bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-lg transition-all duration-300 group hover:border-primary/30 relative overflow-hidden" data-testid={`card-hospital-${hospital.id}`}>
+                    {hospital.verified && (
+                      <div className="absolute top-0 right-0 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg z-10 flex items-center gap-1">
+                        <ShieldCheck className="w-3 h-3" /> VERIFIED
                       </div>
                     )}
 
                     <div className="flex flex-col md:flex-row gap-6">
-                      <div className="w-full md:w-56 h-40 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0 relative">
-                        <img 
-                          src={hospital.images[0]} 
-                          alt={hospital.name} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                        <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur px-2 py-0.5 rounded text-xs font-semibold text-slate-700">
-                           {hospital.images.length} photos
+                      <div className="w-full md:w-56 h-40 rounded-lg overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5 flex-shrink-0 relative flex items-center justify-center">
+                        <div className="text-center p-4">
+                          <MapPin className="h-12 w-12 text-primary/30 mx-auto mb-2" />
+                          <p className="text-xs text-slate-500">
+                            {hospital.lga}, Lagos
+                          </p>
                         </div>
                       </div>
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 mb-2">
-                          <div>
+                          <div className="flex-1">
                              <div className="flex items-center gap-2 mb-1 flex-wrap">
                                 <Badge variant="outline" className="font-normal text-slate-500 border-slate-300">
-                                  {hospital.type}
+                                  {hospital.ownership}
                                 </Badge>
                                 <span className="text-sm text-slate-500 flex items-center">
                                   <MapPin className="w-3 h-3 mr-1" />
-                                  {hospital.city}, {hospital.state}
+                                  {hospital.lga}, {hospital.state}
                                 </span>
-                                {userLocation && (
+                                {userLocation && hospital.latitude && hospital.longitude && (
                                   <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded">
                                     {getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, hospital.latitude, hospital.longitude).toFixed(1)} km
                                   </span>
                                 )}
                              </div>
-                             <h3 className="text-xl font-bold text-slate-900 group-hover:text-primary transition-colors font-serif truncate">
+                             <h3 className="text-xl font-bold text-slate-900 group-hover:text-primary transition-colors font-serif" data-testid={`text-hospital-name-${hospital.id}`}>
                                {hospital.name}
                              </h3>
                           </div>
                           
-                          <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-lg border border-slate-100 shrink-0">
-                             <div className="text-right">
-                               <div className="text-xs text-slate-500 uppercase font-semibold">Patient Score</div>
-                               <div className="flex items-center justify-end gap-1">
-                                 <span className="font-bold text-xl text-slate-900">{hospital.ratingPatient}</span>
-                                 <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                               </div>
-                             </div>
-                          </div>
+                          {hospital.bedCapacity && (
+                            <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 shrink-0 text-center">
+                              <div className="text-xs text-slate-500 uppercase font-semibold">Beds</div>
+                              <div className="font-bold text-lg text-slate-900">{hospital.bedCapacity}</div>
+                            </div>
+                          )}
                         </div>
 
-                        <p className="text-slate-600 text-sm line-clamp-2 mb-4">
-                          {hospital.description}
+                        <p className="text-slate-600 text-sm mb-3">
+                          {hospital.address}
                         </p>
 
                         <div className="flex flex-wrap gap-2 mb-4">
@@ -302,11 +304,10 @@ export default function SearchPage() {
                         </div>
                         
                         <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                            <div className="flex items-center gap-1 text-xs text-slate-500">
-                                <Briefcase className="w-3 h-3" />
-                                <span>Employee Rating: <strong>{hospital.ratingEmployee}/5</strong> ({hospital.reviewCountEmployee})</span>
+                            <div className="text-xs text-slate-500">
+                                {hospital.operatingHours && <span>{hospital.operatingHours}</span>}
                             </div>
-                            <span className="text-xs font-semibold text-primary group-hover:underline">View Profile &rarr;</span>
+                            <span className="text-xs font-semibold text-primary group-hover:underline" data-testid={`link-view-profile-${hospital.id}`}>View Profile &rarr;</span>
                         </div>
                       </div>
                     </div>
@@ -324,8 +325,8 @@ export default function SearchPage() {
                   <div className="mt-6">
                     <Button variant="outline" onClick={() => {
                        setSearchQuery("");
-                       setSelectedStates([]);
-                       setSelectedTypes([]);
+                       setSelectedLGAs([]);
+                       setSelectedOwnership([]);
                     }}>
                       Clear Filters
                     </Button>
@@ -333,19 +334,8 @@ export default function SearchPage() {
                 </div>
               )}
 
-              {filteredHospitals.length > visibleCount && (
-                <div className="text-center pt-8">
-                  <Button 
-                    variant="outline" 
-                    size="lg" 
-                    className="min-w-[200px] bg-white hover:bg-slate-50"
-                    onClick={() => setVisibleCount(prev => prev + 6)}
-                  >
-                    Load More Hospitals
-                  </Button>
-                </div>
-              )}
             </div>
+            )}
           </div>
         </div>
       </div>
