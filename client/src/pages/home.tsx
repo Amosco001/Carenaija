@@ -133,9 +133,9 @@ export default function Home() {
               <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto text-green-600 mb-4">
                 <ShieldCheck className="h-8 w-8" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900">Safety Grades</h3>
+              <h3 className="text-xl font-bold text-slate-900">Verified Listings</h3>
               <p className="text-slate-600 leading-relaxed">
-                We analyze data to grade hospitals on safety, cleanliness, and infection prevention.
+                We verify hospital information to ensure you have accurate details on location and services.
               </p>
             </div>
             <div className="text-center p-6 space-y-4">

@@ -37,15 +37,6 @@ function deg2rad(deg: number) {
   return deg * (Math.PI/180);
 }
 
-// Helper to determine Safety Grade based on rating
-function getSafetyGrade(rating: number) {
-  if (rating >= 4.5) return { grade: 'A', color: 'bg-green-600' };
-  if (rating >= 4.0) return { grade: 'B', color: 'bg-green-500' };
-  if (rating >= 3.0) return { grade: 'C', color: 'bg-yellow-500' };
-  if (rating >= 2.0) return { grade: 'D', color: 'bg-orange-500' };
-  return { grade: 'F', color: 'bg-red-500' };
-}
-
 export default function SearchPage() {
   const [location] = useLocation();
   const searchParams = new URLSearchParams(window.location.search);
@@ -241,7 +232,6 @@ export default function SearchPage() {
 
             <div className="space-y-4">
               {filteredHospitals.slice(0, visibleCount).map(hospital => {
-                const safety = getSafetyGrade(hospital.ratingPatient);
                 return (
                   <Link key={hospital.id} href={`/hospital/${hospital.id}`} className="block bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-lg transition-all duration-300 group hover:border-primary/30 relative overflow-hidden">
                     {/* Top "Best" Badge logic could go here */}
@@ -292,10 +282,6 @@ export default function SearchPage() {
                                  <span className="font-bold text-xl text-slate-900">{hospital.ratingPatient}</span>
                                  <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
                                </div>
-                             </div>
-                             <div className={`w-12 h-12 ${safety.color} rounded-lg flex flex-col items-center justify-center text-white shadow-sm`}>
-                                <span className="text-xs font-medium opacity-80">Grade</span>
-                                <span className="text-xl font-bold leading-none">{safety.grade}</span>
                              </div>
                           </div>
                         </div>
