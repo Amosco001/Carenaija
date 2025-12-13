@@ -16,7 +16,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { StarRating } from "@/components/star-rating";
-import { MapPin, Search as SearchIcon, Filter, SlidersHorizontal, Map, Navigation, Loader2, ShieldCheck, Award, Star, Briefcase } from "lucide-react";
+import { MapPin, Search as SearchIcon, Filter, SlidersHorizontal, Map, Navigation, Loader2, ShieldCheck, Award, Star, Briefcase, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Haversine formula to calculate distance
@@ -304,8 +304,22 @@ export default function SearchPage() {
                         </div>
                         
                         <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                            <div className="text-xs text-slate-500">
-                                {hospital.operatingHours && <span>{hospital.operatingHours}</span>}
+                            <div className="flex items-center gap-3">
+                              <div className="text-xs text-slate-500">
+                                  {hospital.operatingHours && <span>{hospital.operatingHours}</span>}
+                              </div>
+                              {hospital.latitude && hospital.longitude && (
+                                <a 
+                                  href={`https://www.google.com/maps?q=${hospital.latitude},${hospital.longitude}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-xs text-primary hover:underline flex items-center gap-1"
+                                  data-testid={`link-directions-${hospital.id}`}
+                                >
+                                  <Navigation className="w-3 h-3" /> Directions
+                                </a>
+                              )}
                             </div>
                             <span className="text-xs font-semibold text-primary group-hover:underline" data-testid={`link-view-profile-${hospital.id}`}>View Profile &rarr;</span>
                         </div>
