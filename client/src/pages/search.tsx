@@ -241,7 +241,7 @@ export default function SearchPage() {
               <div className="space-y-4">
                 {filteredHospitals.map(hospital => {
                 return (
-                  <Link key={hospital.id} href={`/hospital/${hospital.id}`} className="block bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-lg transition-all duration-300 group hover:border-primary/30 relative overflow-hidden" data-testid={`card-hospital-${hospital.id}`}>
+                  <div key={hospital.id} onClick={() => window.location.href = `/hospital/${hospital.id}`} className="block bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-lg transition-all duration-300 group hover:border-primary/30 relative overflow-hidden cursor-pointer" data-testid={`card-hospital-${hospital.id}`}>
                     {hospital.verified && (
                       <div className="absolute top-0 right-0 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg z-10 flex items-center gap-1">
                         <ShieldCheck className="w-3 h-3" /> VERIFIED
@@ -325,7 +325,7 @@ export default function SearchPage() {
                         </div>
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 );
               })}
 

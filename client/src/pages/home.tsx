@@ -1,10 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, MapPin, Activity, Star, Stethoscope, Briefcase, Heart, Baby, Bone, Brain, Eye, ShieldCheck, ChevronRight } from "lucide-react";
+import { Search, MapPin, Activity, Star, Stethoscope, Briefcase, Heart, Baby, Bone, Brain, Eye, ShieldCheck, ChevronRight, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState } from "react";
-import { MOCK_HOSPITALS } from "@/lib/mockData";
-import { StarRating } from "@/components/star-rating";
+import { useHospitals } from "@/hooks/useHospitals";
 import { Link } from "wouter";
 import generatedHeroImage from "@assets/generated_images/modern_nigerian_hospital_exterior_with_friendly_medical_staff_interaction.png";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 export default function Home() {
   const [location, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
+  const { data: hospitals = [], isLoading } = useHospitals();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +22,7 @@ export default function Home() {
     }
   };
 
-  const topHospitals = [...MOCK_HOSPITALS].sort((a, b) => b.ratingPatient - a.ratingPatient).slice(0, 3);
+  const topHospitals = [...hospitals].sort((a, b) => (b.bedCapacity || 0) - (a.bedCapacity || 0)).slice(0, 3);
 
   const specialties = [
     { name: "Maternity", icon: Baby, color: "text-pink-500", bg: "bg-pink-50" },
@@ -167,20 +167,20 @@ export default function Home() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {topHospitals.map((hospital) => (
+            {isLoading ? (
+              <div className="col-span-3 flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : topHospitals.map((hospital) => (
               <Link key={hospital.id} href={`/hospital/${hospital.id}`} className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-200 flex flex-col h-full">
-                <div className="h-48 overflow-hidden relative">
-                  <img 
-                    src={hospital.images[0]} 
-                    alt={hospital.name} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
+                <div className="h-48 overflow-hidden relative bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                  <MapPin className="h-16 w-16 text-primary/20" />
                   <div className="absolute top-4 left-4 bg-white/95 backdrop-blur px-3 py-1 rounded-full shadow-sm">
-                    <span className="text-xs font-bold uppercase tracking-wide text-primary">{hospital.type}</span>
+                    <span className="text-xs font-bold uppercase tracking-wide text-primary">{hospital.ownership}</span>
                   </div>
-                  <div className="absolute bottom-4 right-4 bg-green-600 text-white px-3 py-1 rounded-md shadow-lg flex items-center gap-1">
-                    <span className="font-bold text-lg">{hospital.ratingPatient}</span>
-                    <Star className="w-3 h-3 fill-current" />
+                  <div className="absolute bottom-4 right-4 bg-primary text-white px-3 py-1 rounded-md shadow-lg flex items-center gap-1">
+                    <span className="font-bold text-lg">{hospital.bedCapacity || 0}</span>
+                    <span className="text-xs">beds</span>
                   </div>
                 </div>
                 <div className="p-6 flex flex-col flex-1">
@@ -189,14 +189,14 @@ export default function Home() {
                   </h3>
                   <div className="flex items-center text-slate-500 text-sm mb-4">
                     <MapPin className="w-4 h-4 mr-1 text-slate-400" />
-                    {hospital.city}, {hospital.state}
+                    {hospital.lga}, {hospital.state}
                   </div>
                   
                   <div className="mt-auto space-y-4">
                      <div className="flex flex-wrap gap-2">
-                      {hospital.tags.slice(0, 3).map(tag => (
-                        <span key={tag} className="text-xs bg-slate-50 text-slate-600 border border-slate-100 px-2 py-1 rounded-md">
-                          {tag}
+                      {hospital.services?.slice(0, 3).map((service: string) => (
+                        <span key={service} className="text-xs bg-slate-50 text-slate-600 border border-slate-100 px-2 py-1 rounded-md">
+                          {service}
                         </span>
                       ))}
                     </div>
