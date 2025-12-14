@@ -6,12 +6,12 @@ import { useState } from "react";
 import { useHospitals } from "@/hooks/useHospitals";
 import { Link } from "wouter";
 import generatedHeroImage from "@assets/generated_images/modern_nigerian_hospital_exterior_with_friendly_medical_staff_interaction.png";
-import hospitalImage1 from "@assets/stock_images/modern_hospital_buil_e245f40f.jpg";
-import hospitalImage2 from "@assets/stock_images/modern_hospital_buil_645337e9.jpg";
-import hospitalImage3 from "@assets/stock_images/modern_hospital_buil_a4fc5ba4.jpg";
+import luthHospitalImage from "@assets/generated_images/luth_hospital_lagos_nigeria.png";
+import neuropsychHospitalImage from "@assets/generated_images/neuropsychiatric_hospital_yaba.png";
+import orthoHospitalImage from "@assets/generated_images/orthopaedic_hospital_igbobi.png";
 import { Card, CardContent } from "@/components/ui/card";
 
-const hospitalImages = [hospitalImage1, hospitalImage2, hospitalImage3];
+const hospitalImages = [luthHospitalImage, neuropsychHospitalImage, orthoHospitalImage];
 
 export default function Home() {
   const [location, setLocation] = useLocation();
