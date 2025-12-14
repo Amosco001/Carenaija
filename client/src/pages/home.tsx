@@ -6,7 +6,12 @@ import { useState } from "react";
 import { useHospitals } from "@/hooks/useHospitals";
 import { Link } from "wouter";
 import generatedHeroImage from "@assets/generated_images/modern_nigerian_hospital_exterior_with_friendly_medical_staff_interaction.png";
+import hospitalImage1 from "@assets/stock_images/modern_hospital_buil_e245f40f.jpg";
+import hospitalImage2 from "@assets/stock_images/modern_hospital_buil_645337e9.jpg";
+import hospitalImage3 from "@assets/stock_images/modern_hospital_buil_a4fc5ba4.jpg";
 import { Card, CardContent } from "@/components/ui/card";
+
+const hospitalImages = [hospitalImage1, hospitalImage2, hospitalImage3];
 
 export default function Home() {
   const [location, setLocation] = useLocation();
@@ -171,10 +176,15 @@ export default function Home() {
               <div className="col-span-3 flex justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
-            ) : topHospitals.map((hospital) => (
+            ) : topHospitals.map((hospital, index) => (
               <Link key={hospital.id} href={`/hospital/${hospital.id}`} className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-200 flex flex-col h-full">
-                <div className="h-48 overflow-hidden relative bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                  <MapPin className="h-16 w-16 text-primary/20" />
+                <div className="h-48 overflow-hidden relative">
+                  <img 
+                    src={hospitalImages[index % hospitalImages.length]} 
+                    alt={hospital.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
                   <div className="absolute top-4 left-4 bg-white/95 backdrop-blur px-3 py-1 rounded-full shadow-sm">
                     <span className="text-xs font-bold uppercase tracking-wide text-primary">{hospital.ownership}</span>
                   </div>
