@@ -330,16 +330,16 @@ export default function SearchPage() {
                                   {hospital.operatingHours && <span>{hospital.operatingHours}</span>}
                               </div>
                               {hospital.latitude && hospital.longitude && (
-                                <a 
-                                  href={`https://www.google.com/maps?q=${hospital.latitude},${hospital.longitude}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    window.open(`https://www.google.com/maps?q=${hospital.latitude},${hospital.longitude}`, '_blank');
+                                  }}
                                   className="text-xs text-primary hover:underline flex items-center gap-1"
                                   data-testid={`link-directions-${hospital.id}`}
                                 >
                                   <Navigation className="w-3 h-3" /> Directions
-                                </a>
+                                </button>
                               )}
                             </div>
                             <span className="text-xs font-semibold text-primary group-hover:underline" data-testid={`link-view-profile-${hospital.id}`}>View Profile &rarr;</span>
