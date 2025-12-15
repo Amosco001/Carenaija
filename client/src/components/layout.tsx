@@ -178,17 +178,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div>
               <h3 className="font-semibold text-white mb-4">Community</h3>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">Guidelines</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Trust & Safety</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Support</a></li>
+                <li><Link href="/guidelines" className="hover:text-white transition-colors">Guidelines</Link></li>
+                <li><Link href="/trust-safety" className="hover:text-white transition-colors">Trust & Safety</Link></li>
+                <li><Link href="/support" className="hover:text-white transition-colors">Support</Link></li>
               </ul>
             </div>
 
             <div>
               <h3 className="font-semibold text-white mb-4">Legal</h3>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
+                <li><Link href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+                <li><Link href="/terms-of-service" className="hover:text-white transition-colors">Terms of Service</Link></li>
               </ul>
             </div>
           </div>

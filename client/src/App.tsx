@@ -15,6 +15,11 @@ import AuthPage from "@/pages/auth-pages";
 import WriteReview from "@/pages/write-review";
 import SuggestHospital from "@/pages/suggest-hospital";
 import ClaimProfile from "@/pages/claim-profile";
+import Guidelines from "@/pages/guidelines";
+import TrustSafety from "@/pages/trust-safety";
+import Support from "@/pages/support";
+import PrivacyPolicy from "@/pages/privacy-policy";
+import TermsOfService from "@/pages/terms-of-service";
 
 function Router() {
   return (
@@ -34,6 +39,11 @@ function Router() {
             <p className="text-muted-foreground">Mock Admin Dashboard - Functionality would go here.</p>
           </div>
         </Route>
+        <Route path="/guidelines" component={Guidelines} />
+        <Route path="/trust-safety" component={TrustSafety} />
+        <Route path="/support" component={Support} />
+        <Route path="/privacy-policy" component={PrivacyPolicy} />
+        <Route path="/terms-of-service" component={TermsOfService} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
