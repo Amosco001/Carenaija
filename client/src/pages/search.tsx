@@ -182,7 +182,7 @@ export default function SearchPage() {
                     <SelectTrigger className="w-full" data-testid="select-state">
                       <SelectValue placeholder="Select State" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-[300px] overflow-y-auto">
                       {allStates.map(state => (
                         <SelectItem key={state} value={state} data-testid={`option-state-${state}`}>
                           {state === "All" ? "All States" : state} {state !== "All" && `(${hospitals.filter(h => h.state === state).length})`}
