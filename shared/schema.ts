@@ -54,6 +54,8 @@ export const hospitals = pgTable("hospitals", {
   operatingHours: text("operating_hours"),
   services: text("services").array().notNull().default(sql`'{}'`),
   email: text("email"),
+  website: text("website"),
+  phone: text("phone"),
   latitude: doublePrecision("latitude"),
   longitude: doublePrecision("longitude"),
   verified: boolean("verified").notNull().default(false),
