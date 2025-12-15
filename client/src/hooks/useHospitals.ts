@@ -2,12 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Hospital, PatientReview, EmployeeReview } from "@/lib/types";
 
 export function useHospitals(searchQuery?: string) {
-  const queryKey = searchQuery 
-    ? ["/api/hospitals", `search=${encodeURIComponent(searchQuery)}`]
-    : ["/api/hospitals"];
+  const url = searchQuery 
+    ? `/api/hospitals?search=${encodeURIComponent(searchQuery)}`
+    : "/api/hospitals";
   
   return useQuery<Hospital[]>({
-    queryKey,
+    queryKey: [url],
   });
 }
 
