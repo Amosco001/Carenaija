@@ -47,13 +47,15 @@ export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [selectedOwnership, setSelectedOwnership] = useState<string[]>([]);
   const [selectedLGAs, setSelectedLGAs] = useState<string[]>([]);
+  const [selectedState, setSelectedState] = useState<string>("All");
   const [sortBy, setSortBy] = useState("name");
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isLocating, setIsLocating] = useState(false);
 
   const { data: hospitals = [], isLoading } = useHospitals();
 
-  const allLGAs = Array.from(new Set(hospitals.map(h => h.lga))).sort();
+  const allStates = ["All", ...Array.from(new Set(hospitals.map(h => h.state))).sort()];
+  const allLGAs = Array.from(new Set(hospitals.filter(h => selectedState === "All" || h.state === selectedState).map(h => h.lga))).sort();
   const allOwnership = Array.from(new Set(hospitals.map(h => h.ownership))).sort();
 
   const handleNearMe = () => {
@@ -90,8 +92,9 @@ export default function SearchPage() {
       
       const matchesOwnership = selectedOwnership.length === 0 || selectedOwnership.includes(hospital.ownership);
       const matchesLGA = selectedLGAs.length === 0 || selectedLGAs.includes(hospital.lga);
+      const matchesState = selectedState === "All" || hospital.state === selectedState;
 
-      return matchesSearch && matchesOwnership && matchesLGA;
+      return matchesSearch && matchesOwnership && matchesLGA && matchesState;
     });
 
     if (sortBy === "distance" && userLocation) {
@@ -108,7 +111,7 @@ export default function SearchPage() {
         return 0;
       });
     }
-  }, [hospitals, searchQuery, selectedOwnership, selectedLGAs, sortBy, userLocation]);
+  }, [hospitals, searchQuery, selectedOwnership, selectedLGAs, selectedState, sortBy, userLocation]);
 
   const toggleLGA = (lga: string) => {
     setSelectedLGAs(prev => 
@@ -159,6 +162,38 @@ export default function SearchPage() {
                   </Select>
               </div>
            </div>
+        </div>
+      </div>
+
+      {/* State Tabs */}
+      <div className="bg-white border-b">
+        <div className="container mx-auto px-4">
+          <div className="flex gap-1 overflow-x-auto py-3 scrollbar-hide">
+            {allStates.map(state => (
+              <Button
+                key={state}
+                variant={selectedState === state ? "default" : "ghost"}
+                size="sm"
+                onClick={() => {
+                  setSelectedState(state);
+                  setSelectedLGAs([]);
+                }}
+                className={`whitespace-nowrap flex-shrink-0 ${
+                  selectedState === state 
+                    ? "bg-primary text-white" 
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                }`}
+                data-testid={`tab-state-${state}`}
+              >
+                {state === "All" ? "All States" : state}
+                {state !== "All" && (
+                  <Badge variant="secondary" className="ml-2 text-xs">
+                    {hospitals.filter(h => h.state === state).length}
+                  </Badge>
+                )}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -253,7 +288,7 @@ export default function SearchPage() {
                         <div className="text-center p-4">
                           <MapPin className="h-12 w-12 text-primary/30 mx-auto mb-2" />
                           <p className="text-xs text-slate-500">
-                            {hospital.lga}, Lagos
+                            {hospital.lga}, {hospital.state}
                           </p>
                         </div>
                       </div>
