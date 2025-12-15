@@ -165,38 +165,6 @@ export default function SearchPage() {
         </div>
       </div>
 
-      {/* State Tabs */}
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-4">
-          <div className="flex gap-1 overflow-x-auto py-3 scrollbar-hide">
-            {allStates.map(state => (
-              <Button
-                key={state}
-                variant={selectedState === state ? "default" : "ghost"}
-                size="sm"
-                onClick={() => {
-                  setSelectedState(state);
-                  setSelectedLGAs([]);
-                }}
-                className={`whitespace-nowrap flex-shrink-0 ${
-                  selectedState === state 
-                    ? "bg-primary text-white" 
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                }`}
-                data-testid={`tab-state-${state}`}
-              >
-                {state === "All" ? "All States" : state}
-                {state !== "All" && (
-                  <Badge variant="secondary" className="ml-2 text-xs">
-                    {hospitals.filter(h => h.state === state).length}
-                  </Badge>
-                )}
-              </Button>
-            ))}
-          </div>
-        </div>
-      </div>
-
       <div className="container mx-auto px-4 py-8">
         <div className="grid md:grid-cols-[260px_1fr] gap-8">
           {/* Sidebar Filters */}
@@ -208,6 +176,24 @@ export default function SearchPage() {
               </div>
               
               <div className="space-y-5">
+                <div>
+                  <h3 className="font-semibold text-sm text-slate-900 mb-3">State</h3>
+                  <Select value={selectedState} onValueChange={(value) => { setSelectedState(value); setSelectedLGAs([]); }}>
+                    <SelectTrigger className="w-full" data-testid="select-state">
+                      <SelectValue placeholder="Select State" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allStates.map(state => (
+                        <SelectItem key={state} value={state} data-testid={`option-state-${state}`}>
+                          {state === "All" ? "All States" : state} {state !== "All" && `(${hospitals.filter(h => h.state === state).length})`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Separator />
+
                 <div>
                   <h3 className="font-semibold text-sm text-slate-900 mb-3">Ownership</h3>
                   <div className="space-y-2">
@@ -231,7 +217,7 @@ export default function SearchPage() {
 
                 <div>
                   <h3 className="font-semibold text-sm text-slate-900 mb-3">Local Government Area</h3>
-                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
                     {allLGAs.map(lga => (
                       <div key={lga} className="flex items-center space-x-2">
                         <Checkbox 
@@ -376,6 +362,7 @@ export default function SearchPage() {
                        setSearchQuery("");
                        setSelectedLGAs([]);
                        setSelectedOwnership([]);
+                       setSelectedState("All");
                     }}>
                       Clear Filters
                     </Button>
