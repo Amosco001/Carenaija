@@ -1,0 +1,77 @@
+# CareNaija - Hospital Review Platform
+
+## Overview
+
+CareNaija is a web platform for reviewing hospitals and clinics in Nigeria, combining features similar to Healthgrades (patient reviews) and Glassdoor (employee reviews/salary info). The platform allows patients to search hospitals, view ratings, and read/write reviews about care quality, while employees can anonymously rate their workplace and share salary information.
+
+## User Preferences
+
+Preferred communication style: Simple, everyday language.
+
+## System Architecture
+
+### Frontend Architecture
+- **Framework**: React with TypeScript
+- **Routing**: Wouter (lightweight router)
+- **State Management**: TanStack React Query for server state
+- **Styling**: Tailwind CSS v4 with shadcn/ui component library (New York style)
+- **Build Tool**: Vite with custom plugins for Replit integration
+- **Form Handling**: React Hook Form with Zod validation
+
+### Backend Architecture
+- **Runtime**: Node.js with Express
+- **Language**: TypeScript (ESM modules)
+- **API Pattern**: RESTful JSON API under `/api/*` routes
+- **Authentication**: Replit Auth via OpenID Connect with Passport.js
+- **Session Management**: Express sessions stored in PostgreSQL via connect-pg-simple
+
+### Data Storage
+- **Database**: PostgreSQL (provisioned via Replit)
+- **ORM**: Drizzle ORM with drizzle-zod for schema validation
+- **Schema Location**: `shared/schema.ts` (shared between client and server)
+- **Migrations**: Drizzle Kit with `db:push` command
+
+### Key Data Models
+- **Users**: Replit Auth-managed users with profile information
+- **Hospitals**: Nigerian hospitals with location, services, ownership details
+- **Patient Reviews**: Ratings for care quality, cleanliness, staff attitude
+- **Employee Reviews**: Workplace ratings, salary info, pros/cons
+- **Hospital Suggestions**: User-submitted hospital additions
+- **Claim Requests**: Hospital profile verification requests
+
+### Project Structure
+```
+/client          - React frontend (Vite)
+  /src
+    /components  - Reusable UI components
+    /pages       - Route page components
+    /hooks       - Custom React hooks
+    /lib         - Utilities, auth, API client
+/server          - Express backend
+/shared          - Shared types and schema
+/migrations      - Database migrations
+```
+
+### Build & Development
+- Development: `npm run dev` starts Express server with Vite middleware
+- Production: `npm run build` bundles client with Vite, server with esbuild
+- Database: `npm run db:push` applies schema changes
+
+## External Dependencies
+
+### Database
+- **PostgreSQL**: Primary database via `DATABASE_URL` environment variable
+- **Drizzle ORM**: Database queries and schema management
+
+### Authentication
+- **Replit Auth**: OpenID Connect integration for user authentication
+- **Required secrets**: `SESSION_SECRET`, `REPL_ID`, `ISSUER_URL`
+
+### UI Components
+- **shadcn/ui**: Component library built on Radix UI primitives
+- **Lucide React**: Icon library
+- **Tailwind CSS**: Utility-first styling
+
+### Third-Party Services
+- No external payment or email services currently integrated
+- Google Maps integration for hospital location display (client-side only, no API key required for basic embed)
