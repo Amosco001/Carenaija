@@ -26,11 +26,17 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.get("/api/hospitals", async (req, res) => {
     try {
-      const { search } = req.query;
+      const { search, page, limit } = req.query;
       
       if (search && typeof search === "string") {
         const results = await storage.searchHospitals(search);
         res.json(results);
+      } else if (page || limit) {
+        const paginatedResult = await storage.getHospitalsPaginated({
+          page: page ? parseInt(page as string) : 1,
+          limit: limit ? parseInt(limit as string) : 20,
+        });
+        res.json(paginatedResult);
       } else {
         const hospitals = await storage.getAllHospitals();
         res.json(hospitals);

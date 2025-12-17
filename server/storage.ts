@@ -22,13 +22,30 @@ import {
   type InsertBookmark,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql, ilike, or, desc } from "drizzle-orm";
+import { eq, and, sql, ilike, or, desc, count } from "drizzle-orm";
+import memoizee from "memoizee";
+
+const CACHE_TTL = 60000;
+
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   
   getAllHospitals(): Promise<Hospital[]>;
+  getHospitalsPaginated(params: PaginationParams): Promise<PaginatedResult<Hospital>>;
   getHospitalById(id: number): Promise<Hospital | undefined>;
   searchHospitals(query: string): Promise<Hospital[]>;
   createHospital(hospital: InsertHospital): Promise<Hospital>;
@@ -79,14 +96,50 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async getAllHospitals(): Promise<Hospital[]> {
+  private _getAllHospitalsUncached = async (): Promise<Hospital[]> => {
     return await db.select().from(hospitals).orderBy(hospitals.name);
+  };
+
+  getAllHospitals = memoizee(this._getAllHospitalsUncached, {
+    promise: true,
+    maxAge: CACHE_TTL,
+    preFetch: true,
+  });
+
+  async getHospitalsPaginated(params: PaginationParams): Promise<PaginatedResult<Hospital>> {
+    const page = params.page || 1;
+    const limit = params.limit || 20;
+    const offset = (page - 1) * limit;
+
+    const [totalResult] = await db.select({ count: count() }).from(hospitals);
+    const total = totalResult?.count || 0;
+
+    const data = await db
+      .select()
+      .from(hospitals)
+      .orderBy(hospitals.name)
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
-  async getHospitalById(id: number): Promise<Hospital | undefined> {
+  private _getHospitalByIdUncached = async (id: number): Promise<Hospital | undefined> => {
     const [hospital] = await db.select().from(hospitals).where(eq(hospitals.id, id));
     return hospital;
-  }
+  };
+
+  getHospitalById = memoizee(this._getHospitalByIdUncached, {
+    promise: true,
+    maxAge: CACHE_TTL,
+    preFetch: true,
+  });
 
   async searchHospitals(query: string): Promise<Hospital[]> {
     const searchPattern = `%${query}%`;
