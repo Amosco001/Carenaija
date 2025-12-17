@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated, registerAuthRoutes } from "./replit_integrations/auth";
 import {
   insertHospitalSchema,
   insertPatientReviewSchema,
@@ -190,6 +190,82 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     } catch (error) {
       console.error("Error creating claim request:", error);
       res.status(400).json({ message: "Invalid claim request data" });
+    }
+  });
+
+  // User bookmarks
+  app.get("/api/user/bookmarks", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const bookmarks = await storage.getUserBookmarks(userId);
+      res.json(bookmarks);
+    } catch (error) {
+      console.error("Error fetching bookmarks:", error);
+      res.status(500).json({ message: "Failed to fetch bookmarks" });
+    }
+  });
+
+  app.post("/api/hospitals/:id/bookmark", isAuthenticated, async (req: any, res) => {
+    try {
+      const hospitalId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const bookmark = await storage.addBookmark(userId, hospitalId);
+      res.status(201).json(bookmark);
+    } catch (error) {
+      console.error("Error adding bookmark:", error);
+      res.status(500).json({ message: "Failed to add bookmark" });
+    }
+  });
+
+  app.delete("/api/hospitals/:id/bookmark", isAuthenticated, async (req: any, res) => {
+    try {
+      const hospitalId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      await storage.removeBookmark(userId, hospitalId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing bookmark:", error);
+      res.status(500).json({ message: "Failed to remove bookmark" });
+    }
+  });
+
+  app.get("/api/hospitals/:id/bookmark", isAuthenticated, async (req: any, res) => {
+    try {
+      const hospitalId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const isBookmarked = await storage.isBookmarked(userId, hospitalId);
+      res.json({ isBookmarked });
+    } catch (error) {
+      console.error("Error checking bookmark:", error);
+      res.status(500).json({ message: "Failed to check bookmark" });
+    }
+  });
+
+  // User reviews
+  app.get("/api/user/reviews", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const [patientReviews, employeeReviews] = await Promise.all([
+        storage.getUserPatientReviews(userId),
+        storage.getUserEmployeeReviews(userId),
+      ]);
+      res.json({ patientReviews, employeeReviews });
+    } catch (error) {
+      console.error("Error fetching user reviews:", error);
+      res.status(500).json({ message: "Failed to fetch reviews" });
+    }
+  });
+
+  // Update user profile
+  app.patch("/api/user/profile", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { firstName, lastName, location } = req.body;
+      const user = await storage.updateUserProfile(userId, { firstName, lastName, location });
+      res.json(user);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
     }
   });
 

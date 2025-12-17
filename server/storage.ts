@@ -5,6 +5,7 @@ import {
   employeeReviews,
   hospitalSuggestions,
   claimRequests,
+  bookmarks,
   type User,
   type UpsertUser,
   type Hospital,
@@ -17,6 +18,8 @@ import {
   type InsertHospitalSuggestion,
   type ClaimRequest,
   type InsertClaimRequest,
+  type Bookmark,
+  type InsertBookmark,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, ilike, or, desc } from "drizzle-orm";
@@ -43,6 +46,16 @@ export interface IStorage {
   
   createClaimRequest(request: InsertClaimRequest): Promise<ClaimRequest>;
   getClaimRequestsByHospitalId(hospitalId: number): Promise<ClaimRequest[]>;
+  
+  getUserBookmarks(userId: string): Promise<(Bookmark & { hospital: Hospital })[]>;
+  addBookmark(userId: string, hospitalId: number): Promise<Bookmark>;
+  removeBookmark(userId: string, hospitalId: number): Promise<void>;
+  isBookmarked(userId: string, hospitalId: number): Promise<boolean>;
+  
+  getUserPatientReviews(userId: string): Promise<(PatientReview & { hospital: Hospital })[]>;
+  getUserEmployeeReviews(userId: string): Promise<(EmployeeReview & { hospital: Hospital })[]>;
+  
+  updateUserProfile(userId: string, data: Partial<UpsertUser>): Promise<User>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -161,6 +174,80 @@ export class DatabaseStorage implements IStorage {
       .from(claimRequests)
       .where(eq(claimRequests.hospitalId, hospitalId))
       .orderBy(desc(claimRequests.createdAt));
+  }
+
+  async getUserBookmarks(userId: string): Promise<(Bookmark & { hospital: Hospital })[]> {
+    const results = await db
+      .select()
+      .from(bookmarks)
+      .innerJoin(hospitals, eq(bookmarks.hospitalId, hospitals.id))
+      .where(eq(bookmarks.userId, userId))
+      .orderBy(desc(bookmarks.createdAt));
+    
+    return results.map(r => ({
+      ...r.bookmarks,
+      hospital: r.hospitals,
+    }));
+  }
+
+  async addBookmark(userId: string, hospitalId: number): Promise<Bookmark> {
+    const [bookmark] = await db
+      .insert(bookmarks)
+      .values({ userId, hospitalId })
+      .onConflictDoNothing()
+      .returning();
+    return bookmark;
+  }
+
+  async removeBookmark(userId: string, hospitalId: number): Promise<void> {
+    await db
+      .delete(bookmarks)
+      .where(and(eq(bookmarks.userId, userId), eq(bookmarks.hospitalId, hospitalId)));
+  }
+
+  async isBookmarked(userId: string, hospitalId: number): Promise<boolean> {
+    const [bookmark] = await db
+      .select()
+      .from(bookmarks)
+      .where(and(eq(bookmarks.userId, userId), eq(bookmarks.hospitalId, hospitalId)));
+    return !!bookmark;
+  }
+
+  async getUserPatientReviews(userId: string): Promise<(PatientReview & { hospital: Hospital })[]> {
+    const results = await db
+      .select()
+      .from(patientReviews)
+      .innerJoin(hospitals, eq(patientReviews.hospitalId, hospitals.id))
+      .where(eq(patientReviews.userId, userId))
+      .orderBy(desc(patientReviews.createdAt));
+    
+    return results.map(r => ({
+      ...r.patient_reviews,
+      hospital: r.hospitals,
+    }));
+  }
+
+  async getUserEmployeeReviews(userId: string): Promise<(EmployeeReview & { hospital: Hospital })[]> {
+    const results = await db
+      .select()
+      .from(employeeReviews)
+      .innerJoin(hospitals, eq(employeeReviews.hospitalId, hospitals.id))
+      .where(eq(employeeReviews.userId, userId))
+      .orderBy(desc(employeeReviews.createdAt));
+    
+    return results.map(r => ({
+      ...r.employee_reviews,
+      hospital: r.hospitals,
+    }));
+  }
+
+  async updateUserProfile(userId: string, data: Partial<UpsertUser>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
   }
 }
 

@@ -347,6 +347,36 @@ export const claimRequestsRelations = relations(claimRequests, ({ one }) => ({
   }),
 }));
 
+// Bookmarks table
+export const bookmarks = pgTable("bookmarks", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  hospitalId: integer("hospital_id").notNull().references(() => hospitals.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_bookmarks_user").on(table.userId),
+  index("IDX_bookmarks_hospital").on(table.hospitalId),
+]);
+
+export const insertBookmarkSchema = createInsertSchema(bookmarks).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertBookmark = z.infer<typeof insertBookmarkSchema>;
+export type Bookmark = typeof bookmarks.$inferSelect;
+
+export const bookmarksRelations = relations(bookmarks, ({ one }) => ({
+  user: one(users, {
+    fields: [bookmarks.userId],
+    references: [users.id],
+  }),
+  hospital: one(hospitals, {
+    fields: [bookmarks.hospitalId],
+    references: [hospitals.id],
+  }),
+}));
+
 export const usersRelations = relations(users, ({ many }) => ({
   patientReviews: many(patientReviews),
   employeeReviews: many(employeeReviews),
@@ -354,4 +384,5 @@ export const usersRelations = relations(users, ({ many }) => ({
   claimRequests: many(claimRequests),
   claimedHospitals: many(hospitals),
   uploadedImages: many(hospitalImages),
+  bookmarks: many(bookmarks),
 }));

@@ -11,7 +11,6 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import SearchPage from "@/pages/search";
 import HospitalDetails from "@/pages/hospital-details";
-import AuthPage from "@/pages/auth-pages";
 import WriteReview from "@/pages/write-review";
 import SuggestHospital from "@/pages/suggest-hospital";
 import ClaimProfile from "@/pages/claim-profile";
@@ -20,6 +19,8 @@ import TrustSafety from "@/pages/trust-safety";
 import Support from "@/pages/support";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import TermsOfService from "@/pages/terms-of-service";
+import Dashboard from "@/pages/dashboard";
+import Profile from "@/pages/profile";
 
 function Router() {
   return (
@@ -28,8 +29,8 @@ function Router() {
         <Route path="/" component={Home} />
         <Route path="/search" component={SearchPage} />
         <Route path="/hospital/:id" component={HospitalDetails} />
-        <Route path="/login" component={AuthPage} />
-        <Route path="/register" component={AuthPage} />
+        <Route path="/dashboard" component={Dashboard} />
+        <Route path="/profile" component={Profile} />
         <Route path="/write-review/:type/:id" component={WriteReview} />
         <Route path="/suggest-hospital" component={SuggestHospital} />
         <Route path="/claim-profile/:id" component={ClaimProfile} />
