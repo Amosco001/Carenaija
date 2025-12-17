@@ -97,8 +97,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           {/* Mobile Menu Toggle */}
           <button 
-            className="md:hidden p-2"
+            className="md:hidden p-2 touch-target flex items-center justify-center"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+            data-testid="mobile-menu-toggle"
           >
             {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
@@ -106,39 +108,59 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t bg-white p-4 space-y-4">
-             <nav className="flex flex-col space-y-3">
-              <Link href="/" className="text-sm font-medium" onClick={() => setIsMobileMenuOpen(false)}>
+          <div className="md:hidden border-t bg-white safe-area-bottom">
+            <nav className="flex flex-col py-2">
+              <Link 
+                href="/" 
+                className="mobile-nav-link" 
+                onClick={() => setIsMobileMenuOpen(false)}
+                data-testid="mobile-nav-home"
+              >
+                <Building2 className="h-5 w-5" />
                 Home
               </Link>
-              <Link href="/search" className="text-sm font-medium" onClick={() => setIsMobileMenuOpen(false)}>
+              <Link 
+                href="/search" 
+                className="mobile-nav-link" 
+                onClick={() => setIsMobileMenuOpen(false)}
+                data-testid="mobile-nav-search"
+              >
+                <Search className="h-5 w-5" />
                 Find Hospitals
               </Link>
-              <div className="h-px bg-border my-2" />
+              <div className="h-px bg-border mx-4 my-2" />
               {user ? (
                 <>
-                  <div className="flex items-center gap-2 py-2">
-                     <Avatar className="h-8 w-8">
+                  <div className="flex items-center gap-3 px-4 py-3">
+                    <Avatar className="h-10 w-10">
                       <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`} />
                       <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
-                      <span className="text-sm font-medium">{user.name}</span>
-                      <span className="text-xs text-muted-foreground">{user.email}</span>
+                      <span className="text-base font-medium">{user.name}</span>
+                      <span className="text-sm text-muted-foreground">{user.email}</span>
                     </div>
                   </div>
-                  <Button variant="outline" className="w-full justify-start" onClick={logout}>
-                    <LogOut className="mr-2 h-4 w-4" />
+                  <button 
+                    className="mobile-nav-link text-destructive" 
+                    onClick={() => { logout(); setIsMobileMenuOpen(false); }}
+                    data-testid="mobile-nav-logout"
+                  >
+                    <LogOut className="h-5 w-5" />
                     Log out
-                  </Button>
+                  </button>
                 </>
               ) : (
-                <div className="flex flex-col gap-2">
-                  <Link href="/login">
-                    <Button variant="outline" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>Log in</Button>
+                <div className="flex flex-col gap-2 px-4 py-3">
+                  <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                    <Button variant="outline" className="w-full h-12 text-base" data-testid="mobile-nav-login">
+                      Log in
+                    </Button>
                   </Link>
-                  <Link href="/register">
-                    <Button className="w-full" onClick={() => setIsMobileMenuOpen(false)}>Sign up</Button>
+                  <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>
+                    <Button className="w-full h-12 text-base" data-testid="mobile-nav-signup">
+                      Sign up
+                    </Button>
                   </Link>
                 </div>
               )}

@@ -34,6 +34,8 @@ import NotFound from "@/pages/not-found";
 import luthHospitalImage from "@assets/generated_images/luth_hospital_lagos_nigeria.png";
 import neuropsychHospitalImage from "@assets/generated_images/neuropsychiatric_hospital_yaba.png";
 import orthoHospitalImage from "@assets/generated_images/orthopaedic_hospital_igbobi.png";
+import { SwipeGallery } from "@/components/swipe-gallery";
+import { ClickToCall, ClickToCallIcon } from "@/components/click-to-call";
 
 const hospitalImages = [luthHospitalImage, neuropsychHospitalImage, orthoHospitalImage];
 
@@ -250,9 +252,23 @@ export default function HospitalDetails() {
         <header className="bg-white border-b">
           <div className="container mx-auto px-4 py-6">
             <div className="flex flex-col lg:flex-row gap-6">
-              {/* Photo Gallery */}
+              {/* Photo Gallery - Mobile Swipe, Desktop Click */}
               <div className="lg:w-2/5">
-                <div className="relative rounded-xl overflow-hidden aspect-[4/3] bg-slate-100">
+                {/* Mobile: Swipe Gallery */}
+                <div className="lg:hidden relative">
+                  <SwipeGallery 
+                    images={galleryImages} 
+                    alt={hospital.name}
+                    className="aspect-[4/3]"
+                  />
+                  {hospital.verified && (
+                    <div className="absolute top-3 left-3 bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-lg z-10">
+                      <ShieldCheck className="w-4 h-4" /> Verified
+                    </div>
+                  )}
+                </div>
+                {/* Desktop: Click Gallery */}
+                <div className="hidden lg:block relative rounded-xl overflow-hidden aspect-[4/3] bg-slate-100">
                   <img
                     src={galleryImages[selectedImage]}
                     alt={hospital.name}
@@ -269,7 +285,7 @@ export default function HospitalDetails() {
                       <button
                         key={i}
                         onClick={() => setSelectedImage(i)}
-                        className={`w-16 h-12 rounded-lg overflow-hidden border-2 transition-all ${selectedImage === i ? "border-emerald-500 ring-2 ring-emerald-500/50" : "border-white/50 opacity-80 hover:opacity-100"}`}
+                        className={`w-16 h-12 rounded-lg overflow-hidden border-2 transition-all touch-target ${selectedImage === i ? "border-emerald-500 ring-2 ring-emerald-500/50" : "border-white/50 opacity-80 hover:opacity-100"}`}
                         data-testid={`button-gallery-${i}`}
                       >
                         <img src={img} alt="" className="w-full h-full object-cover" />
@@ -611,7 +627,11 @@ export default function HospitalDetails() {
                     {hospital.phone && (
                       <div className="flex items-center gap-3 text-sm">
                         <Phone className="w-5 h-5 text-slate-400 shrink-0" />
-                        <a href={`tel:${hospital.phone}`} className="text-emerald-600 hover:underline" itemProp="telephone">{hospital.phone}</a>
+                        <ClickToCall 
+                          phoneNumber={hospital.phone} 
+                          variant="ghost" 
+                          className="p-0 h-auto text-emerald-600 hover:text-emerald-700 hover:bg-transparent"
+                        />
                       </div>
                     )}
                     {hospital.email && (
@@ -683,6 +703,16 @@ export default function HospitalDetails() {
             </aside>
           </div>
         </div>
+
+        {/* Mobile Floating Call Button */}
+        {hospital.phone && (
+          <div className="fixed bottom-6 right-6 lg:hidden z-50">
+            <ClickToCallIcon 
+              phoneNumber={hospital.phone} 
+              className="shadow-lg"
+            />
+          </div>
+        )}
       </article>
     </>
   );
