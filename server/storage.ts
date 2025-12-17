@@ -31,6 +31,7 @@ export interface IStorage {
   createHospital(hospital: InsertHospital): Promise<Hospital>;
   updateHospital(id: number, hospital: Partial<InsertHospital>): Promise<Hospital | undefined>;
   
+  getAllPatientReviews(): Promise<PatientReview[]>;
   getPatientReviewsByHospitalId(hospitalId: number): Promise<PatientReview[]>;
   createPatientReview(review: InsertPatientReview): Promise<PatientReview>;
   
@@ -101,6 +102,14 @@ export class DatabaseStorage implements IStorage {
       .where(eq(hospitals.id, id))
       .returning();
     return updated;
+  }
+
+  async getAllPatientReviews(): Promise<PatientReview[]> {
+    return await db
+      .select()
+      .from(patientReviews)
+      .orderBy(desc(patientReviews.createdAt))
+      .limit(50);
   }
 
   async getPatientReviewsByHospitalId(hospitalId: number): Promise<PatientReview[]> {

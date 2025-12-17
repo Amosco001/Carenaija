@@ -71,6 +71,16 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  app.get("/api/reviews/patient", async (req, res) => {
+    try {
+      const reviews = await storage.getAllPatientReviews();
+      res.json(reviews);
+    } catch (error) {
+      console.error("Error fetching all patient reviews:", error);
+      res.status(500).json({ message: "Failed to fetch patient reviews" });
+    }
+  });
+
   app.get("/api/hospitals/:id/patient-reviews", async (req, res) => {
     try {
       const id = parseInt(req.params.id);

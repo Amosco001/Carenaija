@@ -18,10 +18,20 @@ export function useHospital(id: number) {
   });
 }
 
-export function usePatientReviews(hospitalId: number) {
+export function usePatientReviews(hospitalId?: number) {
+  const url = hospitalId 
+    ? `/api/hospitals/${hospitalId}/patient-reviews`
+    : "/api/reviews/patient";
+  
   return useQuery<PatientReview[]>({
-    queryKey: [`/api/hospitals/${hospitalId}/patient-reviews`],
-    enabled: !!hospitalId,
+    queryKey: [url],
+    enabled: hospitalId ? !!hospitalId : true,
+  });
+}
+
+export function useAllPatientReviews() {
+  return useQuery<PatientReview[]>({
+    queryKey: ["/api/reviews/patient"],
   });
 }
 
