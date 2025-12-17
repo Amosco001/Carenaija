@@ -29,12 +29,16 @@ export type PatientReview = {
   userId: string;
   reviewerName: string;
   reviewerRole: string;
+  title: string | null;
   rating: number;
   waitTime: string | null;
   cleanliness: number | null;
   staffAttitude: number | null;
   facilities: number | null;
   reviewText: string;
+  visitDate: string | null;
+  verifiedVisit: boolean;
+  helpfulCount: number;
   wouldRecommend: boolean;
   createdAt: Date | null;
 };
