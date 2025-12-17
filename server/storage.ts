@@ -158,6 +158,7 @@ export class DatabaseStorage implements IStorage {
 
   async createHospital(hospital: InsertHospital): Promise<Hospital> {
     const [newHospital] = await db.insert(hospitals).values(hospital).returning();
+    this.getAllHospitals.clear();
     return newHospital;
   }
 
@@ -167,6 +168,8 @@ export class DatabaseStorage implements IStorage {
       .set({ ...hospital, updatedAt: new Date() })
       .where(eq(hospitals.id, id))
       .returning();
+    this.getAllHospitals.clear();
+    this.getHospitalById.delete(id);
     return updated;
   }
 
