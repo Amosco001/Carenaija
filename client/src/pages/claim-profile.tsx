@@ -93,14 +93,14 @@ export default function ClaimProfile() {
 
                 <div className="space-y-2">
                   <Label htmlFor="workEmail">Work Email</Label>
-                  <Input id="workEmail" type="email" placeholder={`name@${hospital.website ? hospital.website.replace('https://', '').replace('www.', '').split('/')[0] : 'hospital.com'}`} {...form.register("workEmail")} />
+                  <Input id="workEmail" type="email" inputMode="email" autoComplete="email" placeholder={`name@${hospital.website ? hospital.website.replace('https://', '').replace('www.', '').split('/')[0] : 'hospital.com'}`} {...form.register("workEmail")} />
                   <p className="text-xs text-slate-500">Please use an official email address if available.</p>
                   {form.formState.errors.workEmail && <p className="text-xs text-red-500">{form.formState.errors.workEmail.message}</p>}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" placeholder="+234..." {...form.register("phone")} />
+                  <Input id="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="+234..." {...form.register("phone")} />
                   {form.formState.errors.phone && <p className="text-xs text-red-500">{form.formState.errors.phone.message}</p>}
                 </div>
 

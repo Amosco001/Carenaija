@@ -28,6 +28,7 @@ import { useToast } from "@/hooks/use-toast";
 import luthHospitalImage from "@assets/generated_images/luth_hospital_lagos_nigeria.png";
 import neuropsychHospitalImage from "@assets/generated_images/neuropsychiatric_hospital_yaba.png";
 import orthoHospitalImage from "@assets/generated_images/orthopaedic_hospital_igbobi.png";
+import { SkeletonCard } from "@/components/skeleton-card";
 
 const hospitalImages = [luthHospitalImage, neuropsychHospitalImage, orthoHospitalImage];
 
@@ -387,6 +388,11 @@ export default function SearchPage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => setShowSuggestions(true)}
                   onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  type="search"
+                  inputMode="search"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck="false"
                   data-testid="input-search"
                 />
                 {showSuggestions && suggestions.length > 0 && (
@@ -523,8 +529,10 @@ export default function SearchPage() {
           {/* Results */}
           <div className="space-y-4">
             {isLoading ? (
-              <div className="flex items-center justify-center py-20">
-                <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+              <div className="space-y-4">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <SkeletonCard key={i} variant="horizontal" />
+                ))}
               </div>
             ) : paginatedHospitals.length > 0 ? (
               <>

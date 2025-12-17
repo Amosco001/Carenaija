@@ -78,3 +78,36 @@ export function SkeletonReviewCard() {
     </Card>
   );
 }
+
+interface SkeletonCardProps {
+  variant?: "vertical" | "horizontal";
+  className?: string;
+}
+
+export function SkeletonCard({ variant = "vertical", className }: SkeletonCardProps) {
+  if (variant === "horizontal") {
+    return (
+      <Card className={`overflow-hidden ${className || ""}`}>
+        <div className="flex flex-col sm:flex-row animate-pulse">
+          <Skeleton className="sm:w-48 h-40 sm:h-auto rounded-none" />
+          <div className="flex-1 p-4 sm:p-5 space-y-3">
+            <div className="flex gap-2">
+              <Skeleton className="h-5 w-16 rounded-full" />
+              <Skeleton className="h-5 w-24" />
+            </div>
+            <Skeleton className="h-6 w-3/4" />
+            <div className="flex flex-wrap gap-1.5">
+              <Skeleton className="h-5 w-16 rounded" />
+              <Skeleton className="h-5 w-20 rounded" />
+              <Skeleton className="h-5 w-14 rounded" />
+            </div>
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-2/3" />
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  return <SkeletonHospitalCard />;
+}

@@ -12,6 +12,7 @@ import orthoHospitalImage from "@assets/generated_images/orthopaedic_hospital_ig
 import { Card, CardContent } from "@/components/ui/card";
 import useEmblaCarousel from "embla-carousel-react";
 import { SEOHead } from "@/components/seo-head";
+import { SkeletonHospitalCard } from "@/components/skeleton-card";
 
 const hospitalImages = [luthHospitalImage, neuropsychHospitalImage, orthoHospitalImage];
 
@@ -206,8 +207,12 @@ export default function Home() {
           </div>
 
           {isLoading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+            <div className="flex gap-6 overflow-hidden">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex-none w-[85%] sm:w-[45%] lg:w-[30%]">
+                  <SkeletonHospitalCard />
+                </div>
+              ))}
             </div>
           ) : (
             <div className="overflow-hidden" ref={emblaRef}>
