@@ -52,15 +52,21 @@ export function SEOHead({
     updateMeta("twitter:description", description);
     updateMeta("twitter:image", ogImage);
 
+    const existingCanonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
     if (canonicalUrl) {
-      let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
-      if (!link) {
-        link = document.createElement("link");
+      if (existingCanonical) {
+        existingCanonical.setAttribute("href", canonicalUrl);
+      } else {
+        const link = document.createElement("link");
         link.setAttribute("rel", "canonical");
+        link.setAttribute("href", canonicalUrl);
         document.head.appendChild(link);
       }
-      link.setAttribute("href", canonicalUrl);
+    } else if (existingCanonical) {
+      existingCanonical.remove();
     }
+
+    updateMeta("og:url", canonicalUrl || window.location.href, true);
   }, [fullTitle, description, keywords, canonicalUrl, ogType, ogImage, noIndex]);
 
   return null;
