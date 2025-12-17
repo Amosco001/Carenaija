@@ -104,20 +104,24 @@ export function SwipeGallery({ images, alt = "Gallery image", className }: Swipe
             <ChevronRight className="h-5 w-5" />
           </button>
 
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex">
             {images.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentIndex(index)}
-                className={cn(
-                  "w-2 h-2 rounded-full transition-all touch-target-small",
-                  index === currentIndex
-                    ? "bg-white w-4"
-                    : "bg-white/50 hover:bg-white/75"
-                )}
+                className="touch-target flex items-center justify-center"
                 aria-label={`Go to image ${index + 1}`}
                 data-testid={`gallery-dot-${index}`}
-              />
+              >
+                <span
+                  className={cn(
+                    "rounded-full transition-all",
+                    index === currentIndex
+                      ? "bg-white w-4 h-2"
+                      : "bg-white/50 hover:bg-white/75 w-2 h-2"
+                  )}
+                />
+              </button>
             ))}
           </div>
         </>
