@@ -269,5 +269,76 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // Robots.txt for SEO
+  app.get("/robots.txt", (req, res) => {
+    const baseUrl = `https://${req.get("host")}`;
+    res.type("text/plain");
+    res.send(`User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /profile
+
+Sitemap: ${baseUrl}/sitemap.xml
+
+# CareNaija - Hospital Reviews Nigeria
+# Find the best hospitals in Lagos, Abuja, and across Nigeria
+`);
+  });
+
+  // XML Sitemap for SEO
+  app.get("/sitemap.xml", async (req, res) => {
+    try {
+      const baseUrl = `https://${req.get("host")}`;
+      const hospitals = await storage.getAllHospitals();
+      const today = new Date().toISOString().split("T")[0];
+
+      const staticPages = [
+        { url: "/", priority: "1.0", changefreq: "daily" },
+        { url: "/search", priority: "0.9", changefreq: "daily" },
+        { url: "/guidelines", priority: "0.5", changefreq: "monthly" },
+        { url: "/trust-safety", priority: "0.5", changefreq: "monthly" },
+        { url: "/support", priority: "0.5", changefreq: "monthly" },
+        { url: "/privacy-policy", priority: "0.3", changefreq: "yearly" },
+        { url: "/terms-of-service", priority: "0.3", changefreq: "yearly" },
+      ];
+
+      let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+`;
+
+      for (const page of staticPages) {
+        xml += `  <url>
+    <loc>${baseUrl}${page.url}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${page.changefreq}</changefreq>
+    <priority>${page.priority}</priority>
+  </url>
+`;
+      }
+
+      for (const hospital of hospitals) {
+        const lastmod = hospital.updatedAt 
+          ? new Date(hospital.updatedAt).toISOString().split("T")[0]
+          : today;
+        xml += `  <url>
+    <loc>${baseUrl}/hospital/${hospital.id}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+`;
+      }
+
+      xml += `</urlset>`;
+
+      res.type("application/xml");
+      res.send(xml);
+    } catch (error) {
+      console.error("Error generating sitemap:", error);
+      res.status(500).send("Error generating sitemap");
+    }
+  });
+
   return httpServer;
 }
