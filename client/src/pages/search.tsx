@@ -4,6 +4,7 @@ import { useHospitals } from "@/hooks/useHospitals";
 import type { Hospital } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { SEOHead } from "@/components/seo-head";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -350,8 +351,26 @@ export default function SearchPage() {
     </div>
   );
 
+  const seoTitle = searchQuery 
+    ? `Search: ${searchQuery} - Hospitals in Nigeria`
+    : selectedState !== "All"
+    ? `Best Hospitals in ${selectedState}, Nigeria`
+    : "Search Hospitals in Nigeria";
+  
+  const seoDescription = searchQuery
+    ? `Find hospitals for "${searchQuery}" in Nigeria. Compare ratings and read patient reviews.`
+    : selectedState !== "All"
+    ? `Find the best hospitals in ${selectedState}, Nigeria. Compare ratings, read patient reviews, and make informed healthcare decisions.`
+    : "Search and compare hospitals across Nigeria. Read verified patient reviews and ratings for hospitals in Lagos, Abuja, and all Nigerian states.";
+
   return (
     <div className="bg-slate-50 min-h-screen" data-testid="page-search">
+      <SEOHead 
+        title={seoTitle}
+        description={seoDescription}
+        keywords={`hospitals ${selectedState !== "All" ? selectedState : "Nigeria"}, hospital reviews, Nigerian healthcare, ${searchQuery || "medical facilities"}`}
+        canonicalUrl={`https://carenaija.replit.app/search${searchQuery ? `?q=${encodeURIComponent(searchQuery)}` : ""}`}
+      />
       {/* Search Header */}
       <div className="bg-white border-b sticky top-0 z-30 shadow-sm">
         <div className="container mx-auto px-4 py-4">

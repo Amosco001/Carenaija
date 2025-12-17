@@ -11,6 +11,7 @@ import neuropsychHospitalImage from "@assets/generated_images/neuropsychiatric_h
 import orthoHospitalImage from "@assets/generated_images/orthopaedic_hospital_igbobi.png";
 import { Card, CardContent } from "@/components/ui/card";
 import useEmblaCarousel from "embla-carousel-react";
+import { SEOHead } from "@/components/seo-head";
 
 const hospitalImages = [luthHospitalImage, neuropsychHospitalImage, orthoHospitalImage];
 
@@ -78,6 +79,12 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen bg-white" data-testid="page-home">
+      <SEOHead 
+        title="Hospital Reviews Nigeria - Find Best Hospitals in Lagos & Nigeria"
+        description="Find the best hospitals in Nigeria with verified patient reviews. Compare ratings for hospitals in Lagos, Abuja and across Nigeria. Read honest reviews about care quality."
+        keywords="hospital reviews Nigeria, best hospitals in Lagos, Nigerian hospital ratings, Lagos hospitals, Abuja hospitals, healthcare Nigeria"
+        canonicalUrl="https://carenaija.replit.app/"
+      />
       {/* Hero Section - Nigerian Green Theme */}
       <section className="relative min-h-[600px] flex items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-800 via-emerald-700 to-green-600">
         <div className="absolute inset-0 z-0">

@@ -3,6 +3,7 @@ import { useParams, Link } from "wouter";
 import { useHospital } from "@/hooks/useHospital";
 import { useHospitals, usePatientReviews } from "@/hooks/useHospitals";
 import { Button } from "@/components/ui/button";
+import { SEOHead } from "@/components/seo-head";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -194,8 +195,17 @@ export default function HospitalDetails() {
     "medicalSpecialty": hospital.services,
   };
 
+  const seoDescription = `${hospital.name} in ${hospital.state}, Nigeria. ${hospital.services.slice(0, 3).join(", ")} services. Read ${patientReviews.length} patient reviews and ratings.`;
+
   return (
     <>
+      <SEOHead 
+        title={`${hospital.name} - Reviews & Ratings`}
+        description={seoDescription}
+        keywords={`${hospital.name}, hospital ${hospital.state}, ${hospital.services.slice(0, 3).join(", ")}, hospital reviews Nigeria`}
+        canonicalUrl={`https://carenaija.replit.app/hospital/${hospital.id}`}
+        ogType="place"
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
