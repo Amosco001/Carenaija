@@ -21,6 +21,7 @@ import PrivacyPolicy from "@/pages/privacy-policy";
 import TermsOfService from "@/pages/terms-of-service";
 import Dashboard from "@/pages/dashboard";
 import Profile from "@/pages/profile";
+import AdminDashboard from "@/pages/admin-dashboard";
 
 function Router() {
   return (
@@ -34,12 +35,7 @@ function Router() {
         <Route path="/write-review/:type/:id" component={WriteReview} />
         <Route path="/suggest-hospital" component={SuggestHospital} />
         <Route path="/claim-profile/:id" component={ClaimProfile} />
-        <Route path="/admin">
-          <div className="container mx-auto py-20 text-center">
-            <h1 className="text-3xl font-bold mb-4">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Mock Admin Dashboard - Functionality would go here.</p>
-          </div>
-        </Route>
+        <Route path="/admin" component={AdminDashboard} />
         <Route path="/guidelines" component={Guidelines} />
         <Route path="/trust-safety" component={TrustSafety} />
         <Route path="/support" component={Support} />

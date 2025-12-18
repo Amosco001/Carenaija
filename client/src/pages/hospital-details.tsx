@@ -36,6 +36,7 @@ import neuropsychHospitalImage from "@assets/generated_images/neuropsychiatric_h
 import orthoHospitalImage from "@assets/generated_images/orthopaedic_hospital_igbobi.png";
 import { SwipeGallery } from "@/components/swipe-gallery";
 import { ClickToCall, ClickToCallIcon } from "@/components/click-to-call";
+import { ReportReviewModal } from "@/components/report-review-modal";
 
 const hospitalImages = [luthHospitalImage, neuropsychHospitalImage, orthoHospitalImage];
 
@@ -551,6 +552,7 @@ export default function HospitalDetails() {
                                 <button className="text-xs text-slate-500 hover:text-emerald-600 flex items-center gap-1">
                                   <ThumbsUp className="w-3 h-3" /> Helpful ({review.helpfulCount || 0})
                                 </button>
+                                <ReportReviewModal reviewId={review.id} reviewType="patient" />
                               </div>
                             </div>
                           </div>
