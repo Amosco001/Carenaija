@@ -528,3 +528,152 @@ export const adminAuditLog = pgTable("admin_audit_log", {
 ]);
 
 export type AdminAuditLog = typeof adminAuditLog.$inferSelect;
+
+// Pending Hospitals table - for scraped hospitals awaiting verification
+export const pendingHospitals = pgTable("pending_hospitals", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  address: text("address"),
+  city: text("city"),
+  lga: text("lga"),
+  state: text("state"),
+  phone: text("phone"),
+  email: text("email"),
+  website: text("website"),
+  type: text("type"), // hospital, clinic, diagnostic center
+  ownership: text("ownership"),
+  specialties: text("specialties").array().default(sql`'{}'`),
+  services: text("services").array().default(sql`'{}'`),
+  latitude: doublePrecision("latitude"),
+  longitude: doublePrecision("longitude"),
+  sourceUrl: text("source_url"),
+  sourceName: text("source_name").notNull(), // google_places, ministry_health, hmo_directory, etc.
+  sourceId: text("source_id"), // External ID from source (e.g., Google Place ID)
+  rawData: jsonb("raw_data"), // Store original scraped data
+  duplicateOfId: integer("duplicate_of_id").references(() => hospitals.id),
+  duplicateScore: doublePrecision("duplicate_score"),
+  status: text("status").notNull().default("pending"), // pending, approved, rejected, duplicate
+  reviewedBy: varchar("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewNotes: text("review_notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_pending_hospitals_status").on(table.status),
+  index("IDX_pending_hospitals_source").on(table.sourceName),
+  index("IDX_pending_hospitals_state").on(table.state),
+  index("IDX_pending_hospitals_created").on(table.createdAt),
+  index("IDX_pending_hospitals_source_id").on(table.sourceId),
+]);
+
+export const insertPendingHospitalSchema = createInsertSchema(pendingHospitals).omit({
+  id: true,
+  createdAt: true,
+  status: true,
+  reviewedBy: true,
+  reviewedAt: true,
+  reviewNotes: true,
+});
+
+export type InsertPendingHospital = z.infer<typeof insertPendingHospitalSchema>;
+export type PendingHospital = typeof pendingHospitals.$inferSelect;
+
+// Scraping Jobs table - for tracking scraping tasks
+export const scrapingJobs = pgTable("scraping_jobs", {
+  id: serial("id").primaryKey(),
+  source: text("source").notNull(), // google_places, ministry_health, etc.
+  targetCity: text("target_city"),
+  targetState: text("target_state"),
+  jobType: text("job_type").notNull(), // discover, update, verify
+  status: text("status").notNull().default("pending"), // pending, running, completed, failed
+  priority: integer("priority").notNull().default(5),
+  scheduledFor: timestamp("scheduled_for"),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  itemsProcessed: integer("items_processed").default(0),
+  itemsDiscovered: integer("items_discovered").default(0),
+  itemsDuplicate: integer("items_duplicate").default(0),
+  errorMessage: text("error_message"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_scraping_jobs_status").on(table.status),
+  index("IDX_scraping_jobs_source").on(table.source),
+  index("IDX_scraping_jobs_scheduled").on(table.scheduledFor),
+]);
+
+export const insertScrapingJobSchema = createInsertSchema(scrapingJobs).omit({
+  id: true,
+  createdAt: true,
+  startedAt: true,
+  completedAt: true,
+  itemsProcessed: true,
+  itemsDiscovered: true,
+  itemsDuplicate: true,
+});
+
+export type InsertScrapingJob = z.infer<typeof insertScrapingJobSchema>;
+export type ScrapingJob = typeof scrapingJobs.$inferSelect;
+
+// Scraping Logs table - for detailed activity logging
+export const scrapingLogs = pgTable("scraping_logs", {
+  id: serial("id").primaryKey(),
+  jobId: integer("job_id").references(() => scrapingJobs.id, { onDelete: "cascade" }),
+  level: text("level").notNull().default("info"), // debug, info, warn, error
+  message: text("message").notNull(),
+  source: text("source"),
+  url: text("url"),
+  responseStatus: integer("response_status"),
+  duration: integer("duration"), // milliseconds
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_scraping_logs_job").on(table.jobId),
+  index("IDX_scraping_logs_level").on(table.level),
+  index("IDX_scraping_logs_created").on(table.createdAt),
+]);
+
+export type ScrapingLog = typeof scrapingLogs.$inferSelect;
+
+// Scraping Sources table - for configurable data sources
+export const scrapingSources = pgTable("scraping_sources", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  displayName: text("display_name").notNull(),
+  type: text("type").notNull(), // api, web_scraper
+  baseUrl: text("base_url"),
+  enabled: boolean("enabled").notNull().default(true),
+  rateLimit: integer("rate_limit").default(10), // requests per minute
+  lastRunAt: timestamp("last_run_at"),
+  nextRunAt: timestamp("next_run_at"),
+  scheduleInterval: text("schedule_interval"), // daily, weekly, monthly
+  config: jsonb("config"), // Source-specific configuration
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_scraping_sources_enabled").on(table.enabled),
+  index("IDX_scraping_sources_next_run").on(table.nextRunAt),
+]);
+
+export type ScrapingSource = typeof scrapingSources.$inferSelect;
+
+// Relations for scraping tables
+export const pendingHospitalsRelations = relations(pendingHospitals, ({ one }) => ({
+  duplicateOf: one(hospitals, {
+    fields: [pendingHospitals.duplicateOfId],
+    references: [hospitals.id],
+  }),
+  reviewer: one(users, {
+    fields: [pendingHospitals.reviewedBy],
+    references: [users.id],
+  }),
+}));
+
+export const scrapingJobsRelations = relations(scrapingJobs, ({ many }) => ({
+  logs: many(scrapingLogs),
+}));
+
+export const scrapingLogsRelations = relations(scrapingLogs, ({ one }) => ({
+  job: one(scrapingJobs, {
+    fields: [scrapingLogs.jobId],
+    references: [scrapingJobs.id],
+  }),
+}));
