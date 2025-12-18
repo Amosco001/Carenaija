@@ -37,6 +37,11 @@ export const users = pgTable("users", {
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
   location: varchar("location"),
+  phoneNumber: varchar("phone_number"),
+  emailVerifiedAt: timestamp("email_verified_at"),
+  phoneVerifiedAt: timestamp("phone_verified_at"),
+  lastIpAddress: varchar("last_ip_address"),
+  isAdmin: boolean("is_admin").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
@@ -139,7 +144,7 @@ export const insertHospitalImageSchema = createInsertSchema(hospitalImages).omit
 export type InsertHospitalImage = z.infer<typeof insertHospitalImageSchema>;
 export type HospitalImage = typeof hospitalImages.$inferSelect;
 
-// Patient Reviews table (enhanced with title, visit_date, verified_visit, helpful_count)
+// Patient Reviews table (enhanced with verification and moderation fields)
 export const patientReviews = pgTable("patient_reviews", {
   id: serial("id").primaryKey(),
   hospitalId: integer("hospital_id").notNull().references(() => hospitals.id, { onDelete: "cascade" }),
@@ -157,12 +162,25 @@ export const patientReviews = pgTable("patient_reviews", {
   verifiedVisit: boolean("verified_visit").notNull().default(false),
   helpfulCount: integer("helpful_count").notNull().default(0),
   wouldRecommend: boolean("would_recommend").notNull(),
+  proofAttachmentUrl: text("proof_attachment_url"),
+  proofType: text("proof_type"),
+  verificationStatus: text("verification_status").notNull().default("pending"),
+  moderationStatus: text("moderation_status").notNull().default("approved"),
+  spamScore: integer("spam_score").notNull().default(0),
+  submittedIp: varchar("submitted_ip"),
+  flaggedReason: text("flagged_reason"),
+  flaggedBy: varchar("flagged_by").references(() => users.id),
+  flaggedAt: timestamp("flagged_at"),
+  reviewedBy: varchar("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("IDX_patient_reviews_hospital").on(table.hospitalId),
   index("IDX_patient_reviews_user").on(table.userId),
   index("IDX_patient_reviews_rating").on(table.rating),
   index("IDX_patient_reviews_created").on(table.createdAt),
+  index("IDX_patient_reviews_moderation").on(table.moderationStatus),
+  index("IDX_patient_reviews_user_hospital").on(table.userId, table.hospitalId),
 ]);
 
 export const insertPatientReviewSchema = createInsertSchema(patientReviews).omit({
@@ -385,4 +403,128 @@ export const usersRelations = relations(users, ({ many }) => ({
   claimedHospitals: many(hospitals),
   uploadedImages: many(hospitalImages),
   bookmarks: many(bookmarks),
+  reviewFlags: many(reviewFlags),
 }));
+
+// Review Flags table - for reporting reviews
+export const reviewFlags = pgTable("review_flags", {
+  id: serial("id").primaryKey(),
+  reviewId: integer("review_id").notNull().references(() => patientReviews.id, { onDelete: "cascade" }),
+  reviewType: text("review_type").notNull().default("patient"),
+  reporterUserId: varchar("reporter_user_id").notNull().references(() => users.id),
+  reason: text("reason").notNull(),
+  details: text("details"),
+  status: text("status").notNull().default("pending"),
+  resolvedBy: varchar("resolved_by").references(() => users.id),
+  resolvedAt: timestamp("resolved_at"),
+  resolution: text("resolution"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_review_flags_review").on(table.reviewId),
+  index("IDX_review_flags_status").on(table.status),
+  index("IDX_review_flags_reporter").on(table.reporterUserId),
+]);
+
+export const insertReviewFlagSchema = createInsertSchema(reviewFlags).omit({
+  id: true,
+  createdAt: true,
+  status: true,
+  resolvedBy: true,
+  resolvedAt: true,
+  resolution: true,
+});
+
+export type InsertReviewFlag = z.infer<typeof insertReviewFlagSchema>;
+export type ReviewFlag = typeof reviewFlags.$inferSelect;
+
+export const reviewFlagsRelations = relations(reviewFlags, ({ one }) => ({
+  review: one(patientReviews, {
+    fields: [reviewFlags.reviewId],
+    references: [patientReviews.id],
+  }),
+  reporter: one(users, {
+    fields: [reviewFlags.reporterUserId],
+    references: [users.id],
+  }),
+  resolver: one(users, {
+    fields: [reviewFlags.resolvedBy],
+    references: [users.id],
+  }),
+}));
+
+// Verification Tokens table - for email/phone verification
+export const verificationTokens = pgTable("verification_tokens", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  token: varchar("token").notNull(),
+  type: text("type").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  consumedAt: timestamp("consumed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_verification_tokens_user").on(table.userId),
+  index("IDX_verification_tokens_token").on(table.token),
+]);
+
+export const insertVerificationTokenSchema = createInsertSchema(verificationTokens).omit({
+  id: true,
+  createdAt: true,
+  consumedAt: true,
+});
+
+export type InsertVerificationToken = z.infer<typeof insertVerificationTokenSchema>;
+export type VerificationToken = typeof verificationTokens.$inferSelect;
+
+// Spam Keywords table - for automated spam detection
+export const spamKeywords = pgTable("spam_keywords", {
+  id: serial("id").primaryKey(),
+  phrase: text("phrase").notNull().unique(),
+  weight: integer("weight").notNull().default(10),
+  category: text("category").notNull().default("general"),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_spam_keywords_active").on(table.active),
+]);
+
+export const insertSpamKeywordSchema = createInsertSchema(spamKeywords).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertSpamKeyword = z.infer<typeof insertSpamKeywordSchema>;
+export type SpamKeyword = typeof spamKeywords.$inferSelect;
+
+// IP Tracking table - for spam prevention
+export const ipTracking = pgTable("ip_tracking", {
+  id: serial("id").primaryKey(),
+  ipAddress: varchar("ip_address").notNull(),
+  userId: varchar("user_id").references(() => users.id),
+  action: text("action").notNull(),
+  resourceType: text("resource_type"),
+  resourceId: integer("resource_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_ip_tracking_ip").on(table.ipAddress),
+  index("IDX_ip_tracking_created").on(table.createdAt),
+]);
+
+export type IpTracking = typeof ipTracking.$inferSelect;
+
+// Admin Audit Log table
+export const adminAuditLog = pgTable("admin_audit_log", {
+  id: serial("id").primaryKey(),
+  adminUserId: varchar("admin_user_id").notNull().references(() => users.id),
+  action: text("action").notNull(),
+  targetType: text("target_type").notNull(),
+  targetId: integer("target_id").notNull(),
+  previousState: jsonb("previous_state"),
+  newState: jsonb("new_state"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_admin_audit_admin").on(table.adminUserId),
+  index("IDX_admin_audit_target").on(table.targetType, table.targetId),
+]);
+
+export type AdminAuditLog = typeof adminAuditLog.$inferSelect;
