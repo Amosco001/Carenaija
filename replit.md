@@ -86,12 +86,26 @@ The platform includes an automated hospital discovery system using Python scrape
 
 **Scrapers Available:**
 1. **Google Places API** (`scraper/sources/google_places.py`)
-   - Searches major Nigerian cities: Lagos, Abuja, Port Harcourt, Kano, Ibadan, etc.
+   - Searches all 36 Nigerian states with neighborhood-level coverage for major cities
+   - Extracts: name, address, phone, website, coordinates, rating, reviews, photos, opening hours, place_id
+   - Supports 14+ search queries (hospital, clinic, diagnostic center, etc.)
    - Requires `GOOGLE_PLACES_API_KEY` secret (billed API)
    
 2. **Web Directory Scrapers** (`scraper/sources/web_directory.py`)
    - Scrapes Nigerian health ministry and HMO directories
    - Respects robots.txt and uses polite rate limiting
+
+**Data Quality Scoring:**
+- **Completeness Score (0-100%)**: Measures available data fields (name, phone, website, hours, etc.)
+- **Confidence Score (0-100%)**: Measures data trustworthiness (review count, verification, rating)
+- Scores displayed in admin dashboard with visual progress bars
+
+**Auto-Approval Logic:**
+Facilities are auto-approved if they meet ALL criteria:
+- Google verified listing
+- 10+ user reviews
+- Completeness score ≥ 60%
+- No duplicate match detected
 
 **Deduplication:**
 - Fuzzy matching on hospital name (85% threshold)
@@ -99,13 +113,27 @@ The platform includes an automated hospital discovery system using Python scrape
 - Phone number exact matching
 - Duplicate score shown to admins for manual review
 
+**Caching:**
+- API responses cached to `/scraper/cache/` directory
+- 7-day cache TTL to minimize API costs
+- Cache stats available via `scraper.utils.cache.get_cache_stats()`
+
+**Cost Estimation:**
+```python
+from scraper.sources.google_places import get_cost_estimate
+estimate = get_cost_estimate(num_cities=36)
+# Returns: searches, estimated_places, total_estimated_cost, monthly_cost_daily_runs
+```
+
 **Running the Scraper:**
 ```bash
 cd scraper && python runner.py --source google_places
 cd scraper && python runner.py --source all
+cd scraper && python -c "from scraper.sources.google_places import get_cost_estimate; print(get_cost_estimate())"
 ```
 
 **Workflow:**
-1. Scraper discovers hospitals → saves to `pending_hospitals` (status: pending)
-2. Admin reviews in dashboard → approves/rejects/marks as duplicate
-3. Approved hospitals → copied to main `hospitals` table
+1. Scraper discovers hospitals → calculates scores → saves to `pending_hospitals`
+2. Auto-approved hospitals marked for fast-track review
+3. Admin reviews in dashboard → approves/rejects/marks as duplicate
+4. Approved hospitals → copied to main `hospitals` table with Google data

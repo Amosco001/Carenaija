@@ -94,14 +94,18 @@ def calculate_confidence_score(hospital_data: Dict[str, Any]) -> float:
 
 def should_auto_approve(hospital_data: Dict[str, Any], 
                         completeness_threshold: float = 60,
-                        confidence_threshold: float = 70,
                         min_reviews: int = 10) -> tuple[bool, str]:
     """
     Determine if a hospital should be auto-approved.
     Returns (should_approve, reason).
+    
+    Auto-approval requires ALL of:
+    - Google verified listing
+    - 10+ user reviews  
+    - Completeness score >= 60%
+    - No duplicate match detected
     """
     completeness = hospital_data.get("completeness_score", 0)
-    confidence = hospital_data.get("confidence_score", 0)
     review_count = hospital_data.get("google_review_count", 0) or 0
     google_verified = hospital_data.get("google_verified", False)
     duplicate_score = hospital_data.get("duplicate_score", 0) or 0
@@ -110,24 +114,20 @@ def should_auto_approve(hospital_data: Dict[str, Any],
     if duplicate_score > 0.5:
         return False, f"Potential duplicate (score: {duplicate_score:.0%})"
     
-    # Never auto-approve without minimum data
-    if completeness < 40:
-        return False, f"Incomplete data (score: {completeness:.0f}%)"
+    # Never auto-approve without Google verification
+    if not google_verified:
+        return False, "Not Google verified"
     
-    # Auto-approve if:
-    # 1. Has Google verification + sufficient reviews + good completeness
-    if google_verified and review_count >= min_reviews and completeness >= completeness_threshold:
-        return True, "Verified Google listing with sufficient reviews"
+    # Never auto-approve without minimum reviews
+    if review_count < min_reviews:
+        return False, f"Insufficient reviews ({review_count} < {min_reviews})"
     
-    # 2. High confidence + high completeness + many reviews
-    if confidence >= confidence_threshold and completeness >= completeness_threshold and review_count >= min_reviews:
-        return True, f"High quality data (confidence: {confidence:.0f}%, completeness: {completeness:.0f}%)"
+    # Never auto-approve without minimum completeness
+    if completeness < completeness_threshold:
+        return False, f"Incomplete data ({completeness:.0f}% < {completeness_threshold:.0f}%)"
     
-    # 3. Very high reviews (trusted establishment)
-    if review_count >= 50 and completeness >= 50:
-        return True, f"Well-established facility ({review_count} reviews)"
-    
-    return False, "Requires manual review"
+    # All criteria met - auto-approve
+    return True, f"Verified listing with {review_count} reviews and {completeness:.0f}% complete"
 
 
 def get_approval_status(hospital_data: Dict[str, Any]) -> Dict[str, Any]:
