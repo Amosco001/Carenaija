@@ -550,6 +550,15 @@ export const pendingHospitals = pgTable("pending_hospitals", {
   sourceName: text("source_name").notNull(), // google_places, ministry_health, hmo_directory, etc.
   sourceId: text("source_id"), // External ID from source (e.g., Google Place ID)
   rawData: jsonb("raw_data"), // Store original scraped data
+  googleRating: doublePrecision("google_rating"),
+  googleReviewCount: integer("google_review_count"),
+  googlePhotos: text("google_photos").array().default(sql`'{}'`),
+  googleOpeningHours: jsonb("google_opening_hours"),
+  googleCategories: text("google_categories").array().default(sql`'{}'`),
+  googleVerified: boolean("google_verified").default(false),
+  completenessScore: doublePrecision("completeness_score"),
+  confidenceScore: doublePrecision("confidence_score"),
+  autoApproved: boolean("auto_approved").default(false),
   duplicateOfId: integer("duplicate_of_id").references(() => hospitals.id),
   duplicateScore: doublePrecision("duplicate_score"),
   status: text("status").notNull().default("pending"), // pending, approved, rejected, duplicate
@@ -563,6 +572,7 @@ export const pendingHospitals = pgTable("pending_hospitals", {
   index("IDX_pending_hospitals_state").on(table.state),
   index("IDX_pending_hospitals_created").on(table.createdAt),
   index("IDX_pending_hospitals_source_id").on(table.sourceId),
+  index("IDX_pending_hospitals_auto_approved").on(table.autoApproved),
 ]);
 
 export const insertPendingHospitalSchema = createInsertSchema(pendingHospitals).omit({
