@@ -73,5 +73,39 @@ Preferred communication style: Simple, everyday language.
 - **Tailwind CSS**: Utility-first styling
 
 ### Third-Party Services
-- No external payment or email services currently integrated
 - Google Maps integration for hospital location display (client-side only, no API key required for basic embed)
+- Google Places API for hospital discovery (requires `GOOGLE_PLACES_API_KEY` secret)
+
+### Hospital Discovery System (Web Scraping)
+The platform includes an automated hospital discovery system using Python scrapers.
+
+**Architecture:**
+- Location: `/scraper` directory (Python 3.11)
+- Database: Stores discovered hospitals in `pending_hospitals` table
+- Admin Review: Admins approve/reject hospitals via "Discovered Hospitals" tab
+
+**Scrapers Available:**
+1. **Google Places API** (`scraper/sources/google_places.py`)
+   - Searches major Nigerian cities: Lagos, Abuja, Port Harcourt, Kano, Ibadan, etc.
+   - Requires `GOOGLE_PLACES_API_KEY` secret (billed API)
+   
+2. **Web Directory Scrapers** (`scraper/sources/web_directory.py`)
+   - Scrapes Nigerian health ministry and HMO directories
+   - Respects robots.txt and uses polite rate limiting
+
+**Deduplication:**
+- Fuzzy matching on hospital name (85% threshold)
+- Address similarity check (80% threshold)
+- Phone number exact matching
+- Duplicate score shown to admins for manual review
+
+**Running the Scraper:**
+```bash
+cd scraper && python runner.py --source google_places
+cd scraper && python runner.py --source all
+```
+
+**Workflow:**
+1. Scraper discovers hospitals → saves to `pending_hospitals` (status: pending)
+2. Admin reviews in dashboard → approves/rejects/marks as duplicate
+3. Approved hospitals → copied to main `hospitals` table
