@@ -30,7 +30,7 @@ import neuropsychHospitalImage from "@assets/generated_images/neuropsychiatric_h
 import orthoHospitalImage from "@assets/generated_images/orthopaedic_hospital_igbobi.png";
 import { SkeletonCard } from "@/components/skeleton-card";
 import { useGeolocation, formatDistance, getGoogleMapsDirectionsUrl } from "@/hooks/useGeolocation";
-import { StaticMapFallback } from "@/components/map-view";
+import { MapView, StaticMapFallback } from "@/components/map-view";
 
 const hospitalImages = [luthHospitalImage, neuropsychHospitalImage, orthoHospitalImage];
 
@@ -689,9 +689,22 @@ export default function SearchPage() {
 
                           {/* Distance if available */}
                           {userLocation && hospital.latitude && hospital.longitude && (
-                            <div className="flex items-center gap-1 text-sm text-orange-600 mb-2">
-                              <Navigation className="w-3 h-3" />
-                              {getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, hospital.latitude, hospital.longitude).toFixed(1)} km away
+                            <div className="flex items-center gap-2 text-sm mb-2">
+                              <span className="flex items-center gap-1 text-orange-600">
+                                <Navigation className="w-3 h-3" />
+                                {getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, hospital.latitude, hospital.longitude).toFixed(1)} km away
+                              </span>
+                              <a
+                                href={`https://www.google.com/maps/dir/?api=1&destination=${hospital.latitude},${hospital.longitude}&travelmode=driving`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="inline-flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 font-medium hover:underline"
+                                data-testid={`link-directions-${hospital.id}`}
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                                Directions
+                              </a>
                             </div>
                           )}
 
