@@ -1,0 +1,67 @@
+Create a modern, mobile-responsive login page for CareNaija with excellent UX:
+
+DESIGN REQUIREMENTS:
+- Clean, minimalist design with CareNaija branding (green/white Nigerian colors)
+- Center-aligned form on desktop, full-width on mobile
+- Welcoming header: "Welcome Back to CareNaija"
+- Subtle background (light gradient or healthcare-themed pattern)
+
+FORM FIELDS:
+- Email/Phone number input (single field that accepts both)
+  * Placeholder: "Email or Phone Number"
+  * Auto-detect format and validate accordingly
+  * Support Nigerian phone format (+234...)
+- Password input with show/hide toggle icon
+  * "Show Password" eye icon
+  * Clear visibility
+- "Remember Me" checkbox (optional, pre-checked)
+- Large, prominent "Login" button (full-width on mobile)
+  * Loading spinner during authentication
+  * Disabled state while processing
+
+SOCIAL LOGIN OPTIONS:
+- "Or continue with" divider
+- Google login button (prominent)
+- Facebook login button
+- Buttons with proper branding colors and icons
+
+ADDITIONAL FEATURES:
+- "Forgot Password?" link (right-aligned, subtle)
+- "Don't have an account? Sign Up" link at bottom
+- Error messages display above form (red, clear text)
+- Success feedback (green checkmark animation)
+- Auto-focus on first input field on page load
+- Enter key submits form
+- Client-side validation with helpful error messages
+- Session timeout warning before logout
+
+SECURITY:
+- HTTPS enforced
+- CSRF token protection
+- Rate limiting (max 5 attempts per 15 minutes)
+- Account lockout after 5 failed attempts
+- "You've been locked out" message with unlock instructions
+- Password strength indicator (on password change)
+
+MOBILE OPTIMIZATION:
+- Touch-friendly buttons (minimum 44x44px)
+- Appropriate input types (email keyboard for email, tel for phone)
+- Prevent zoom on input focus
+- Fast loading (< 2 seconds)
+- Works on slow 3G connections
+
+ACCESSIBILITY:
+- ARIA labels on all inputs
+- Keyboard navigation support
+- High contrast for visibility
+- Screen reader friendly
+- Focus indicators clearly visible
+
+ERROR HANDLING:
+- "Invalid email/phone or password" (don't specify which is wrong for security)
+- "Account not found. Sign up here"
+- "Account locked. Reset password or contact support"
+- "Too many attempts. Try again in 15 minutes"
+- Network error handling with retry option
+
+Include proper spacing, smooth animations, and professional appearance.
