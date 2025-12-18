@@ -6,6 +6,11 @@ import {
   hospitalSuggestions,
   claimRequests,
   bookmarks,
+  reviewFlags,
+  verificationTokens,
+  spamKeywords,
+  ipTracking,
+  adminAuditLog,
   type User,
   type UpsertUser,
   type Hospital,
@@ -20,9 +25,17 @@ import {
   type InsertClaimRequest,
   type Bookmark,
   type InsertBookmark,
+  type ReviewFlag,
+  type InsertReviewFlag,
+  type VerificationToken,
+  type InsertVerificationToken,
+  type SpamKeyword,
+  type InsertSpamKeyword,
+  type IpTracking,
+  type AdminAuditLog,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql, ilike, or, desc, count } from "drizzle-orm";
+import { eq, and, sql, ilike, or, desc, count, gte, inArray } from "drizzle-orm";
 import memoizee from "memoizee";
 
 const CACHE_TTL = 60000;
@@ -73,6 +86,40 @@ export interface IStorage {
   getUserEmployeeReviews(userId: string): Promise<(EmployeeReview & { hospital: Hospital })[]>;
   
   updateUserProfile(userId: string, data: Partial<UpsertUser>): Promise<User>;
+  
+  // Verification methods
+  createVerificationToken(token: InsertVerificationToken): Promise<VerificationToken>;
+  getVerificationToken(token: string, type: string): Promise<VerificationToken | undefined>;
+  consumeVerificationToken(tokenId: number): Promise<void>;
+  
+  // Review flagging methods
+  createReviewFlag(flag: InsertReviewFlag): Promise<ReviewFlag>;
+  getReviewFlags(status?: string): Promise<ReviewFlag[]>;
+  getReviewFlagsByReviewId(reviewId: number): Promise<ReviewFlag[]>;
+  updateReviewFlagStatus(flagId: number, status: string, resolvedBy: string, resolution: string): Promise<ReviewFlag>;
+  
+  // Review moderation methods
+  updateReviewModerationStatus(reviewId: number, status: string, reviewedBy: string): Promise<PatientReview>;
+  getReviewsForModeration(status?: string): Promise<PatientReview[]>;
+  updateReviewVerificationStatus(reviewId: number, status: string, proofUrl?: string, proofType?: string): Promise<PatientReview>;
+  
+  // IP tracking methods
+  trackIp(ip: string, userId: string | null, action: string, resourceType?: string, resourceId?: number): Promise<void>;
+  getIpActivityCount(ip: string, action: string, hoursAgo: number): Promise<number>;
+  
+  // Spam keywords methods
+  getAllSpamKeywords(): Promise<SpamKeyword[]>;
+  createSpamKeyword(keyword: InsertSpamKeyword): Promise<SpamKeyword>;
+  updateSpamKeyword(id: number, active: boolean): Promise<SpamKeyword>;
+  
+  // Review limit check
+  canUserReviewHospital(userId: string, hospitalId: number): Promise<boolean>;
+  getLastUserReviewForHospital(userId: string, hospitalId: number): Promise<PatientReview | undefined>;
+  
+  // Admin methods
+  getAdminUsers(): Promise<User[]>;
+  createAdminAuditLog(adminUserId: string, action: string, targetType: string, targetId: number, previousState?: unknown, newState?: unknown, notes?: string): Promise<void>;
+  getAdminAuditLogs(targetType?: string, targetId?: number): Promise<AdminAuditLog[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -304,6 +351,228 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return user;
+  }
+
+  // Verification Token Methods
+  async createVerificationToken(token: InsertVerificationToken): Promise<VerificationToken> {
+    const [newToken] = await db.insert(verificationTokens).values(token).returning();
+    return newToken;
+  }
+
+  async getVerificationToken(token: string, type: string): Promise<VerificationToken | undefined> {
+    const [result] = await db
+      .select()
+      .from(verificationTokens)
+      .where(and(
+        eq(verificationTokens.token, token),
+        eq(verificationTokens.type, type),
+        gte(verificationTokens.expiresAt, new Date())
+      ));
+    return result;
+  }
+
+  async consumeVerificationToken(tokenId: number): Promise<void> {
+    await db
+      .update(verificationTokens)
+      .set({ consumedAt: new Date() })
+      .where(eq(verificationTokens.id, tokenId));
+  }
+
+  // Review Flag Methods
+  async createReviewFlag(flag: InsertReviewFlag): Promise<ReviewFlag> {
+    const [newFlag] = await db.insert(reviewFlags).values(flag).returning();
+    return newFlag;
+  }
+
+  async getReviewFlags(status?: string): Promise<ReviewFlag[]> {
+    if (status) {
+      return await db
+        .select()
+        .from(reviewFlags)
+        .where(eq(reviewFlags.status, status))
+        .orderBy(desc(reviewFlags.createdAt));
+    }
+    return await db.select().from(reviewFlags).orderBy(desc(reviewFlags.createdAt));
+  }
+
+  async getReviewFlagsByReviewId(reviewId: number): Promise<ReviewFlag[]> {
+    return await db
+      .select()
+      .from(reviewFlags)
+      .where(eq(reviewFlags.reviewId, reviewId))
+      .orderBy(desc(reviewFlags.createdAt));
+  }
+
+  async updateReviewFlagStatus(flagId: number, status: string, resolvedBy: string, resolution: string): Promise<ReviewFlag> {
+    const [updated] = await db
+      .update(reviewFlags)
+      .set({ status, resolvedBy, resolution, resolvedAt: new Date() })
+      .where(eq(reviewFlags.id, flagId))
+      .returning();
+    return updated;
+  }
+
+  // Review Moderation Methods
+  async updateReviewModerationStatus(reviewId: number, status: string, reviewedBy: string): Promise<PatientReview> {
+    const [updated] = await db
+      .update(patientReviews)
+      .set({ moderationStatus: status, reviewedBy, reviewedAt: new Date() })
+      .where(eq(patientReviews.id, reviewId))
+      .returning();
+    return updated;
+  }
+
+  async getReviewsForModeration(status?: string): Promise<PatientReview[]> {
+    if (status) {
+      return await db
+        .select()
+        .from(patientReviews)
+        .where(eq(patientReviews.moderationStatus, status))
+        .orderBy(desc(patientReviews.createdAt));
+    }
+    return await db
+      .select()
+      .from(patientReviews)
+      .where(inArray(patientReviews.moderationStatus, ['pending', 'flagged', 'under_review']))
+      .orderBy(desc(patientReviews.createdAt));
+  }
+
+  async updateReviewVerificationStatus(reviewId: number, status: string, proofUrl?: string, proofType?: string): Promise<PatientReview> {
+    const updateData: Record<string, unknown> = { verificationStatus: status };
+    if (proofUrl) updateData.proofAttachmentUrl = proofUrl;
+    if (proofType) updateData.proofType = proofType;
+    if (status === 'verified') updateData.verifiedVisit = true;
+    
+    const [updated] = await db
+      .update(patientReviews)
+      .set(updateData)
+      .where(eq(patientReviews.id, reviewId))
+      .returning();
+    return updated;
+  }
+
+  // IP Tracking Methods
+  async trackIp(ip: string, userId: string | null, action: string, resourceType?: string, resourceId?: number): Promise<void> {
+    await db.insert(ipTracking).values({
+      ipAddress: ip,
+      userId,
+      action,
+      resourceType,
+      resourceId,
+    });
+  }
+
+  async getIpActivityCount(ip: string, action: string, hoursAgo: number): Promise<number> {
+    const cutoffTime = new Date(Date.now() - hoursAgo * 60 * 60 * 1000);
+    const [result] = await db
+      .select({ count: count() })
+      .from(ipTracking)
+      .where(and(
+        eq(ipTracking.ipAddress, ip),
+        eq(ipTracking.action, action),
+        gte(ipTracking.createdAt, cutoffTime)
+      ));
+    return result?.count || 0;
+  }
+
+  // Spam Keywords Methods
+  async getAllSpamKeywords(): Promise<SpamKeyword[]> {
+    return await db
+      .select()
+      .from(spamKeywords)
+      .where(eq(spamKeywords.active, true));
+  }
+
+  async createSpamKeyword(keyword: InsertSpamKeyword): Promise<SpamKeyword> {
+    const [newKeyword] = await db.insert(spamKeywords).values(keyword).returning();
+    return newKeyword;
+  }
+
+  async updateSpamKeyword(id: number, active: boolean): Promise<SpamKeyword> {
+    const [updated] = await db
+      .update(spamKeywords)
+      .set({ active })
+      .where(eq(spamKeywords.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Review Limit Methods
+  async canUserReviewHospital(userId: string, hospitalId: number): Promise<boolean> {
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    
+    const [existingReview] = await db
+      .select()
+      .from(patientReviews)
+      .where(and(
+        eq(patientReviews.userId, userId),
+        eq(patientReviews.hospitalId, hospitalId),
+        gte(patientReviews.createdAt, oneYearAgo)
+      ))
+      .limit(1);
+    
+    return !existingReview;
+  }
+
+  async getLastUserReviewForHospital(userId: string, hospitalId: number): Promise<PatientReview | undefined> {
+    const [review] = await db
+      .select()
+      .from(patientReviews)
+      .where(and(
+        eq(patientReviews.userId, userId),
+        eq(patientReviews.hospitalId, hospitalId)
+      ))
+      .orderBy(desc(patientReviews.createdAt))
+      .limit(1);
+    return review;
+  }
+
+  // Admin Methods
+  async getAdminUsers(): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .where(eq(users.isAdmin, true));
+  }
+
+  async createAdminAuditLog(
+    adminUserId: string,
+    action: string,
+    targetType: string,
+    targetId: number,
+    previousState?: unknown,
+    newState?: unknown,
+    notes?: string
+  ): Promise<void> {
+    await db.insert(adminAuditLog).values({
+      adminUserId,
+      action,
+      targetType,
+      targetId,
+      previousState,
+      newState,
+      notes,
+    });
+  }
+
+  async getAdminAuditLogs(targetType?: string, targetId?: number): Promise<AdminAuditLog[]> {
+    if (targetType && targetId) {
+      return await db
+        .select()
+        .from(adminAuditLog)
+        .where(and(
+          eq(adminAuditLog.targetType, targetType),
+          eq(adminAuditLog.targetId, targetId)
+        ))
+        .orderBy(desc(adminAuditLog.createdAt))
+        .limit(100);
+    }
+    return await db
+      .select()
+      .from(adminAuditLog)
+      .orderBy(desc(adminAuditLog.createdAt))
+      .limit(100);
   }
 }
 
