@@ -135,9 +135,9 @@ export default function WriteReview() {
             <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
             <h2 className="text-xl font-bold mb-2">Please Log In</h2>
             <p className="text-slate-600 mb-4">You need to be logged in to write a review.</p>
-            <Link href="/login">
+            <a href="/api/login">
               <Button className="bg-emerald-600 hover:bg-emerald-700">Go to Login</Button>
-            </Link>
+            </a>
           </CardContent>
         </Card>
       </div>

@@ -85,12 +85,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </DropdownMenu>
             ) : (
               <div className="flex items-center gap-2">
-                <Link href="/login">
+                <a href="/api/login">
                   <Button variant="ghost" size="sm">Log in</Button>
-                </Link>
-                <Link href="/register">
+                </a>
+                <a href="/api/login">
                   <Button size="sm">Sign up</Button>
-                </Link>
+                </a>
               </div>
             )}
           </div>
@@ -152,16 +152,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </>
               ) : (
                 <div className="flex flex-col gap-2 px-4 py-3">
-                  <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                  <a href="/api/login" onClick={() => setIsMobileMenuOpen(false)}>
                     <Button variant="outline" className="w-full h-12 text-base" data-testid="mobile-nav-login">
                       Log in
                     </Button>
-                  </Link>
-                  <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>
+                  </a>
+                  <a href="/api/login" onClick={() => setIsMobileMenuOpen(false)}>
                     <Button className="w-full h-12 text-base" data-testid="mobile-nav-signup">
                       Sign up
                     </Button>
-                  </Link>
+                  </a>
                 </div>
               )}
             </nav>
@@ -192,8 +192,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <h3 className="font-semibold text-white mb-4">Platform</h3>
               <ul className="space-y-2 text-sm">
                 <li><Link href="/search" className="hover:text-white transition-colors">Find a Hospital</Link></li>
-                <li><Link href="/login" className="hover:text-white transition-colors">Write a Review</Link></li>
-                <li><Link href="/register" className="hover:text-white transition-colors">For Employers</Link></li>
+                <li><a href="/api/login" className="hover:text-white transition-colors">Write a Review</a></li>
+                <li><a href="/api/login" className="hover:text-white transition-colors">For Employers</a></li>
               </ul>
             </div>
 
