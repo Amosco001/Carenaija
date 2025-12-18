@@ -665,6 +665,54 @@ export const scrapingSources = pgTable("scraping_sources", {
 
 export type ScrapingSource = typeof scrapingSources.$inferSelect;
 
+// Unverified Submissions table - for news/social media discovered hospitals
+export const unverifiedSubmissions = pgTable("unverified_submissions", {
+  id: serial("id").primaryKey(),
+  sourceType: text("source_type").notNull(), // rss, news, twitter, facebook, press_release
+  sourceName: text("source_name").notNull(), // e.g., "punch_ng", "vanguard"
+  sourceUrl: text("source_url").notNull(),
+  headline: text("headline"),
+  excerpt: text("excerpt"),
+  rawText: text("raw_text"),
+  publishedAt: timestamp("published_at"),
+  hospitalName: text("hospital_name"),
+  hospitalAliases: jsonb("hospital_aliases"),
+  city: text("city"),
+  state: text("state"),
+  geoConfidence: doublePrecision("geo_confidence"),
+  openingDate: text("opening_date"),
+  servicesDetected: text("services_detected").array().default(sql`'{}'`),
+  sentimentScore: doublePrecision("sentiment_score"),
+  credibilityScore: doublePrecision("credibility_score"),
+  extractedEntities: jsonb("extracted_entities"),
+  eventType: text("event_type"), // opening, expansion, renovation, closure
+  status: text("status").notNull().default("pending"), // pending, verified, ignored, promoted
+  promotedToHospitalId: integer("promoted_to_hospital_id").references(() => hospitals.id),
+  reviewedBy: varchar("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewNotes: text("review_notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_unverified_submissions_status").on(table.status),
+  index("IDX_unverified_submissions_source").on(table.sourceType),
+  index("IDX_unverified_submissions_state").on(table.state),
+  index("IDX_unverified_submissions_created").on(table.createdAt),
+  index("IDX_unverified_submissions_event").on(table.eventType),
+]);
+
+export const insertUnverifiedSubmissionSchema = createInsertSchema(unverifiedSubmissions).omit({
+  id: true,
+  createdAt: true,
+  status: true,
+  reviewedBy: true,
+  reviewedAt: true,
+  reviewNotes: true,
+  promotedToHospitalId: true,
+});
+
+export type InsertUnverifiedSubmission = z.infer<typeof insertUnverifiedSubmissionSchema>;
+export type UnverifiedSubmission = typeof unverifiedSubmissions.$inferSelect;
+
 // Relations for scraping tables
 export const pendingHospitalsRelations = relations(pendingHospitals, ({ one }) => ({
   duplicateOf: one(hospitals, {
