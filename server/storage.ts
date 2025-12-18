@@ -40,6 +40,9 @@ import {
   type InsertPendingHospital,
   type ScrapingJob,
   type ScrapingLog,
+  unverifiedSubmissions,
+  type UnverifiedSubmission,
+  type InsertUnverifiedSubmission,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, ilike, or, desc, count, gte, inArray } from "drizzle-orm";
@@ -138,6 +141,13 @@ export interface IStorage {
   // Scraping jobs methods
   getScrapingJobs(limit?: number): Promise<ScrapingJob[]>;
   getScrapingLogs(jobId: number): Promise<ScrapingLog[]>;
+  
+  // Unverified submissions (news/social media discoveries) methods
+  getUnverifiedSubmissions(status?: string): Promise<UnverifiedSubmission[]>;
+  getUnverifiedSubmissionById(id: number): Promise<UnverifiedSubmission | undefined>;
+  updateUnverifiedSubmissionStatus(id: number, status: string, reviewedBy: string, notes?: string): Promise<UnverifiedSubmission>;
+  promoteUnverifiedSubmission(id: number, reviewedBy: string): Promise<Hospital>;
+  getUnverifiedSubmissionsStats(): Promise<{ pending: number; verified: number; ignored: number; promoted: number }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -713,6 +723,118 @@ export class DatabaseStorage implements IStorage {
       .where(eq(scrapingLogs.jobId, jobId))
       .orderBy(desc(scrapingLogs.createdAt))
       .limit(500);
+  }
+
+  // Unverified Submissions Methods
+  async getUnverifiedSubmissions(status?: string): Promise<UnverifiedSubmission[]> {
+    if (status) {
+      return await db
+        .select()
+        .from(unverifiedSubmissions)
+        .where(eq(unverifiedSubmissions.status, status))
+        .orderBy(desc(unverifiedSubmissions.createdAt))
+        .limit(100);
+    }
+    return await db
+      .select()
+      .from(unverifiedSubmissions)
+      .orderBy(desc(unverifiedSubmissions.createdAt))
+      .limit(100);
+  }
+
+  async getUnverifiedSubmissionById(id: number): Promise<UnverifiedSubmission | undefined> {
+    const [submission] = await db
+      .select()
+      .from(unverifiedSubmissions)
+      .where(eq(unverifiedSubmissions.id, id));
+    return submission;
+  }
+
+  async updateUnverifiedSubmissionStatus(
+    id: number,
+    status: string,
+    reviewedBy: string,
+    notes?: string
+  ): Promise<UnverifiedSubmission> {
+    const [updated] = await db
+      .update(unverifiedSubmissions)
+      .set({
+        status,
+        reviewedBy,
+        reviewedAt: new Date(),
+        reviewNotes: notes,
+      })
+      .where(eq(unverifiedSubmissions.id, id))
+      .returning();
+    return updated;
+  }
+
+  async promoteUnverifiedSubmission(id: number, reviewedBy: string): Promise<Hospital> {
+    const submission = await this.getUnverifiedSubmissionById(id);
+    if (!submission) {
+      throw new Error("Submission not found");
+    }
+
+    const [newHospital] = await db
+      .insert(hospitals)
+      .values({
+        name: submission.hospitalName || "Unknown Hospital",
+        address: "",
+        city: submission.city || null,
+        lga: submission.city || "Unknown",
+        state: submission.state || "Lagos",
+        phone: null,
+        email: null,
+        website: null,
+        ownership: "Private",
+        services: submission.servicesDetected || [],
+        facilities: [],
+        latitude: null,
+        longitude: null,
+        verified: false,
+      })
+      .returning();
+
+    await db
+      .update(unverifiedSubmissions)
+      .set({
+        status: "promoted",
+        promotedToHospitalId: newHospital.id,
+        reviewedBy,
+        reviewedAt: new Date(),
+      })
+      .where(eq(unverifiedSubmissions.id, id));
+
+    return newHospital;
+  }
+
+  async getUnverifiedSubmissionsStats(): Promise<{ pending: number; verified: number; ignored: number; promoted: number }> {
+    const [pendingCount] = await db
+      .select({ count: count() })
+      .from(unverifiedSubmissions)
+      .where(eq(unverifiedSubmissions.status, "pending"));
+    
+    const [verifiedCount] = await db
+      .select({ count: count() })
+      .from(unverifiedSubmissions)
+      .where(eq(unverifiedSubmissions.status, "verified"));
+    
+    const [ignoredCount] = await db
+      .select({ count: count() })
+      .from(unverifiedSubmissions)
+      .where(eq(unverifiedSubmissions.status, "ignored"));
+    
+    const [promotedCount] = await db
+      .select({ count: count() })
+      .from(unverifiedSubmissions)
+      .where(eq(unverifiedSubmissions.status, "promoted"));
+
+    return {
+      pending: pendingCount?.count || 0,
+      verified: verifiedCount?.count || 0,
+      ignored: ignoredCount?.count || 0,
+      promoted: promotedCount?.count || 0,
+    };
   }
 }
 
