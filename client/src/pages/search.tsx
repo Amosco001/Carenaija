@@ -23,12 +23,14 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { MapPin, Search as SearchIcon, Filter, Navigation, Loader2, ShieldCheck, Star, X, ChevronLeft, ChevronRight, Building2, Clock, Stethoscope } from "lucide-react";
+import { MapPin, Search as SearchIcon, Filter, Navigation, Loader2, ShieldCheck, Star, X, ChevronLeft, ChevronRight, Building2, Clock, Stethoscope, List, Map as MapIcon, Crosshair, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import luthHospitalImage from "@assets/generated_images/luth_hospital_lagos_nigeria.png";
 import neuropsychHospitalImage from "@assets/generated_images/neuropsychiatric_hospital_yaba.png";
 import orthoHospitalImage from "@assets/generated_images/orthopaedic_hospital_igbobi.png";
 import { SkeletonCard } from "@/components/skeleton-card";
+import { useGeolocation, formatDistance, getGoogleMapsDirectionsUrl } from "@/hooks/useGeolocation";
+import { StaticMapFallback } from "@/components/map-view";
 
 const hospitalImages = [luthHospitalImage, neuropsychHospitalImage, orthoHospitalImage];
 
@@ -54,6 +56,15 @@ const SPECIALTIES_OPTIONS = [
   "Eye Care",
   "Dental",
   "General Medicine",
+];
+
+const RADIUS_OPTIONS = [
+  { value: 1, label: "1 km" },
+  { value: 5, label: "5 km" },
+  { value: 10, label: "10 km" },
+  { value: 25, label: "25 km" },
+  { value: 50, label: "50 km" },
+  { value: 0, label: "Any distance" },
 ];
 
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -87,12 +98,21 @@ export default function SearchPage() {
   const [minRating, setMinRating] = useState<number>(0);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [sortBy, setSortBy] = useState("rating");
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [isLocating, setIsLocating] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [selectedRadius, setSelectedRadius] = useState<number>(0);
+  const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const searchInputRef = useRef<HTMLInputElement>(null);
+  
+  const { 
+    coords: userLocation, 
+    isLoading: isLocating, 
+    error: locationError,
+    permissionState,
+    requestLocation,
+    hasLocation 
+  } = useGeolocation();
 
   const { data: hospitals = [], isLoading } = useHospitals();
 
@@ -132,23 +152,29 @@ export default function SearchPage() {
   }, [searchQuery, locationQuery, selectedOwnership, selectedState, selectedFacilities, minRating, verifiedOnly, sortBy]);
 
   const handleNearMe = () => {
-    if (!navigator.geolocation) {
-      toast({ title: "Error", description: "Geolocation is not supported", variant: "destructive" });
-      return;
+    requestLocation();
+    setSortBy("distance");
+    if (!hasLocation && !isLocating) {
+      toast({ title: "Finding your location", description: "Please allow location access when prompted" });
     }
-    setIsLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
-        setSortBy("distance");
-        setIsLocating(false);
-        toast({ title: "Location found", description: "Showing hospitals near you" });
-      },
-      () => {
-        setIsLocating(false);
-        toast({ title: "Error", description: "Unable to retrieve location", variant: "destructive" });
-      }
-    );
+  };
+
+  useEffect(() => {
+    if (hasLocation && sortBy !== "distance") {
+      setSortBy("distance");
+      toast({ title: "Location found", description: "Showing hospitals near you" });
+    }
+  }, [hasLocation]);
+
+  useEffect(() => {
+    if (locationError) {
+      toast({ title: "Location Error", description: locationError, variant: "destructive" });
+    }
+  }, [locationError]);
+
+  const getHospitalDistance = (hospital: Hospital): number | null => {
+    if (!userLocation || !hospital.latitude || !hospital.longitude) return null;
+    return getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, hospital.latitude, hospital.longitude);
   };
 
   const filteredHospitals = useMemo(() => {
@@ -177,8 +203,14 @@ export default function SearchPage() {
           (hospital.facilities && hospital.facilities.some(fac => fac.toLowerCase().includes(f.toLowerCase())))
         );
 
+      let matchesRadius = true;
+      if (selectedRadius > 0 && userLocation && hospital.latitude && hospital.longitude) {
+        const distance = getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, hospital.latitude, hospital.longitude);
+        matchesRadius = distance <= selectedRadius;
+      }
+
       return matchesSearch && matchesLocation && matchesOwnership && matchesState && 
-             matchesRating && matchesVerified && matchesFacilities;
+             matchesRating && matchesVerified && matchesFacilities && matchesRadius;
     });
 
     return filtered.sort((a, b) => {
@@ -199,7 +231,7 @@ export default function SearchPage() {
           return a.name.localeCompare(b.name);
       }
     });
-  }, [hospitals, searchQuery, locationQuery, selectedOwnership, selectedState, selectedFacilities, minRating, verifiedOnly, sortBy, userLocation]);
+  }, [hospitals, searchQuery, locationQuery, selectedOwnership, selectedState, selectedFacilities, minRating, verifiedOnly, sortBy, userLocation, selectedRadius]);
 
   const totalPages = Math.ceil(filteredHospitals.length / RESULTS_PER_PAGE);
   const paginatedHospitals = filteredHospitals.slice(
@@ -213,6 +245,7 @@ export default function SearchPage() {
     selectedFacilities.length > 0,
     minRating > 0,
     verifiedOnly,
+    selectedRadius > 0,
   ].filter(Boolean).length;
 
   const clearAllFilters = () => {
@@ -223,6 +256,7 @@ export default function SearchPage() {
     setSelectedFacilities([]);
     setMinRating(0);
     setVerifiedOnly(false);
+    setSelectedRadius(0);
   };
 
   const getRatingStars = (rating: number) => (
@@ -339,6 +373,49 @@ export default function SearchPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      <Separator />
+
+      {/* Distance/Radius Filter */}
+      <div>
+        <h3 className="font-semibold text-sm text-slate-900 mb-3">Distance</h3>
+        {!hasLocation ? (
+          <div className="space-y-3">
+            <p className="text-xs text-slate-500">Enable location to filter by distance</p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full gap-2" 
+              onClick={handleNearMe}
+              disabled={isLocating}
+              data-testid="button-enable-location"
+            >
+              {isLocating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Crosshair className="w-4 h-4" />
+              )}
+              {isLocating ? "Finding location..." : "Find hospitals near me"}
+            </Button>
+            {permissionState === "denied" && (
+              <p className="text-xs text-red-500">Location access denied. Please enable in browser settings.</p>
+            )}
+          </div>
+        ) : (
+          <Select value={selectedRadius.toString()} onValueChange={(v) => setSelectedRadius(Number(v))}>
+            <SelectTrigger className="w-full" data-testid="select-radius">
+              <SelectValue placeholder="Any distance" />
+            </SelectTrigger>
+            <SelectContent>
+              {RADIUS_OPTIONS.map(option => (
+                <SelectItem key={option.value} value={option.value.toString()}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {activeFiltersCount > 0 && (
@@ -490,18 +567,42 @@ export default function SearchPage() {
                 )}
               </div>
 
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-[180px] h-9" data-testid="select-sort">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="rating">Highest Rated</SelectItem>
-                  <SelectItem value="reviews">Most Reviewed</SelectItem>
-                  <SelectItem value="distance" disabled={!userLocation}>Nearest Location</SelectItem>
-                  <SelectItem value="recent">Recently Added</SelectItem>
-                  <SelectItem value="name">Name (A-Z)</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                {/* View Toggle */}
+                <div className="hidden md:flex border rounded-lg overflow-hidden">
+                  <Button
+                    variant={viewMode === "list" ? "default" : "ghost"}
+                    size="sm"
+                    className={`rounded-none h-9 ${viewMode === "list" ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
+                    onClick={() => setViewMode("list")}
+                    data-testid="button-view-list"
+                  >
+                    <List className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === "map" ? "default" : "ghost"}
+                    size="sm"
+                    className={`rounded-none h-9 ${viewMode === "map" ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
+                    onClick={() => setViewMode("map")}
+                    data-testid="button-view-map"
+                  >
+                    <MapIcon className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-[180px] h-9" data-testid="select-sort">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="rating">Highest Rated</SelectItem>
+                    <SelectItem value="reviews">Most Reviewed</SelectItem>
+                    <SelectItem value="distance" disabled={!userLocation}>Nearest Location</SelectItem>
+                    <SelectItem value="recent">Recently Added</SelectItem>
+                    <SelectItem value="name">Name (A-Z)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </div>
