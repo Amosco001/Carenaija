@@ -11,6 +11,9 @@ import {
   spamKeywords,
   ipTracking,
   adminAuditLog,
+  pendingHospitals,
+  scrapingJobs,
+  scrapingLogs,
   type User,
   type UpsertUser,
   type Hospital,
@@ -33,6 +36,10 @@ import {
   type InsertSpamKeyword,
   type IpTracking,
   type AdminAuditLog,
+  type PendingHospital,
+  type InsertPendingHospital,
+  type ScrapingJob,
+  type ScrapingLog,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, ilike, or, desc, count, gte, inArray } from "drizzle-orm";
@@ -120,6 +127,17 @@ export interface IStorage {
   getAdminUsers(): Promise<User[]>;
   createAdminAuditLog(adminUserId: string, action: string, targetType: string, targetId: number, previousState?: unknown, newState?: unknown, notes?: string): Promise<void>;
   getAdminAuditLogs(targetType?: string, targetId?: number): Promise<AdminAuditLog[]>;
+  
+  // Pending hospitals (scraped) methods
+  getPendingHospitals(status?: string): Promise<PendingHospital[]>;
+  getPendingHospitalById(id: number): Promise<PendingHospital | undefined>;
+  updatePendingHospitalStatus(id: number, status: string, reviewedBy: string, notes?: string): Promise<PendingHospital>;
+  approvePendingHospital(id: number, reviewedBy: string): Promise<Hospital>;
+  getPendingHospitalsStats(): Promise<{ pending: number; approved: number; rejected: number; duplicate: number }>;
+  
+  // Scraping jobs methods
+  getScrapingJobs(limit?: number): Promise<ScrapingJob[]>;
+  getScrapingLogs(jobId: number): Promise<ScrapingLog[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -573,6 +591,128 @@ export class DatabaseStorage implements IStorage {
       .from(adminAuditLog)
       .orderBy(desc(adminAuditLog.createdAt))
       .limit(100);
+  }
+
+  // Pending Hospitals Methods (Scraped Data)
+  async getPendingHospitals(status?: string): Promise<PendingHospital[]> {
+    if (status) {
+      return await db
+        .select()
+        .from(pendingHospitals)
+        .where(eq(pendingHospitals.status, status))
+        .orderBy(desc(pendingHospitals.createdAt))
+        .limit(200);
+    }
+    return await db
+      .select()
+      .from(pendingHospitals)
+      .orderBy(desc(pendingHospitals.createdAt))
+      .limit(200);
+  }
+
+  async getPendingHospitalById(id: number): Promise<PendingHospital | undefined> {
+    const [hospital] = await db
+      .select()
+      .from(pendingHospitals)
+      .where(eq(pendingHospitals.id, id));
+    return hospital;
+  }
+
+  async updatePendingHospitalStatus(
+    id: number,
+    status: string,
+    reviewedBy: string,
+    notes?: string
+  ): Promise<PendingHospital> {
+    const [updated] = await db
+      .update(pendingHospitals)
+      .set({
+        status,
+        reviewedBy,
+        reviewedAt: new Date(),
+        reviewNotes: notes || null,
+      })
+      .where(eq(pendingHospitals.id, id))
+      .returning();
+    return updated;
+  }
+
+  async approvePendingHospital(id: number, reviewedBy: string): Promise<Hospital> {
+    const pending = await this.getPendingHospitalById(id);
+    if (!pending) {
+      throw new Error("Pending hospital not found");
+    }
+
+    const [newHospital] = await db
+      .insert(hospitals)
+      .values({
+        name: pending.name,
+        address: pending.address || "",
+        city: pending.city || null,
+        lga: pending.lga || pending.city || "Unknown",
+        state: pending.state || "Lagos",
+        phone: pending.phone || null,
+        email: pending.email || null,
+        website: pending.website || null,
+        ownership: pending.ownership || "Private",
+        services: pending.services || [],
+        facilities: [],
+        latitude: pending.latitude || null,
+        longitude: pending.longitude || null,
+        verified: false,
+      })
+      .returning();
+
+    await this.updatePendingHospitalStatus(id, "approved", reviewedBy);
+
+    return newHospital;
+  }
+
+  async getPendingHospitalsStats(): Promise<{ pending: number; approved: number; rejected: number; duplicate: number }> {
+    const [pendingCount] = await db
+      .select({ count: count() })
+      .from(pendingHospitals)
+      .where(eq(pendingHospitals.status, "pending"));
+    
+    const [approvedCount] = await db
+      .select({ count: count() })
+      .from(pendingHospitals)
+      .where(eq(pendingHospitals.status, "approved"));
+    
+    const [rejectedCount] = await db
+      .select({ count: count() })
+      .from(pendingHospitals)
+      .where(eq(pendingHospitals.status, "rejected"));
+    
+    const [duplicateCount] = await db
+      .select({ count: count() })
+      .from(pendingHospitals)
+      .where(eq(pendingHospitals.status, "duplicate"));
+
+    return {
+      pending: pendingCount?.count || 0,
+      approved: approvedCount?.count || 0,
+      rejected: rejectedCount?.count || 0,
+      duplicate: duplicateCount?.count || 0,
+    };
+  }
+
+  // Scraping Jobs Methods
+  async getScrapingJobs(limit: number = 50): Promise<ScrapingJob[]> {
+    return await db
+      .select()
+      .from(scrapingJobs)
+      .orderBy(desc(scrapingJobs.createdAt))
+      .limit(limit);
+  }
+
+  async getScrapingLogs(jobId: number): Promise<ScrapingLog[]> {
+    return await db
+      .select()
+      .from(scrapingLogs)
+      .where(eq(scrapingLogs.jobId, jobId))
+      .orderBy(desc(scrapingLogs.createdAt))
+      .limit(500);
   }
 }
 

@@ -21,7 +21,13 @@ import {
   FileText,
   Activity,
   Settings,
-  ChevronDown
+  ChevronDown,
+  Building2,
+  Globe,
+  MapPin,
+  Phone,
+  ExternalLink,
+  Copy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -469,6 +475,10 @@ export default function AdminDashboard() {
                 <Settings className="w-4 h-4" />
                 Spam Keywords
               </TabsTrigger>
+              <TabsTrigger value="discovered" className="flex items-center gap-2">
+                <Building2 className="w-4 h-4" />
+                Discovered Hospitals
+              </TabsTrigger>
             </TabsList>
 
             <div className="flex items-center gap-2">
@@ -555,6 +565,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="keywords">
             <SpamKeywordsManager />
+          </TabsContent>
+
+          <TabsContent value="discovered">
+            <DiscoveredHospitalsManager />
           </TabsContent>
         </Tabs>
       </div>
@@ -708,6 +722,274 @@ function SpamKeywordsManager() {
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+interface PendingHospital {
+  id: number;
+  name: string;
+  address: string | null;
+  city: string | null;
+  lga: string | null;
+  state: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  type: string | null;
+  ownership: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  sourceName: string;
+  sourceUrl: string | null;
+  duplicateScore: number | null;
+  duplicateOfId: number | null;
+  status: string;
+  createdAt: string;
+}
+
+function DiscoveredHospitalsManager() {
+  const queryClient = useQueryClient();
+  const [statusFilter, setStatusFilter] = useState("pending");
+
+  const { data: hospitals = [], isLoading, refetch } = useQuery<PendingHospital[]>({
+    queryKey: ["/api/admin/pending-hospitals", statusFilter],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/pending-hospitals?status=${statusFilter}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch pending hospitals");
+      return res.json();
+    },
+  });
+
+  const { data: stats } = useQuery({
+    queryKey: ["/api/admin/pending-hospitals/stats"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/pending-hospitals/stats", {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch stats");
+      return res.json();
+    },
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/admin/pending-hospitals/${id}/approve`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to approve");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success("Hospital approved and added to database");
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-hospitals"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-hospitals/stats"] });
+    },
+    onError: () => {
+      toast.error("Failed to approve hospital");
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async ({ id, notes }: { id: number; notes?: string }) => {
+      const res = await fetch(`/api/admin/pending-hospitals/${id}/reject`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notes }),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to reject");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success("Hospital rejected");
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-hospitals"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-hospitals/stats"] });
+    },
+    onError: () => {
+      toast.error("Failed to reject hospital");
+    },
+  });
+
+  const duplicateMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/admin/pending-hospitals/${id}/duplicate`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to mark as duplicate");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success("Marked as duplicate");
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-hospitals"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-hospitals/stats"] });
+    },
+  });
+
+  const getSourceBadgeColor = (source: string) => {
+    const colors: Record<string, string> = {
+      google_places: "bg-blue-100 text-blue-800",
+      ng_health_directory: "bg-green-100 text-green-800",
+      hmo_directory: "bg-purple-100 text-purple-800",
+    };
+    return colors[source] || "bg-gray-100 text-gray-800";
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-4 gap-4">
+        <Card className="cursor-pointer hover:shadow-md" onClick={() => setStatusFilter("pending")}>
+          <CardContent className="pt-4 pb-3 text-center">
+            <div className="text-2xl font-bold text-orange-600">{stats?.pending || 0}</div>
+            <div className="text-xs text-slate-500">Pending Review</div>
+          </CardContent>
+        </Card>
+        <Card className="cursor-pointer hover:shadow-md" onClick={() => setStatusFilter("approved")}>
+          <CardContent className="pt-4 pb-3 text-center">
+            <div className="text-2xl font-bold text-emerald-600">{stats?.approved || 0}</div>
+            <div className="text-xs text-slate-500">Approved</div>
+          </CardContent>
+        </Card>
+        <Card className="cursor-pointer hover:shadow-md" onClick={() => setStatusFilter("rejected")}>
+          <CardContent className="pt-4 pb-3 text-center">
+            <div className="text-2xl font-bold text-red-600">{stats?.rejected || 0}</div>
+            <div className="text-xs text-slate-500">Rejected</div>
+          </CardContent>
+        </Card>
+        <Card className="cursor-pointer hover:shadow-md" onClick={() => setStatusFilter("duplicate")}>
+          <CardContent className="pt-4 pb-3 text-center">
+            <div className="text-2xl font-bold text-slate-600">{stats?.duplicate || 0}</div>
+            <div className="text-xs text-slate-500">Duplicates</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold capitalize">{statusFilter} Hospitals ({hospitals.length})</h3>
+        <Button variant="outline" size="sm" onClick={() => refetch()}>
+          <RefreshCcw className="w-4 h-4 mr-1" /> Refresh
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <RefreshCcw className="w-8 h-8 animate-spin text-emerald-600" />
+        </div>
+      ) : hospitals.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Building2 className="w-12 h-12 text-slate-300 mb-4" />
+            <h3 className="text-lg font-semibold text-slate-900">No {statusFilter} hospitals</h3>
+            <p className="text-slate-500">Run the scraper to discover new hospitals.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {hospitals.map((hospital) => (
+            <Card key={hospital.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-semibold text-slate-900 truncate">{hospital.name}</h4>
+                      <Badge className={`text-xs ${getSourceBadgeColor(hospital.sourceName)}`}>
+                        {hospital.sourceName.replace("_", " ")}
+                      </Badge>
+                      {hospital.duplicateScore && hospital.duplicateScore > 0.5 && (
+                        <Badge variant="destructive" className="text-xs">
+                          {Math.round(hospital.duplicateScore * 100)}% match
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-slate-600 mt-2">
+                      {hospital.address && (
+                        <div className="flex items-center gap-1 truncate">
+                          <MapPin className="w-3 h-3 flex-shrink-0" />
+                          <span className="truncate">{hospital.address}</span>
+                        </div>
+                      )}
+                      {hospital.state && (
+                        <div className="flex items-center gap-1">
+                          <Globe className="w-3 h-3" />
+                          {hospital.city && `${hospital.city}, `}{hospital.state}
+                        </div>
+                      )}
+                      {hospital.phone && (
+                        <div className="flex items-center gap-1">
+                          <Phone className="w-3 h-3" />
+                          {hospital.phone}
+                        </div>
+                      )}
+                      {hospital.website && (
+                        <a 
+                          href={hospital.website} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-blue-600 hover:underline truncate"
+                        >
+                          <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                          <span className="truncate">{hospital.website}</span>
+                        </a>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 mt-2 text-xs text-slate-400">
+                      <span>ID: {hospital.id}</span>
+                      <span>|</span>
+                      <span>Added: {format(new Date(hospital.createdAt), "MMM d, yyyy")}</span>
+                      {hospital.type && (
+                        <>
+                          <span>|</span>
+                          <span className="capitalize">{hospital.type}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {statusFilter === "pending" && (
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        size="sm"
+                        className="bg-emerald-600 hover:bg-emerald-700"
+                        onClick={() => approveMutation.mutate(hospital.id)}
+                        disabled={approveMutation.isPending}
+                      >
+                        <CheckCircle className="w-4 h-4 mr-1" />
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => rejectMutation.mutate({ id: hospital.id })}
+                        disabled={rejectMutation.isPending}
+                      >
+                        <XCircle className="w-4 h-4 mr-1" />
+                        Reject
+                      </Button>
+                      {hospital.duplicateScore && hospital.duplicateScore > 0.5 && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => duplicateMutation.mutate(hospital.id)}
+                          disabled={duplicateMutation.isPending}
+                        >
+                          <Copy className="w-4 h-4 mr-1" />
+                          Duplicate
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

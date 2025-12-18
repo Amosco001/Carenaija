@@ -854,6 +854,123 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // ==================
+  // Pending Hospitals (Scraped Data) Admin Routes
+  // ==================
+
+  // Get pending hospitals stats
+  app.get("/api/admin/pending-hospitals/stats", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const stats = await storage.getPendingHospitalsStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching pending hospitals stats:", error);
+      res.status(500).json({ message: "Failed to fetch stats" });
+    }
+  });
+
+  // Get pending hospitals list
+  app.get("/api/admin/pending-hospitals", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { status } = req.query;
+      const hospitals = await storage.getPendingHospitals(status as string | undefined);
+      res.json(hospitals);
+    } catch (error) {
+      console.error("Error fetching pending hospitals:", error);
+      res.status(500).json({ message: "Failed to fetch pending hospitals" });
+    }
+  });
+
+  // Approve pending hospital
+  app.post("/api/admin/pending-hospitals/:id/approve", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      
+      const newHospital = await storage.approvePendingHospital(id, userId);
+      
+      await storage.createAdminAuditLog(
+        userId,
+        "approve_pending_hospital",
+        "pending_hospital",
+        id,
+        null,
+        { hospitalId: newHospital.id },
+        `Approved and added to hospitals database`
+      );
+      
+      res.json({ message: "Hospital approved", hospital: newHospital });
+    } catch (error) {
+      console.error("Error approving pending hospital:", error);
+      res.status(500).json({ message: "Failed to approve hospital" });
+    }
+  });
+
+  // Reject pending hospital
+  app.post("/api/admin/pending-hospitals/:id/reject", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const { notes } = req.body;
+      
+      const updated = await storage.updatePendingHospitalStatus(id, "rejected", userId, notes);
+      
+      await storage.createAdminAuditLog(
+        userId,
+        "reject_pending_hospital",
+        "pending_hospital",
+        id,
+        null,
+        { status: "rejected" },
+        notes || "Rejected by admin"
+      );
+      
+      res.json({ message: "Hospital rejected", hospital: updated });
+    } catch (error) {
+      console.error("Error rejecting pending hospital:", error);
+      res.status(500).json({ message: "Failed to reject hospital" });
+    }
+  });
+
+  // Mark as duplicate
+  app.post("/api/admin/pending-hospitals/:id/duplicate", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const { notes } = req.body;
+      
+      const updated = await storage.updatePendingHospitalStatus(id, "duplicate", userId, notes);
+      
+      res.json({ message: "Marked as duplicate", hospital: updated });
+    } catch (error) {
+      console.error("Error marking as duplicate:", error);
+      res.status(500).json({ message: "Failed to mark as duplicate" });
+    }
+  });
+
+  // Get scraping jobs
+  app.get("/api/admin/scraping-jobs", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const jobs = await storage.getScrapingJobs();
+      res.json(jobs);
+    } catch (error) {
+      console.error("Error fetching scraping jobs:", error);
+      res.status(500).json({ message: "Failed to fetch scraping jobs" });
+    }
+  });
+
+  // Get scraping logs for a job
+  app.get("/api/admin/scraping-jobs/:id/logs", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const jobId = parseInt(req.params.id);
+      const logs = await storage.getScrapingLogs(jobId);
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching scraping logs:", error);
+      res.status(500).json({ message: "Failed to fetch logs" });
+    }
+  });
+
   // Robots.txt for SEO
   app.get("/robots.txt", (req, res) => {
     const baseUrl = `https://${req.get("host")}`;
