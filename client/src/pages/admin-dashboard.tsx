@@ -27,7 +27,11 @@ import {
   MapPin,
   Phone,
   ExternalLink,
-  Copy
+  Copy,
+  Star,
+  Sparkles,
+  TrendingUp,
+  Image
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -742,6 +746,13 @@ interface PendingHospital {
   longitude: number | null;
   sourceName: string;
   sourceUrl: string | null;
+  googleRating: number | null;
+  googleReviewCount: number | null;
+  googlePhotos: string[] | null;
+  googleVerified: boolean | null;
+  completenessScore: number | null;
+  confidenceScore: number | null;
+  autoApproved: boolean | null;
   duplicateScore: number | null;
   duplicateOfId: number | null;
   status: string;
@@ -890,19 +901,49 @@ function DiscoveredHospitalsManager() {
       ) : (
         <div className="space-y-3">
           {hospitals.map((hospital) => (
-            <Card key={hospital.id} className="hover:shadow-md transition-shadow">
+            <Card key={hospital.id} className={`hover:shadow-md transition-shadow ${hospital.autoApproved ? 'border-l-4 border-l-emerald-500' : ''}`}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h4 className="font-semibold text-slate-900 truncate">{hospital.name}</h4>
                       <Badge className={`text-xs ${getSourceBadgeColor(hospital.sourceName)}`}>
                         {hospital.sourceName.replace("_", " ")}
                       </Badge>
+                      {hospital.googleVerified && (
+                        <Badge className="text-xs bg-blue-100 text-blue-800">
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Verified
+                        </Badge>
+                      )}
+                      {hospital.autoApproved && (
+                        <Badge className="text-xs bg-emerald-100 text-emerald-800">
+                          <Sparkles className="w-3 h-3 mr-1" />
+                          Auto-approved
+                        </Badge>
+                      )}
                       {hospital.duplicateScore && hospital.duplicateScore > 0.5 && (
                         <Badge variant="destructive" className="text-xs">
                           {Math.round(hospital.duplicateScore * 100)}% match
                         </Badge>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-4 mt-2 text-sm">
+                      {hospital.googleRating && (
+                        <div className="flex items-center gap-1">
+                          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                          <span className="font-medium">{hospital.googleRating.toFixed(1)}</span>
+                          {hospital.googleReviewCount && (
+                            <span className="text-slate-500">({hospital.googleReviewCount} reviews)</span>
+                          )}
+                        </div>
+                      )}
+                      {hospital.googlePhotos && hospital.googlePhotos.length > 0 && (
+                        <div className="flex items-center gap-1 text-slate-500">
+                          <Image className="w-3 h-3" />
+                          <span>{hospital.googlePhotos.length} photos</span>
+                        </div>
                       )}
                     </div>
 
@@ -935,6 +976,26 @@ function DiscoveredHospitalsManager() {
                           <ExternalLink className="w-3 h-3 flex-shrink-0" />
                           <span className="truncate">{hospital.website}</span>
                         </a>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-3 mt-3 pt-2 border-t">
+                      {hospital.completenessScore !== null && (
+                        <div className="flex items-center gap-1">
+                          <div className="w-16 h-2 bg-slate-200 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full ${hospital.completenessScore >= 70 ? 'bg-emerald-500' : hospital.completenessScore >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                              style={{ width: `${hospital.completenessScore}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-slate-500">{hospital.completenessScore}% complete</span>
+                        </div>
+                      )}
+                      {hospital.confidenceScore !== null && (
+                        <div className="flex items-center gap-1">
+                          <TrendingUp className={`w-3 h-3 ${hospital.confidenceScore >= 70 ? 'text-emerald-500' : 'text-slate-400'}`} />
+                          <span className="text-xs text-slate-500">{hospital.confidenceScore}% confidence</span>
+                        </div>
                       )}
                     </div>
 
