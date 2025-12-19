@@ -16,6 +16,9 @@ class AuthStorage implements IAuthStorage {
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
+    const existingUser = userData.id ? await this.getUser(userData.id) : null;
+    const isNewUser = !existingUser;
+
     const [user] = await db
       .insert(users)
       .values(userData)
@@ -27,6 +30,22 @@ class AuthStorage implements IAuthStorage {
         },
       })
       .returning();
+
+    // Send welcome email for new users
+    if (isNewUser && user.email) {
+      import("../../services/notification").then(({ notificationService }) => {
+        notificationService.sendWelcomeEmail({
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+        }).catch((err: any) => {
+          console.error("Failed to send welcome email:", err);
+        });
+      }).catch((err: any) => {
+        console.error("Failed to load notification service:", err);
+      });
+    }
+
     return user;
   }
 }

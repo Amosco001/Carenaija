@@ -1,11 +1,17 @@
 import { storage } from "../storage";
 import { emailTemplates, sendEmail, getUnsubscribeUrl } from "./email";
-import type { User, Hospital, PatientReview, EmployeeReview } from "@shared/schema";
+import type { Hospital, PatientReview, EmployeeReview } from "@shared/schema";
+
+interface BasicUser {
+  id: string;
+  email: string | null;
+  firstName: string | null;
+}
 
 const MILESTONES = [1, 5, 10, 25, 50, 100, 250, 500, 1000];
 
 export class NotificationService {
-  async sendWelcomeEmail(user: User): Promise<void> {
+  async sendWelcomeEmail(user: BasicUser): Promise<void> {
     if (!user.email) return;
     
     let prefs = await storage.getEmailPreferences(user.id);
@@ -31,7 +37,7 @@ export class NotificationService {
     });
   }
 
-  async notifyNewReviewOnFollowedHospital(review: PatientReview | EmployeeReview, hospital: Hospital, reviewer: User): Promise<void> {
+  async notifyNewReviewOnFollowedHospital(review: PatientReview | EmployeeReview, hospital: Hospital, reviewer: BasicUser): Promise<void> {
     const followers = await storage.getFollowersOfHospital(hospital.id);
     
     for (const follower of followers) {

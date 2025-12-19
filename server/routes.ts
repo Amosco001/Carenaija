@@ -214,6 +214,24 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       });
 
       const review = await storage.createPatientReview(validatedData);
+
+      // Trigger notifications asynchronously
+      (async () => {
+        try {
+          const [hospital, reviewer] = await Promise.all([
+            storage.getHospital(hospitalId),
+            storage.getUser(userId),
+          ]);
+          if (hospital && reviewer) {
+            await notificationService.notifyNewReviewOnFollowedHospital(review, hospital, reviewer);
+          }
+          await storage.incrementUserReviewCount(userId, "patient");
+          await notificationService.checkAndNotifyMilestone(userId);
+        } catch (err) {
+          console.error("Error sending review notifications:", err);
+        }
+      })();
+
       res.status(201).json(review);
     } catch (error) {
       console.error("Error creating patient review:", error);
@@ -251,6 +269,24 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       });
 
       const review = await storage.createEmployeeReview(validatedData);
+
+      // Trigger notifications asynchronously
+      (async () => {
+        try {
+          const [hospital, reviewer] = await Promise.all([
+            storage.getHospital(hospitalId),
+            storage.getUser(userId),
+          ]);
+          if (hospital && reviewer) {
+            await notificationService.notifyNewReviewOnFollowedHospital(review, hospital, reviewer);
+          }
+          await storage.incrementUserReviewCount(userId, "employee");
+          await notificationService.checkAndNotifyMilestone(userId);
+        } catch (err) {
+          console.error("Error sending review notifications:", err);
+        }
+      })();
+
       res.status(201).json(review);
     } catch (error) {
       console.error("Error creating employee review:", error);
