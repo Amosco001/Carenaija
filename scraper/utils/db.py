@@ -74,6 +74,17 @@ def create_scraping_job(data: dict) -> int:
         return cursor.fetchone()['id']
 
 def update_scraping_job(job_id: int, data: dict):
+    # Allowlist of valid columns to prevent SQL injection via column names
+    ALLOWED_COLUMNS = {
+        'status', 'started_at', 'completed_at', 'items_processed', 
+        'items_discovered', 'items_duplicate', 'error_message', 'metadata'
+    }
+    
+    # Validate all keys are in allowlist
+    invalid_keys = set(data.keys()) - ALLOWED_COLUMNS
+    if invalid_keys:
+        raise ValueError(f"Invalid columns for update: {invalid_keys}")
+    
     with get_db_cursor() as cursor:
         set_clause = ", ".join([f"{k} = %({k})s" for k in data.keys()])
         data['id'] = job_id
