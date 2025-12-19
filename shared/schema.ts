@@ -735,3 +735,149 @@ export const scrapingLogsRelations = relations(scrapingLogs, ({ one }) => ({
     references: [scrapingJobs.id],
   }),
 }));
+
+// Email notification preferences
+export const emailPreferences = pgTable("email_preferences", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
+  welcomeEmail: boolean("welcome_email").notNull().default(true),
+  newReviewOnFollowed: boolean("new_review_on_followed").notNull().default(true),
+  reviewResponse: boolean("review_response").notNull().default(true),
+  weeklyDigest: boolean("weekly_digest").notNull().default(true),
+  reviewMilestones: boolean("review_milestones").notNull().default(true),
+  marketingEmails: boolean("marketing_emails").notNull().default(false),
+  weeklyDigestDay: integer("weekly_digest_day").notNull().default(1), // 0=Sunday, 1=Monday, etc.
+  lastDigestSentAt: timestamp("last_digest_sent_at"),
+  unsubscribeToken: varchar("unsubscribe_token").notNull().default(sql`gen_random_uuid()`),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("IDX_email_preferences_user").on(table.userId),
+  index("IDX_email_preferences_unsubscribe").on(table.unsubscribeToken),
+]);
+
+export const insertEmailPreferencesSchema = createInsertSchema(emailPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  unsubscribeToken: true,
+});
+
+export type InsertEmailPreferences = z.infer<typeof insertEmailPreferencesSchema>;
+export type EmailPreferences = typeof emailPreferences.$inferSelect;
+
+// User followed hospitals
+export const followedHospitals = pgTable("followed_hospitals", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  hospitalId: integer("hospital_id").notNull().references(() => hospitals.id, { onDelete: "cascade" }),
+  notifyNewReviews: boolean("notify_new_reviews").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_followed_hospitals_user").on(table.userId),
+  index("IDX_followed_hospitals_hospital").on(table.hospitalId),
+]);
+
+export const insertFollowedHospitalSchema = createInsertSchema(followedHospitals).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertFollowedHospital = z.infer<typeof insertFollowedHospitalSchema>;
+export type FollowedHospital = typeof followedHospitals.$inferSelect;
+
+// Email outbox for queued emails
+export const emailOutbox = pgTable("email_outbox", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
+  toEmail: varchar("to_email").notNull(),
+  templateType: text("template_type").notNull(), // welcome, new_review, review_response, weekly_digest, milestone, verification, password_reset
+  subject: text("subject").notNull(),
+  htmlContent: text("html_content").notNull(),
+  textContent: text("text_content"),
+  payload: jsonb("payload"), // Additional data for the email
+  status: text("status").notNull().default("pending"), // pending, sent, failed
+  attempts: integer("attempts").notNull().default(0),
+  lastError: text("last_error"),
+  sendAfter: timestamp("send_after").defaultNow(),
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_email_outbox_status").on(table.status),
+  index("IDX_email_outbox_user").on(table.userId),
+  index("IDX_email_outbox_send_after").on(table.sendAfter),
+]);
+
+export const insertEmailOutboxSchema = createInsertSchema(emailOutbox).omit({
+  id: true,
+  createdAt: true,
+  sentAt: true,
+  attempts: true,
+  lastError: true,
+});
+
+export type InsertEmailOutbox = z.infer<typeof insertEmailOutboxSchema>;
+export type EmailOutbox = typeof emailOutbox.$inferSelect;
+
+// User review stats for milestone tracking
+export const userReviewStats = pgTable("user_review_stats", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
+  totalPatientReviews: integer("total_patient_reviews").notNull().default(0),
+  totalEmployeeReviews: integer("total_employee_reviews").notNull().default(0),
+  lastMilestoneNotified: integer("last_milestone_notified").notNull().default(0),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("IDX_user_review_stats_user").on(table.userId),
+]);
+
+export type UserReviewStats = typeof userReviewStats.$inferSelect;
+
+// Review responses from hospitals
+export const reviewResponses = pgTable("review_responses", {
+  id: serial("id").primaryKey(),
+  reviewId: integer("review_id").notNull(),
+  reviewType: text("review_type").notNull(), // patient or employee
+  responderId: varchar("responder_id").notNull().references(() => users.id),
+  responseText: text("response_text").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("IDX_review_responses_review").on(table.reviewId),
+  index("IDX_review_responses_responder").on(table.responderId),
+]);
+
+export const insertReviewResponseSchema = createInsertSchema(reviewResponses).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertReviewResponse = z.infer<typeof insertReviewResponseSchema>;
+export type ReviewResponse = typeof reviewResponses.$inferSelect;
+
+// Relations for email/notification tables
+export const emailPreferencesRelations = relations(emailPreferences, ({ one }) => ({
+  user: one(users, {
+    fields: [emailPreferences.userId],
+    references: [users.id],
+  }),
+}));
+
+export const followedHospitalsRelations = relations(followedHospitals, ({ one }) => ({
+  user: one(users, {
+    fields: [followedHospitals.userId],
+    references: [users.id],
+  }),
+  hospital: one(hospitals, {
+    fields: [followedHospitals.hospitalId],
+    references: [hospitals.id],
+  }),
+}));
+
+export const reviewResponsesRelations = relations(reviewResponses, ({ one }) => ({
+  responder: one(users, {
+    fields: [reviewResponses.responderId],
+    references: [users.id],
+  }),
+}));
