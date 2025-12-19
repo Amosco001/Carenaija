@@ -4,7 +4,9 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth";
+import { ComparisonProvider } from "@/lib/comparison-context";
 import { Layout } from "@/components/layout";
+import { CompareBar } from "@/components/compare-bar";
 import NotFound from "@/pages/not-found";
 
 // Pages
@@ -23,6 +25,7 @@ import Dashboard from "@/pages/dashboard";
 import Profile from "@/pages/profile";
 import AdminDashboard from "@/pages/admin-dashboard";
 import AnalyticsDashboard from "@/pages/analytics-dashboard";
+import ComparePage from "@/pages/compare";
 
 function Router() {
   return (
@@ -38,6 +41,7 @@ function Router() {
         <Route path="/claim-profile/:id" component={ClaimProfile} />
         <Route path="/admin" component={AdminDashboard} />
         <Route path="/admin/analytics" component={AnalyticsDashboard} />
+        <Route path="/compare" component={ComparePage} />
         <Route path="/guidelines" component={Guidelines} />
         <Route path="/trust-safety" component={TrustSafety} />
         <Route path="/support" component={Support} />
@@ -53,10 +57,13 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <ComparisonProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+            <CompareBar />
+          </TooltipProvider>
+        </ComparisonProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
