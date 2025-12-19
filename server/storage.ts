@@ -148,6 +148,22 @@ export interface IStorage {
   updateUnverifiedSubmissionStatus(id: number, status: string, reviewedBy: string, notes?: string): Promise<UnverifiedSubmission>;
   promoteUnverifiedSubmission(id: number, reviewedBy: string): Promise<Hospital>;
   getUnverifiedSubmissionsStats(): Promise<{ pending: number; verified: number; ignored: number; promoted: number }>;
+  
+  // Analytics methods
+  getAnalyticsSummary(): Promise<{
+    totalHospitals: number;
+    totalReviews: number;
+    totalUsers: number;
+    avgRating: number;
+    pendingReviews: number;
+    verifiedReviews: number;
+  }>;
+  getReviewsOverTime(days: number): Promise<{ date: string; count: number }[]>;
+  getTopRatedHospitals(limit: number, city?: string): Promise<Hospital[]>;
+  getMostReviewedHospitals(limit: number): Promise<(Hospital & { reviewCount: number })[]>;
+  getAverageRatingsByCategory(): Promise<{ category: string; average: number }[]>;
+  getRecentActivity(limit: number): Promise<any[]>;
+  getHospitalsByState(): Promise<{ state: string; count: number }[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -835,6 +851,157 @@ export class DatabaseStorage implements IStorage {
       ignored: ignoredCount?.count || 0,
       promoted: promotedCount?.count || 0,
     };
+  }
+
+  // Analytics Methods
+  async getAnalyticsSummary(): Promise<{
+    totalHospitals: number;
+    totalReviews: number;
+    totalUsers: number;
+    avgRating: number;
+    pendingReviews: number;
+    verifiedReviews: number;
+  }> {
+    const [hospitalCount] = await db.select({ count: count() }).from(hospitals);
+    const [reviewCount] = await db.select({ count: count() }).from(patientReviews);
+    const [userCount] = await db.select({ count: count() }).from(users);
+    
+    const [avgResult] = await db
+      .select({ avg: sql<number>`COALESCE(AVG(overall_rating), 0)` })
+      .from(patientReviews);
+    
+    const [pendingCount] = await db
+      .select({ count: count() })
+      .from(patientReviews)
+      .where(eq(patientReviews.moderationStatus, "pending"));
+    
+    const [verifiedCount] = await db
+      .select({ count: count() })
+      .from(patientReviews)
+      .where(eq(patientReviews.verificationStatus, "verified"));
+
+    return {
+      totalHospitals: hospitalCount?.count || 0,
+      totalReviews: reviewCount?.count || 0,
+      totalUsers: userCount?.count || 0,
+      avgRating: Number(avgResult?.avg) || 0,
+      pendingReviews: pendingCount?.count || 0,
+      verifiedReviews: verifiedCount?.count || 0,
+    };
+  }
+
+  async getReviewsOverTime(days: number): Promise<{ date: string; count: number }[]> {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    
+    const result = await db
+      .select({
+        date: sql<string>`DATE(created_at)::text`,
+        count: count(),
+      })
+      .from(patientReviews)
+      .where(gte(patientReviews.createdAt, startDate))
+      .groupBy(sql`DATE(created_at)`)
+      .orderBy(sql`DATE(created_at)`);
+    
+    return result.map(r => ({ date: r.date, count: r.count }));
+  }
+
+  async getTopRatedHospitals(limit: number, city?: string): Promise<Hospital[]> {
+    let query = db.select().from(hospitals);
+    
+    if (city) {
+      return await db
+        .select()
+        .from(hospitals)
+        .where(ilike(hospitals.city, `%${city}%`))
+        .orderBy(desc(hospitals.averageRating))
+        .limit(limit);
+    }
+    
+    return await db
+      .select()
+      .from(hospitals)
+      .orderBy(desc(hospitals.averageRating))
+      .limit(limit);
+  }
+
+  async getMostReviewedHospitals(limit: number): Promise<(Hospital & { reviewCount: number })[]> {
+    const result = await db
+      .select({
+        hospital: hospitals,
+        reviewCount: count(patientReviews.id),
+      })
+      .from(hospitals)
+      .leftJoin(patientReviews, eq(hospitals.id, patientReviews.hospitalId))
+      .groupBy(hospitals.id)
+      .orderBy(desc(count(patientReviews.id)))
+      .limit(limit);
+    
+    return result.map(r => ({
+      ...r.hospital,
+      reviewCount: r.reviewCount,
+    }));
+  }
+
+  async getAverageRatingsByCategory(): Promise<{ category: string; average: number }[]> {
+    const careQuality = await db
+      .select({ avg: sql<number>`COALESCE(AVG(care_quality), 0)` })
+      .from(patientReviews);
+    
+    const staffAttitude = await db
+      .select({ avg: sql<number>`COALESCE(AVG(staff_attitude), 0)` })
+      .from(patientReviews);
+    
+    const cleanliness = await db
+      .select({ avg: sql<number>`COALESCE(AVG(cleanliness), 0)` })
+      .from(patientReviews);
+    
+    const waitTime = await db
+      .select({ avg: sql<number>`COALESCE(AVG(wait_time), 0)` })
+      .from(patientReviews);
+    
+    const valueForMoney = await db
+      .select({ avg: sql<number>`COALESCE(AVG(value_for_money), 0)` })
+      .from(patientReviews);
+
+    return [
+      { category: "Care Quality", average: Number(careQuality[0]?.avg) || 0 },
+      { category: "Staff Attitude", average: Number(staffAttitude[0]?.avg) || 0 },
+      { category: "Cleanliness", average: Number(cleanliness[0]?.avg) || 0 },
+      { category: "Wait Time", average: Number(waitTime[0]?.avg) || 0 },
+      { category: "Value for Money", average: Number(valueForMoney[0]?.avg) || 0 },
+    ];
+  }
+
+  async getRecentActivity(limit: number): Promise<any[]> {
+    const reviews = await db
+      .select({
+        id: patientReviews.id,
+        type: sql<string>`'review'`,
+        title: patientReviews.title,
+        createdAt: patientReviews.createdAt,
+        hospitalId: patientReviews.hospitalId,
+        userId: patientReviews.userId,
+      })
+      .from(patientReviews)
+      .orderBy(desc(patientReviews.createdAt))
+      .limit(limit);
+    
+    return reviews;
+  }
+
+  async getHospitalsByState(): Promise<{ state: string; count: number }[]> {
+    const result = await db
+      .select({
+        state: hospitals.state,
+        count: count(),
+      })
+      .from(hospitals)
+      .groupBy(hospitals.state)
+      .orderBy(desc(count()));
+    
+    return result.map(r => ({ state: r.state, count: r.count }));
   }
 }
 

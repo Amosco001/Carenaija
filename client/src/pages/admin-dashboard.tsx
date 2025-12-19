@@ -483,6 +483,10 @@ export default function AdminDashboard() {
                 <Building2 className="w-4 h-4" />
                 Discovered Hospitals
               </TabsTrigger>
+              <TabsTrigger value="analytics" className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                Analytics
+              </TabsTrigger>
             </TabsList>
 
             <div className="flex items-center gap-2">
@@ -573,6 +577,22 @@ export default function AdminDashboard() {
 
           <TabsContent value="discovered">
             <DiscoveredHospitalsManager />
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <TrendingUp className="w-12 h-12 text-emerald-500 mb-4" />
+                <h3 className="text-lg font-semibold text-slate-900">Analytics Dashboard</h3>
+                <p className="text-slate-500 mb-4">View detailed platform analytics and insights</p>
+                <Link href="/admin/analytics">
+                  <Button className="bg-emerald-600 hover:bg-emerald-700">
+                    Open Full Analytics
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

@@ -972,6 +972,142 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // Robots.txt for SEO
+  // Analytics API Routes
+  app.get("/api/admin/analytics/summary", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const summary = await storage.getAnalyticsSummary();
+      res.json(summary);
+    } catch (error) {
+      console.error("Error fetching analytics summary:", error);
+      res.status(500).json({ message: "Failed to fetch analytics summary" });
+    }
+  });
+
+  app.get("/api/admin/analytics/reviews-over-time", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const days = parseInt(req.query.days as string) || 30;
+      const data = await storage.getReviewsOverTime(days);
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching reviews over time:", error);
+      res.status(500).json({ message: "Failed to fetch reviews over time" });
+    }
+  });
+
+  app.get("/api/admin/analytics/top-hospitals", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const city = req.query.city as string | undefined;
+      const hospitals = await storage.getTopRatedHospitals(limit, city);
+      res.json(hospitals);
+    } catch (error) {
+      console.error("Error fetching top hospitals:", error);
+      res.status(500).json({ message: "Failed to fetch top hospitals" });
+    }
+  });
+
+  app.get("/api/admin/analytics/most-reviewed", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const hospitals = await storage.getMostReviewedHospitals(limit);
+      res.json(hospitals);
+    } catch (error) {
+      console.error("Error fetching most reviewed hospitals:", error);
+      res.status(500).json({ message: "Failed to fetch most reviewed hospitals" });
+    }
+  });
+
+  app.get("/api/admin/analytics/ratings-by-category", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const data = await storage.getAverageRatingsByCategory();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching ratings by category:", error);
+      res.status(500).json({ message: "Failed to fetch ratings by category" });
+    }
+  });
+
+  app.get("/api/admin/analytics/recent-activity", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 20;
+      const activity = await storage.getRecentActivity(limit);
+      res.json(activity);
+    } catch (error) {
+      console.error("Error fetching recent activity:", error);
+      res.status(500).json({ message: "Failed to fetch recent activity" });
+    }
+  });
+
+  app.get("/api/admin/analytics/hospitals-by-state", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const data = await storage.getHospitalsByState();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching hospitals by state:", error);
+      res.status(500).json({ message: "Failed to fetch hospitals by state" });
+    }
+  });
+
+  // Unverified Submissions Admin Routes
+  app.get("/api/admin/news-discoveries/stats", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const stats = await storage.getUnverifiedSubmissionsStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching news discoveries stats:", error);
+      res.status(500).json({ message: "Failed to fetch stats" });
+    }
+  });
+
+  app.get("/api/admin/news-discoveries", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { status } = req.query;
+      const submissions = await storage.getUnverifiedSubmissions(status as string | undefined);
+      res.json(submissions);
+    } catch (error) {
+      console.error("Error fetching news discoveries:", error);
+      res.status(500).json({ message: "Failed to fetch news discoveries" });
+    }
+  });
+
+  app.post("/api/admin/news-discoveries/:id/verify", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const { notes } = req.body;
+      const updated = await storage.updateUnverifiedSubmissionStatus(id, "verified", userId, notes);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error verifying news discovery:", error);
+      res.status(500).json({ message: "Failed to verify" });
+    }
+  });
+
+  app.post("/api/admin/news-discoveries/:id/ignore", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const { notes } = req.body;
+      const updated = await storage.updateUnverifiedSubmissionStatus(id, "ignored", userId, notes);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error ignoring news discovery:", error);
+      res.status(500).json({ message: "Failed to ignore" });
+    }
+  });
+
+  app.post("/api/admin/news-discoveries/:id/promote", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const hospital = await storage.promoteUnverifiedSubmission(id, userId);
+      res.json(hospital);
+    } catch (error) {
+      console.error("Error promoting news discovery:", error);
+      res.status(500).json({ message: "Failed to promote" });
+    }
+  });
+
   app.get("/robots.txt", (req, res) => {
     const baseUrl = `https://${req.get("host")}`;
     res.type("text/plain");

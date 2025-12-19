@@ -22,6 +22,7 @@ import TermsOfService from "@/pages/terms-of-service";
 import Dashboard from "@/pages/dashboard";
 import Profile from "@/pages/profile";
 import AdminDashboard from "@/pages/admin-dashboard";
+import AnalyticsDashboard from "@/pages/analytics-dashboard";
 
 function Router() {
   return (
@@ -36,6 +37,7 @@ function Router() {
         <Route path="/suggest-hospital" component={SuggestHospital} />
         <Route path="/claim-profile/:id" component={ClaimProfile} />
         <Route path="/admin" component={AdminDashboard} />
+        <Route path="/admin/analytics" component={AnalyticsDashboard} />
         <Route path="/guidelines" component={Guidelines} />
         <Route path="/trust-safety" component={TrustSafety} />
         <Route path="/support" component={Support} />
