@@ -1,10 +1,10 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Link } from "wouter";
 import { useComparison } from "@/lib/comparison-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   Download,
@@ -76,10 +76,12 @@ function FeatureCheck({ has }: { has: boolean }) {
 export default function ComparePage() {
   const { compareList, removeFromCompare, clearCompare } = useComparison();
   const compareRef = useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const exportPDF = async () => {
     if (!compareRef.current) return;
     
+    setIsExporting(true);
     try {
       const canvas = await html2canvas(compareRef.current, {
         scale: 2,
@@ -96,8 +98,12 @@ export default function ComparePage() {
       
       pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
       pdf.save(`hospital-comparison-${new Date().toISOString().split("T")[0]}.pdf`);
+      toast.success("PDF exported successfully");
     } catch (error) {
       console.error("PDF export failed:", error);
+      toast.error("Failed to export PDF. Please try again.");
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -174,9 +180,9 @@ export default function ComparePage() {
           <Button variant="outline" onClick={clearCompare}>
             Clear All
           </Button>
-          <Button onClick={exportPDF} className="bg-green-600 hover:bg-green-700">
+          <Button onClick={exportPDF} disabled={isExporting} className="bg-green-600 hover:bg-green-700">
             <Download className="h-4 w-4 mr-2" />
-            Export PDF
+            {isExporting ? "Exporting..." : "Export PDF"}
           </Button>
         </div>
       </div>

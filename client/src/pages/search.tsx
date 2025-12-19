@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { HospitalCard } from "@/components/hospital-card";
 import { 
   Select, 
   SelectContent, 
@@ -638,112 +639,12 @@ export default function SearchPage() {
             ) : paginatedHospitals.length > 0 ? (
               <>
                 {paginatedHospitals.map((hospital, index) => (
-                  <Link key={hospital.id} href={`/hospital/${hospital.id}`}>
-                    <div
-                      className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group hover:border-emerald-300 cursor-pointer"
-                      data-testid={`card-hospital-${hospital.id}`}
-                    >
-                      <div className="flex flex-col sm:flex-row">
-                        {/* Thumbnail */}
-                        <div className="sm:w-48 h-40 sm:h-auto relative overflow-hidden flex-shrink-0">
-                          <img
-                            src={hospitalImages[index % hospitalImages.length]}
-                            alt={hospital.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            loading="lazy"
-                          />
-                          {hospital.verified && (
-                            <div className="absolute top-2 left-2 bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
-                              <ShieldCheck className="w-3 h-3" /> Verified
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Content */}
-                        <div className="flex-1 p-4 sm:p-5">
-                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
-                                <Badge variant="outline" className="font-normal text-xs">
-                                  {hospital.ownership}
-                                </Badge>
-                                <span className="flex items-center">
-                                  <MapPin className="w-3 h-3 mr-1" />
-                                  {hospital.lga}, {hospital.state}
-                                </span>
-                              </div>
-                              <h3 className="text-lg font-bold text-slate-900 group-hover:text-emerald-700 transition-colors line-clamp-1" data-testid={`text-hospital-name-${hospital.id}`}>
-                                {hospital.name}
-                              </h3>
-                            </div>
-
-                            {/* Rating */}
-                            <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg">
-                              <div className="flex items-center gap-1">
-                                <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-                                <span className="font-bold text-slate-900">{(hospital.averageRating || 0).toFixed(1)}</span>
-                              </div>
-                              <span className="text-xs text-slate-500">({hospital.totalReviews || 0} reviews)</span>
-                            </div>
-                          </div>
-
-                          {/* Distance if available */}
-                          {userLocation && hospital.latitude && hospital.longitude && (
-                            <div className="flex items-center gap-2 text-sm mb-2">
-                              <span className="flex items-center gap-1 text-orange-600">
-                                <Navigation className="w-3 h-3" />
-                                {getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, hospital.latitude, hospital.longitude).toFixed(1)} km away
-                              </span>
-                              <a
-                                href={`https://www.google.com/maps/dir/?api=1&destination=${hospital.latitude},${hospital.longitude}&travelmode=driving`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="inline-flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 font-medium hover:underline"
-                                data-testid={`link-directions-${hospital.id}`}
-                              >
-                                <ExternalLink className="w-3 h-3" />
-                                Directions
-                              </a>
-                            </div>
-                          )}
-
-                          {/* Services/Specialties */}
-                          <div className="flex flex-wrap gap-1.5 mb-3">
-                            {hospital.services.slice(0, 4).map(service => (
-                              <span key={service} className="text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded">
-                                {service}
-                              </span>
-                            ))}
-                            {hospital.services.length > 4 && (
-                              <span className="text-xs text-slate-400 px-2 py-1">+{hospital.services.length - 4} more</span>
-                            )}
-                          </div>
-
-                          {/* Footer */}
-                          <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                            <div className="flex items-center gap-4 text-xs text-slate-500">
-                              {hospital.bedCapacity && (
-                                <span className="flex items-center gap-1">
-                                  <Building2 className="w-3 h-3" />
-                                  {hospital.bedCapacity} beds
-                                </span>
-                              )}
-                              {hospital.operatingHours && (
-                                <span className="flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />
-                                  {hospital.operatingHours}
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-sm font-semibold text-emerald-600 group-hover:underline">
-                              View Details →
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
+                  <HospitalCard
+                    key={hospital.id}
+                    hospital={hospital}
+                    imageUrl={hospitalImages[index % hospitalImages.length]}
+                    variant="list"
+                  />
                 ))}
 
                 {/* Pagination */}

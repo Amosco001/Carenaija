@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import useEmblaCarousel from "embla-carousel-react";
 import { SEOHead } from "@/components/seo-head";
 import { SkeletonHospitalCard } from "@/components/skeleton-card";
+import { HospitalCard } from "@/components/hospital-card";
 
 const hospitalImages = [luthHospitalImage, neuropsychHospitalImage, orthoHospitalImage];
 
@@ -218,50 +219,17 @@ export default function Home() {
             <div className="overflow-hidden" ref={emblaRef}>
               <div className="flex gap-6">
                 {featuredHospitals.map((hospital, index) => (
-                  <Link 
-                    key={hospital.id} 
-                    href={`/hospital/${hospital.id}`} 
-                    className="flex-none w-[85%] sm:w-[45%] lg:w-[30%] group"
+                  <div 
+                    key={hospital.id}
+                    className="flex-none w-[85%] sm:w-[45%] lg:w-[30%]"
                     data-testid={`card-featured-hospital-${hospital.id}`}
                   >
-                    <Card className="overflow-hidden border-slate-200 hover:border-emerald-300 hover:shadow-lg transition-all duration-300 h-full">
-                      <div className="h-48 overflow-hidden relative">
-                        <img 
-                          src={hospitalImages[index % hospitalImages.length]} 
-                          alt={hospital.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          loading="lazy"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                        {hospital.verified && (
-                          <div className="absolute top-3 left-3 bg-emerald-500 text-white px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1">
-                            <ShieldCheck className="w-3 h-3" /> Verified
-                          </div>
-                        )}
-                        <div className="absolute top-3 right-3 bg-white/95 backdrop-blur px-2 py-1 rounded-md shadow-sm">
-                          <span className="text-xs font-semibold text-emerald-700">{hospital.ownership}</span>
-                        </div>
-                      </div>
-                      <CardContent className="p-5">
-                        <h3 className="font-bold text-lg text-slate-900 mb-2 line-clamp-2 group-hover:text-emerald-700 transition-colors">
-                          {hospital.name}
-                        </h3>
-                        <div className="flex items-center text-slate-500 text-sm mb-3">
-                          <MapPin className="w-4 h-4 mr-1 text-slate-400" />
-                          {hospital.lga}, {hospital.state}
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1">
-                            {getRatingStars(hospital.averageRating || 4)}
-                            <span className="text-sm text-slate-500 ml-1">({hospital.totalReviews || 0})</span>
-                          </div>
-                          {hospital.bedCapacity && (
-                            <span className="text-xs text-slate-500">{hospital.bedCapacity} beds</span>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
+                    <HospitalCard
+                      hospital={hospital}
+                      imageUrl={hospitalImages[index % hospitalImages.length]}
+                      variant="carousel"
+                    />
+                  </div>
                 ))}
               </div>
             </div>
