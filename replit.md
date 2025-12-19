@@ -137,3 +137,53 @@ cd scraper && python -c "from scraper.sources.google_places import get_cost_esti
 2. Auto-approved hospitals marked for fast-track review
 3. Admin reviews in dashboard → approves/rejects/marks as duplicate
 4. Approved hospitals → copied to main `hospitals` table with Google data
+
+### News/Social Media Monitoring System
+Automated system to discover new hospital openings from Nigerian news sources.
+
+**News Sources Monitored:**
+- Punch Nigeria (Health section RSS)
+- Vanguard Nigeria (Health section RSS)
+- Guardian Nigeria (Health section RSS)
+- Premium Times (Health section RSS)
+- This Day Live (News RSS)
+
+**Monitoring Features:**
+- RSS feed parsing with feedparser
+- Article content extraction with newspaper3k
+- Hospital name extraction via regex patterns
+- Location detection (Nigerian states and cities)
+- Event type classification (opening, expansion, renovation, closure)
+- Credibility scoring based on source reputation
+
+**Data Storage:**
+- Discoveries stored in `unverified_submissions` table
+- Admin review via "News Discoveries" API endpoints
+- Promotes verified discoveries to main hospitals table
+
+**Running the Monitor:**
+```bash
+cd scraper && python -c "from sources.news_monitor import NewsMonitorScraper; NewsMonitorScraper().scrape()"
+```
+
+### Analytics Dashboard
+Comprehensive platform analytics available at `/admin/analytics`.
+
+**Dashboard Features:**
+- Summary stats: total hospitals, reviews, users, average rating
+- Reviews over time chart (configurable: 7/30/90/365 days)
+- Hospitals by state pie chart
+- Ratings by category bar chart
+- Top rated hospitals list
+- Most reviewed hospitals list
+- Recent activity feed
+- CSV export capability
+
+**API Endpoints (Admin Only):**
+- `GET /api/admin/analytics/summary` - Platform statistics
+- `GET /api/admin/analytics/reviews-over-time` - Review trends
+- `GET /api/admin/analytics/top-hospitals` - Top rated facilities
+- `GET /api/admin/analytics/most-reviewed` - Most reviewed facilities
+- `GET /api/admin/analytics/ratings-by-category` - Category breakdown
+- `GET /api/admin/analytics/recent-activity` - Activity feed
+- `GET /api/admin/analytics/hospitals-by-state` - Geographic distribution

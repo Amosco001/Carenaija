@@ -136,45 +136,94 @@ function exportToCSV(data: any[], filename: string) {
 export default function AnalyticsDashboard() {
   const [timeRange, setTimeRange] = useState("30");
 
-  const { data: summary, isLoading: loadingSummary } = useQuery<AnalyticsSummary>({
+  const { data: summary, isLoading: loadingSummary, error: summaryError } = useQuery<AnalyticsSummary>({
     queryKey: ["/api/admin/analytics/summary"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/analytics/summary", { credentials: "include" });
+      if (!res.ok) throw new Error(res.status === 401 ? "Unauthorized" : "Failed to fetch");
+      return res.json();
+    },
+    retry: false,
   });
 
   const { data: reviewsOverTime, isLoading: loadingReviews } = useQuery<ReviewOverTime[]>({
     queryKey: ["/api/admin/analytics/reviews-over-time", timeRange],
     queryFn: async () => {
-      const res = await fetch(`/api/admin/analytics/reviews-over-time?days=${timeRange}`);
+      const res = await fetch(`/api/admin/analytics/reviews-over-time?days=${timeRange}`, { credentials: "include" });
+      if (!res.ok) return [];
       return res.json();
     },
+    enabled: !summaryError,
   });
 
-  const { data: topHospitals } = useQuery<Hospital[]>({
+  const { data: topHospitals = [] } = useQuery<Hospital[]>({
     queryKey: ["/api/admin/analytics/top-hospitals"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/analytics/top-hospitals?limit=10");
+      const res = await fetch("/api/admin/analytics/top-hospitals?limit=10", { credentials: "include" });
+      if (!res.ok) return [];
       return res.json();
     },
+    enabled: !summaryError,
   });
 
-  const { data: mostReviewed } = useQuery<HospitalWithReviewCount[]>({
+  const { data: mostReviewed = [] } = useQuery<HospitalWithReviewCount[]>({
     queryKey: ["/api/admin/analytics/most-reviewed"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/analytics/most-reviewed?limit=10");
+      const res = await fetch("/api/admin/analytics/most-reviewed?limit=10", { credentials: "include" });
+      if (!res.ok) return [];
       return res.json();
     },
+    enabled: !summaryError,
   });
 
-  const { data: ratingsByCategory } = useQuery<CategoryRating[]>({
+  const { data: ratingsByCategory = [] } = useQuery<CategoryRating[]>({
     queryKey: ["/api/admin/analytics/ratings-by-category"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/analytics/ratings-by-category", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !summaryError,
   });
 
-  const { data: hospitalsByState } = useQuery<StateCount[]>({
+  const { data: hospitalsByState = [] } = useQuery<StateCount[]>({
     queryKey: ["/api/admin/analytics/hospitals-by-state"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/analytics/hospitals-by-state", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !summaryError,
   });
 
-  const { data: recentActivity } = useQuery<RecentActivity[]>({
+  const { data: recentActivity = [] } = useQuery<RecentActivity[]>({
     queryKey: ["/api/admin/analytics/recent-activity"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/analytics/recent-activity", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !summaryError,
   });
+
+  if (summaryError) {
+    return (
+      <div className="container mx-auto px-4 py-16 max-w-lg text-center">
+        <Card>
+          <CardContent className="pt-6">
+            <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Access Denied</h2>
+            <p className="text-muted-foreground mb-4">
+              You need to be logged in as an administrator to view the analytics dashboard.
+            </p>
+            <Button onClick={() => window.location.href = "/api/login"} className="bg-green-600 hover:bg-green-700">
+              Log In
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (loadingSummary) {
     return (
