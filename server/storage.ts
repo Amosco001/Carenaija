@@ -14,6 +14,11 @@ import {
   pendingHospitals,
   scrapingJobs,
   scrapingLogs,
+  emailPreferences,
+  followedHospitals,
+  emailOutbox,
+  userReviewStats,
+  reviewResponses,
   type User,
   type UpsertUser,
   type Hospital,
@@ -40,6 +45,15 @@ import {
   type InsertPendingHospital,
   type ScrapingJob,
   type ScrapingLog,
+  type EmailPreferences,
+  type InsertEmailPreferences,
+  type FollowedHospital,
+  type InsertFollowedHospital,
+  type EmailOutbox,
+  type InsertEmailOutbox,
+  type UserReviewStats,
+  type ReviewResponse,
+  type InsertReviewResponse,
   unverifiedSubmissions,
   type UnverifiedSubmission,
   type InsertUnverifiedSubmission,
@@ -1002,6 +1016,189 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(count()));
     
     return result.map(r => ({ state: r.state, count: r.count }));
+  }
+
+  // Email preferences methods
+  async getEmailPreferences(userId: string): Promise<EmailPreferences | undefined> {
+    const [prefs] = await db.select().from(emailPreferences).where(eq(emailPreferences.userId, userId));
+    return prefs;
+  }
+
+  async createEmailPreferences(userId: string): Promise<EmailPreferences> {
+    const [prefs] = await db.insert(emailPreferences).values({ userId }).returning();
+    return prefs;
+  }
+
+  async updateEmailPreferences(userId: string, data: Partial<InsertEmailPreferences>): Promise<EmailPreferences> {
+    const [prefs] = await db
+      .update(emailPreferences)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(emailPreferences.userId, userId))
+      .returning();
+    return prefs;
+  }
+
+  async getEmailPreferencesByToken(token: string): Promise<EmailPreferences | undefined> {
+    const [prefs] = await db.select().from(emailPreferences).where(eq(emailPreferences.unsubscribeToken, token));
+    return prefs;
+  }
+
+  // Followed hospitals methods
+  async getFollowedHospitals(userId: string): Promise<(FollowedHospital & { hospital: Hospital })[]> {
+    const follows = await db.select().from(followedHospitals).where(eq(followedHospitals.userId, userId));
+    const hospitalIds = follows.map(f => f.hospitalId);
+    if (hospitalIds.length === 0) return [];
+    
+    const hospitalsData = await db.select().from(hospitals).where(inArray(hospitals.id, hospitalIds));
+    const hospitalMap = new Map(hospitalsData.map(h => [h.id, h]));
+    
+    return follows.map(f => ({
+      ...f,
+      hospital: hospitalMap.get(f.hospitalId)!,
+    })).filter(f => f.hospital);
+  }
+
+  async followHospital(userId: string, hospitalId: number): Promise<FollowedHospital> {
+    const [existing] = await db.select().from(followedHospitals).where(
+      and(eq(followedHospitals.userId, userId), eq(followedHospitals.hospitalId, hospitalId))
+    );
+    if (existing) return existing;
+    
+    const [follow] = await db.insert(followedHospitals).values({ userId, hospitalId }).returning();
+    return follow;
+  }
+
+  async unfollowHospital(userId: string, hospitalId: number): Promise<void> {
+    await db.delete(followedHospitals).where(
+      and(eq(followedHospitals.userId, userId), eq(followedHospitals.hospitalId, hospitalId))
+    );
+  }
+
+  async isFollowingHospital(userId: string, hospitalId: number): Promise<boolean> {
+    const [follow] = await db.select().from(followedHospitals).where(
+      and(eq(followedHospitals.userId, userId), eq(followedHospitals.hospitalId, hospitalId))
+    );
+    return !!follow;
+  }
+
+  async getFollowersOfHospital(hospitalId: number): Promise<{ userId: string; email: string | null }[]> {
+    const follows = await db.select().from(followedHospitals).where(eq(followedHospitals.hospitalId, hospitalId));
+    if (follows.length === 0) return [];
+    
+    const userIds = follows.map(f => f.userId);
+    const usersData = await db.select({ id: users.id, email: users.email }).from(users).where(inArray(users.id, userIds));
+    return usersData.map(u => ({ userId: u.id, email: u.email }));
+  }
+
+  // Email outbox methods
+  async queueEmail(email: InsertEmailOutbox): Promise<EmailOutbox> {
+    const [queued] = await db.insert(emailOutbox).values(email).returning();
+    return queued;
+  }
+
+  async getPendingEmails(limit: number = 50): Promise<EmailOutbox[]> {
+    return db.select().from(emailOutbox)
+      .where(and(
+        eq(emailOutbox.status, "pending"),
+        sql`${emailOutbox.sendAfter} <= NOW()`
+      ))
+      .orderBy(emailOutbox.createdAt)
+      .limit(limit);
+  }
+
+  async markEmailSent(id: number): Promise<void> {
+    await db.update(emailOutbox)
+      .set({ status: "sent", sentAt: new Date() })
+      .where(eq(emailOutbox.id, id));
+  }
+
+  async markEmailFailed(id: number, error: string): Promise<void> {
+    await db.update(emailOutbox)
+      .set({ 
+        status: sql`CASE WHEN attempts >= 3 THEN 'failed' ELSE 'pending' END`,
+        attempts: sql`attempts + 1`,
+        lastError: error,
+      })
+      .where(eq(emailOutbox.id, id));
+  }
+
+  // User review stats methods
+  async getUserReviewStats(userId: string): Promise<UserReviewStats | undefined> {
+    const [stats] = await db.select().from(userReviewStats).where(eq(userReviewStats.userId, userId));
+    return stats;
+  }
+
+  async incrementUserReviewCount(userId: string, type: "patient" | "employee"): Promise<UserReviewStats> {
+    const existing = await this.getUserReviewStats(userId);
+    
+    if (existing) {
+      const [updated] = await db.update(userReviewStats)
+        .set({
+          totalPatientReviews: type === "patient" ? sql`total_patient_reviews + 1` : existing.totalPatientReviews,
+          totalEmployeeReviews: type === "employee" ? sql`total_employee_reviews + 1` : existing.totalEmployeeReviews,
+          updatedAt: new Date(),
+        })
+        .where(eq(userReviewStats.userId, userId))
+        .returning();
+      return updated;
+    }
+    
+    const [created] = await db.insert(userReviewStats).values({
+      userId,
+      totalPatientReviews: type === "patient" ? 1 : 0,
+      totalEmployeeReviews: type === "employee" ? 1 : 0,
+    }).returning();
+    return created;
+  }
+
+  async updateLastMilestoneNotified(userId: string, milestone: number): Promise<void> {
+    await db.update(userReviewStats)
+      .set({ lastMilestoneNotified: milestone, updatedAt: new Date() })
+      .where(eq(userReviewStats.userId, userId));
+  }
+
+  // Review responses methods
+  async createReviewResponse(response: InsertReviewResponse): Promise<ReviewResponse> {
+    const [created] = await db.insert(reviewResponses).values(response).returning();
+    return created;
+  }
+
+  async getReviewResponse(reviewId: number, reviewType: string): Promise<ReviewResponse | undefined> {
+    const [response] = await db.select().from(reviewResponses).where(
+      and(eq(reviewResponses.reviewId, reviewId), eq(reviewResponses.reviewType, reviewType))
+    );
+    return response;
+  }
+
+  // Weekly digest helpers
+  async getUsersForWeeklyDigest(dayOfWeek: number): Promise<(EmailPreferences & { user: User })[]> {
+    const prefs = await db.select().from(emailPreferences).where(
+      and(
+        eq(emailPreferences.weeklyDigest, true),
+        eq(emailPreferences.weeklyDigestDay, dayOfWeek),
+        or(
+          sql`${emailPreferences.lastDigestSentAt} IS NULL`,
+          sql`${emailPreferences.lastDigestSentAt} < NOW() - INTERVAL '6 days'`
+        )
+      )
+    );
+    
+    if (prefs.length === 0) return [];
+    
+    const userIds = prefs.map(p => p.userId);
+    const usersData = await db.select().from(users).where(inArray(users.id, userIds));
+    const userMap = new Map(usersData.map(u => [u.id, u]));
+    
+    return prefs.map(p => ({
+      ...p,
+      user: userMap.get(p.userId)!,
+    })).filter(p => p.user && p.user.email);
+  }
+
+  async updateLastDigestSent(userId: string): Promise<void> {
+    await db.update(emailPreferences)
+      .set({ lastDigestSentAt: new Date() })
+      .where(eq(emailPreferences.userId, userId));
   }
 }
 

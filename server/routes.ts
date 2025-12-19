@@ -9,7 +9,9 @@ import {
   insertHospitalSuggestionSchema,
   insertClaimRequestSchema,
   insertReviewFlagSchema,
+  insertEmailPreferencesSchema,
 } from "@shared/schema";
+import { notificationService } from "./services/notification";
 import crypto from "crypto";
 
 function getClientIp(req: Request): string {
@@ -1105,6 +1107,159 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     } catch (error) {
       console.error("Error promoting news discovery:", error);
       res.status(500).json({ message: "Failed to promote" });
+    }
+  });
+
+  // ============ NOTIFICATION & EMAIL PREFERENCES ROUTES ============
+
+  // Get user's email preferences
+  app.get("/api/notifications/preferences", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      let prefs = await storage.getEmailPreferences(userId);
+      if (!prefs) {
+        prefs = await storage.createEmailPreferences(userId);
+      }
+      res.json(prefs);
+    } catch (error) {
+      console.error("Error fetching email preferences:", error);
+      res.status(500).json({ message: "Failed to fetch preferences" });
+    }
+  });
+
+  // Update email preferences
+  app.put("/api/notifications/preferences", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const data = insertEmailPreferencesSchema.partial().parse(req.body);
+      
+      let prefs = await storage.getEmailPreferences(userId);
+      if (!prefs) {
+        prefs = await storage.createEmailPreferences(userId);
+      }
+      
+      const updated = await storage.updateEmailPreferences(userId, data);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating email preferences:", error);
+      res.status(500).json({ message: "Failed to update preferences" });
+    }
+  });
+
+  // Get followed hospitals
+  app.get("/api/notifications/followed-hospitals", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const followed = await storage.getFollowedHospitals(userId);
+      res.json(followed);
+    } catch (error) {
+      console.error("Error fetching followed hospitals:", error);
+      res.status(500).json({ message: "Failed to fetch followed hospitals" });
+    }
+  });
+
+  // Follow a hospital
+  app.post("/api/notifications/follow/:hospitalId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const hospitalId = parseInt(req.params.hospitalId);
+      const follow = await storage.followHospital(userId, hospitalId);
+      res.json(follow);
+    } catch (error) {
+      console.error("Error following hospital:", error);
+      res.status(500).json({ message: "Failed to follow hospital" });
+    }
+  });
+
+  // Unfollow a hospital
+  app.delete("/api/notifications/follow/:hospitalId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const hospitalId = parseInt(req.params.hospitalId);
+      await storage.unfollowHospital(userId, hospitalId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error unfollowing hospital:", error);
+      res.status(500).json({ message: "Failed to unfollow hospital" });
+    }
+  });
+
+  // Check if following a hospital
+  app.get("/api/notifications/follow/:hospitalId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const hospitalId = parseInt(req.params.hospitalId);
+      const isFollowing = await storage.isFollowingHospital(userId, hospitalId);
+      res.json({ isFollowing });
+    } catch (error) {
+      console.error("Error checking follow status:", error);
+      res.status(500).json({ message: "Failed to check follow status" });
+    }
+  });
+
+  // Public unsubscribe endpoint (no auth required)
+  app.post("/api/notifications/unsubscribe", async (req, res) => {
+    try {
+      const { token, category } = req.body;
+      if (!token) {
+        return res.status(400).json({ message: "Token required" });
+      }
+
+      const prefs = await storage.getEmailPreferencesByToken(token);
+      if (!prefs) {
+        return res.status(404).json({ message: "Invalid unsubscribe token" });
+      }
+
+      const updateData: Record<string, boolean> = {};
+      if (category === "all" || !category) {
+        updateData.welcomeEmail = false;
+        updateData.newReviewOnFollowed = false;
+        updateData.reviewResponse = false;
+        updateData.weeklyDigest = false;
+        updateData.reviewMilestones = false;
+        updateData.marketingEmails = false;
+      } else {
+        const categoryMap: Record<string, string> = {
+          welcome: "welcomeEmail",
+          new_review: "newReviewOnFollowed",
+          review_response: "reviewResponse",
+          weekly_digest: "weeklyDigest",
+          milestone: "reviewMilestones",
+          marketing: "marketingEmails",
+        };
+        const field = categoryMap[category];
+        if (field) {
+          updateData[field] = false;
+        }
+      }
+
+      await storage.updateEmailPreferences(prefs.userId, updateData);
+      res.json({ success: true, message: "Successfully unsubscribed" });
+    } catch (error) {
+      console.error("Error unsubscribing:", error);
+      res.status(500).json({ message: "Failed to unsubscribe" });
+    }
+  });
+
+  // Admin: Process email queue (could be called by a cron job)
+  app.post("/api/admin/process-email-queue", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const result = await notificationService.processEmailQueue();
+      res.json(result);
+    } catch (error) {
+      console.error("Error processing email queue:", error);
+      res.status(500).json({ message: "Failed to process email queue" });
+    }
+  });
+
+  // Admin: Send weekly digests
+  app.post("/api/admin/send-weekly-digests", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const count = await notificationService.sendWeeklyDigests();
+      res.json({ sent: count });
+    } catch (error) {
+      console.error("Error sending weekly digests:", error);
+      res.status(500).json({ message: "Failed to send weekly digests" });
     }
   });
 
