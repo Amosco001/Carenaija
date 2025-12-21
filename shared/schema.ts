@@ -1697,7 +1697,7 @@ export const healthArticles = pgTable("health_articles", {
   contentHtml: text("content_html"),
   coverImageUrl: text("cover_image_url"),
   coverImageAlt: text("cover_image_alt"),
-  authorId: varchar("author_id").notNull().references(() => users.id),
+  authorId: varchar("author_id").references(() => users.id),
   authorName: text("author_name").notNull(),
   authorCredentials: text("author_credentials"),
   categoryId: integer("category_id").references(() => healthCategories.id),
