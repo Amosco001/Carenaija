@@ -93,27 +93,13 @@ export function useGeolocation() {
   }, []);
 
   const requestLocation = useCallback((forceRefresh = false) => {
-    // Check if running in secure context (HTTPS or localhost)
-    const isSecureContext = window.isSecureContext || 
-      window.location.protocol === 'https:' || 
-      window.location.hostname === 'localhost' ||
-      window.location.hostname === '127.0.0.1';
-    
-    if (!isSecureContext) {
-      setState(prev => ({
-        ...prev,
-        error: "Location requires a secure connection (HTTPS). Please access the site via HTTPS or the published app URL.",
-        permissionState: "unavailable",
-        isLoading: false,
-      }));
-      return;
-    }
-    
+    // Check if geolocation API exists
     if (!navigator.geolocation) {
       setState(prev => ({
         ...prev,
-        error: "Geolocation is not supported by your browser",
+        error: "Geolocation is not supported by your browser. Please search for hospitals by state or city instead.",
         permissionState: "unavailable",
+        isLoading: false,
       }));
       return;
     }
@@ -133,54 +119,64 @@ export function useGeolocation() {
 
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const coords = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        };
-        
-        setCachedLocation(coords);
-        
-        setState({
-          coords,
-          error: null,
-          isLoading: false,
-          permissionState: "granted",
-          lastUpdated: Date.now(),
-        });
-      },
-      (error) => {
-        let errorMessage = "Unable to get your location";
-        let permissionState: GeolocationState["permissionState"] = "prompt";
-        
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = "Location access was denied. Please enable location permissions in your browser settings, or try using the published app URL.";
-            permissionState = "denied";
-            clearLocationCache();
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = "Location information is unavailable. Please try again or search for hospitals by state/city instead.";
-            break;
-          case error.TIMEOUT:
-            errorMessage = "Location request timed out. Please try again.";
-            break;
+    try {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const coords = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+          
+          setCachedLocation(coords);
+          
+          setState({
+            coords,
+            error: null,
+            isLoading: false,
+            permissionState: "granted",
+            lastUpdated: Date.now(),
+          });
+        },
+        (error) => {
+          let errorMessage = "Unable to get your location";
+          let permissionState: GeolocationState["permissionState"] = "prompt";
+          
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = "Location access was blocked. Please allow location access in your browser, or search by state/city instead.";
+              permissionState = "denied";
+              clearLocationCache();
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = "Location unavailable. Please search for hospitals by state or city instead.";
+              break;
+            case error.TIMEOUT:
+              errorMessage = "Location request timed out. Please try again.";
+              break;
+          }
+          
+          setState(prev => ({
+            ...prev,
+            error: errorMessage,
+            isLoading: false,
+            permissionState,
+          }));
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 15000,
+          maximumAge: CACHE_TTL,
         }
-        
-        setState(prev => ({
-          ...prev,
-          error: errorMessage,
-          isLoading: false,
-          permissionState,
-        }));
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 15000,
-        maximumAge: CACHE_TTL,
-      }
-    );
+      );
+    } catch (e) {
+      // Handle any synchronous errors (e.g., security policy blocks)
+      setState(prev => ({
+        ...prev,
+        error: "Location access is blocked by browser security. Please search for hospitals by state or city instead.",
+        isLoading: false,
+        permissionState: "denied",
+      }));
+    }
   }, []);
 
   const clearLocation = useCallback(() => {
