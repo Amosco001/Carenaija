@@ -2552,6 +2552,203 @@ Sitemap: ${baseUrl}/sitemap.xml
   });
 
   // XML Sitemap for SEO
+  // ==================== ENGAGEMENT SYSTEM ROUTES ====================
+
+  // Initialize default badges on startup
+  storage.seedDefaultBadges().catch(console.error);
+
+  // Get leaderboard
+  app.get("/api/leaderboard", async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const leaderboard = await storage.getLeaderboard(limit);
+      res.json(leaderboard);
+    } catch (error) {
+      console.error("Error fetching leaderboard:", error);
+      res.status(500).json({ message: "Failed to fetch leaderboard" });
+    }
+  });
+
+  // Get all badges (for display)
+  app.get("/api/badges", async (req, res) => {
+    try {
+      const badgesList = await storage.getAllBadges();
+      res.json(badgesList);
+    } catch (error) {
+      console.error("Error fetching badges:", error);
+      res.status(500).json({ message: "Failed to fetch badges" });
+    }
+  });
+
+  // Get current user's engagement profile
+  app.get("/api/engagement/profile", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const profile = await storage.getUserEngagementProfile(userId);
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching engagement profile:", error);
+      res.status(500).json({ message: "Failed to fetch engagement profile" });
+    }
+  });
+
+  // Get user's engagement profile by ID (public)
+  app.get("/api/engagement/profile/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const profile = await storage.getUserEngagementProfile(userId);
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching user engagement profile:", error);
+      res.status(500).json({ message: "Failed to fetch engagement profile" });
+    }
+  });
+
+  // Get user's achievement notifications
+  app.get("/api/notifications/achievements", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const notifications = await storage.getUserUnreadNotifications(userId);
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  // Mark notification as read
+  app.post("/api/notifications/achievements/:id/read", isAuthenticated, async (req: any, res) => {
+    try {
+      const notificationId = parseInt(req.params.id);
+      await storage.markNotificationRead(notificationId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking notification read:", error);
+      res.status(500).json({ message: "Failed to mark notification read" });
+    }
+  });
+
+  // Mark all notifications as read
+  app.post("/api/notifications/achievements/read-all", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      await storage.markAllNotificationsRead(userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking notifications read:", error);
+      res.status(500).json({ message: "Failed to mark notifications read" });
+    }
+  });
+
+  // Get user's referral code
+  app.get("/api/referral/code", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const code = await storage.generateReferralCode(userId);
+      res.json({ code });
+    } catch (error) {
+      console.error("Error generating referral code:", error);
+      res.status(500).json({ message: "Failed to generate referral code" });
+    }
+  });
+
+  // Get user's referrals
+  app.get("/api/referrals", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userReferrals = await storage.getUserReferrals(userId);
+      res.json(userReferrals);
+    } catch (error) {
+      console.error("Error fetching referrals:", error);
+      res.status(500).json({ message: "Failed to fetch referrals" });
+    }
+  });
+
+  // Get current featured reviewer
+  app.get("/api/featured-reviewer", async (req, res) => {
+    try {
+      const featured = await storage.getCurrentFeaturedReviewer();
+      res.json(featured || null);
+    } catch (error) {
+      console.error("Error fetching featured reviewer:", error);
+      res.status(500).json({ message: "Failed to fetch featured reviewer" });
+    }
+  });
+
+  // Get featured reviewer history
+  app.get("/api/featured-reviewers/history", async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 12;
+      const history = await storage.getFeaturedReviewerHistory(limit);
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching featured reviewer history:", error);
+      res.status(500).json({ message: "Failed to fetch history" });
+    }
+  });
+
+  // Get user's point transactions
+  app.get("/api/points/transactions", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const transactions = await storage.getUserPointTransactions(userId, limit);
+      res.json(transactions);
+    } catch (error) {
+      console.error("Error fetching point transactions:", error);
+      res.status(500).json({ message: "Failed to fetch transactions" });
+    }
+  });
+
+  // Admin: Set featured reviewer
+  app.post("/api/admin/featured-reviewer", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { userId, reason, featuredReviewId } = req.body;
+      const now = new Date();
+      
+      const featured = await storage.createFeaturedReviewer({
+        userId,
+        month: now.getMonth() + 1,
+        year: now.getFullYear(),
+        reason,
+        featuredReviewId,
+        reviewCount: 0,
+        helpfulVotes: 0,
+        active: true
+      });
+      
+      res.json(featured);
+    } catch (error) {
+      console.error("Error creating featured reviewer:", error);
+      res.status(500).json({ message: "Failed to create featured reviewer" });
+    }
+  });
+
+  // Admin: Award badge to user
+  app.post("/api/admin/award-badge", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { userId, badgeCode } = req.body;
+      const badge = await storage.getBadgeByCode(badgeCode);
+      if (!badge) {
+        return res.status(404).json({ message: "Badge not found" });
+      }
+      
+      const userBadge = await storage.awardBadge(userId, badge.id);
+      await storage.createAchievementNotification({
+        userId,
+        type: 'badge_earned',
+        title: `Badge Earned: ${badge.name}`,
+        message: badge.description,
+        badgeId: badge.id
+      });
+      
+      res.json(userBadge);
+    } catch (error) {
+      console.error("Error awarding badge:", error);
+      res.status(500).json({ message: "Failed to award badge" });
+    }
+  });
+
   app.get("/sitemap.xml", async (req, res) => {
     try {
       const baseUrl = `https://${req.get("host")}`;
