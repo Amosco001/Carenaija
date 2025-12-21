@@ -176,10 +176,14 @@ export default function HospitalDetails() {
     hospitalImages[(hospitalId + 2) % hospitalImages.length],
   ];
 
+  const canonicalUrl = `https://carenaija.replit.app/hospital/${hospital.id}`;
+  
   const schemaData = {
     "@context": "https://schema.org",
-    "@type": "Hospital",
+    "@type": ["Hospital", "MedicalOrganization"],
+    "@id": canonicalUrl,
     "name": hospital.name,
+    "description": `${hospital.name} is a ${hospital.ownership.toLowerCase()} healthcare facility in ${hospital.lga}, ${hospital.state}, Nigeria offering ${hospital.services.slice(0, 3).join(", ")} services.`,
     "address": {
       "@type": "PostalAddress",
       "streetAddress": hospital.address,
@@ -187,15 +191,43 @@ export default function HospitalDetails() {
       "addressRegion": hospital.state,
       "addressCountry": "NG"
     },
-    "telephone": hospital.phone || undefined,
-    "email": hospital.email || undefined,
-    "url": hospital.website || undefined,
-    "aggregateRating": hospital.averageRating ? {
-      "@type": "AggregateRating",
-      "ratingValue": hospital.averageRating,
-      "reviewCount": hospital.totalReviews || patientReviews.length
-    } : undefined,
+    "url": canonicalUrl,
+    ...(hospital.phone && { "telephone": hospital.phone }),
+    ...(hospital.email && { "email": hospital.email }),
+    ...(hospital.website && { "sameAs": [hospital.website] }),
+    ...(hospital.latitude && hospital.longitude && {
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": hospital.latitude,
+        "longitude": hospital.longitude
+      }
+    }),
+    "openingHours": hospital.operatingHours === "24/7" ? "Mo-Su 00:00-24:00" : undefined,
     "medicalSpecialty": hospital.services,
+    "numberOfBeds": hospital.bedCapacity || undefined,
+    "isAcceptingNewPatients": true,
+    ...((hospital.totalReviews > 0 || patientReviews.length > 0) && {
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": (hospital.averageRating || ratingBreakdown?.overall || 0).toFixed(1),
+        "bestRating": "5",
+        "worstRating": "1",
+        "ratingCount": hospital.totalReviews || patientReviews.length,
+        "reviewCount": patientReviews.length
+      }
+    }),
+    "priceRange": hospital.ownership === "Government" ? "$" : "$$"
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://carenaija.replit.app/" },
+      { "@type": "ListItem", "position": 2, "name": "Hospitals", "item": "https://carenaija.replit.app/search" },
+      { "@type": "ListItem", "position": 3, "name": hospital.state, "item": `https://carenaija.replit.app/search?location=${encodeURIComponent(hospital.state)}` },
+      { "@type": "ListItem", "position": 4, "name": hospital.name, "item": canonicalUrl }
+    ]
   };
 
   const seoDescription = `${hospital.name} in ${hospital.state}, Nigeria. ${hospital.services.slice(0, 3).join(", ")} services. Read ${patientReviews.length} patient reviews and ratings.`;
@@ -203,15 +235,20 @@ export default function HospitalDetails() {
   return (
     <>
       <SEOHead 
-        title={`${hospital.name} - Reviews & Ratings`}
+        title={`${hospital.name} - Reviews & Ratings in ${hospital.state}`}
         description={seoDescription}
-        keywords={`${hospital.name}, hospital ${hospital.state}, ${hospital.services.slice(0, 3).join(", ")}, hospital reviews Nigeria`}
-        canonicalUrl={`https://carenaija.replit.app/hospital/${hospital.id}`}
+        keywords={`${hospital.name}, hospital ${hospital.state}, ${hospital.services.slice(0, 3).join(", ")}, hospital reviews Nigeria, ${hospital.lga} hospitals`}
+        canonicalUrl={canonicalUrl}
         ogType="place"
+        ogImage={galleryImages[0]}
       />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
       
       <article className="bg-slate-50 min-h-screen pb-16" itemScope itemType="https://schema.org/Hospital" data-testid="page-hospital-details">

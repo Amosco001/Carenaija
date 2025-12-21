@@ -51,6 +51,7 @@ export function SEOHead({
     updateMeta("twitter:title", fullTitle);
     updateMeta("twitter:description", description);
     updateMeta("twitter:image", ogImage);
+    updateMeta("twitter:url", canonicalUrl || window.location.href);
 
     const existingCanonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
     if (canonicalUrl) {

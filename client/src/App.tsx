@@ -1,4 +1,5 @@
 import { Switch, Route } from "wouter";
+import { lazy, Suspense } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -7,58 +8,71 @@ import { AuthProvider } from "@/lib/auth";
 import { ComparisonProvider } from "@/lib/comparison-context";
 import { Layout } from "@/components/layout";
 import { CompareBar } from "@/components/compare-bar";
+import { Loader2 } from "lucide-react";
 import NotFound from "@/pages/not-found";
 
-// Pages
+// Critical pages (eagerly loaded)
 import Home from "@/pages/home";
 import SearchPage from "@/pages/search";
 import HospitalDetails from "@/pages/hospital-details";
-import WriteReview from "@/pages/write-review";
-import SuggestHospital from "@/pages/suggest-hospital";
-import ClaimProfile from "@/pages/claim-profile";
-import Guidelines from "@/pages/guidelines";
-import TrustSafety from "@/pages/trust-safety";
-import About from "@/pages/about";
-import Support from "@/pages/support";
-import PrivacyPolicy from "@/pages/privacy-policy";
-import TermsOfService from "@/pages/terms-of-service";
-import Dashboard from "@/pages/dashboard";
-import Profile from "@/pages/profile";
-import AdminDashboard from "@/pages/admin-dashboard";
-import AnalyticsDashboard from "@/pages/analytics-dashboard";
-import ComparePage from "@/pages/compare";
-import BlogPage from "@/pages/blog";
-import BlogArticlePage from "@/pages/blog-article";
-import HelpCenter from "@/pages/help-center";
-import Leaderboard from "@/pages/leaderboard";
+
+// Lazy-loaded pages (code splitting for performance)
+const WriteReview = lazy(() => import("@/pages/write-review"));
+const SuggestHospital = lazy(() => import("@/pages/suggest-hospital"));
+const ClaimProfile = lazy(() => import("@/pages/claim-profile"));
+const Guidelines = lazy(() => import("@/pages/guidelines"));
+const TrustSafety = lazy(() => import("@/pages/trust-safety"));
+const About = lazy(() => import("@/pages/about"));
+const Support = lazy(() => import("@/pages/support"));
+const PrivacyPolicy = lazy(() => import("@/pages/privacy-policy"));
+const TermsOfService = lazy(() => import("@/pages/terms-of-service"));
+const Dashboard = lazy(() => import("@/pages/dashboard"));
+const Profile = lazy(() => import("@/pages/profile"));
+const AdminDashboard = lazy(() => import("@/pages/admin-dashboard"));
+const AnalyticsDashboard = lazy(() => import("@/pages/analytics-dashboard"));
+const ComparePage = lazy(() => import("@/pages/compare"));
+const BlogPage = lazy(() => import("@/pages/blog"));
+const BlogArticlePage = lazy(() => import("@/pages/blog-article"));
+const HelpCenter = lazy(() => import("@/pages/help-center"));
+const Leaderboard = lazy(() => import("@/pages/leaderboard"));
+
+function PageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+    </div>
+  );
+}
 
 function Router() {
   return (
     <Layout>
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route path="/search" component={SearchPage} />
-        <Route path="/hospital/:id" component={HospitalDetails} />
-        <Route path="/dashboard" component={Dashboard} />
-        <Route path="/profile" component={Profile} />
-        <Route path="/write-review/:type/:id" component={WriteReview} />
-        <Route path="/suggest-hospital" component={SuggestHospital} />
-        <Route path="/claim-profile/:id" component={ClaimProfile} />
-        <Route path="/admin" component={AdminDashboard} />
-        <Route path="/admin/analytics" component={AnalyticsDashboard} />
-        <Route path="/compare" component={ComparePage} />
-        <Route path="/blog" component={BlogPage} />
-        <Route path="/blog/:slug" component={BlogArticlePage} />
-        <Route path="/help" component={HelpCenter} />
-        <Route path="/leaderboard" component={Leaderboard} />
-        <Route path="/guidelines" component={Guidelines} />
-        <Route path="/trust-safety" component={TrustSafety} />
-        <Route path="/about" component={About} />
-        <Route path="/support" component={Support} />
-        <Route path="/privacy-policy" component={PrivacyPolicy} />
-        <Route path="/terms-of-service" component={TermsOfService} />
-        <Route component={NotFound} />
-      </Switch>
+      <Suspense fallback={<PageLoader />}>
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route path="/search" component={SearchPage} />
+          <Route path="/hospital/:id" component={HospitalDetails} />
+          <Route path="/dashboard" component={Dashboard} />
+          <Route path="/profile" component={Profile} />
+          <Route path="/write-review/:type/:id" component={WriteReview} />
+          <Route path="/suggest-hospital" component={SuggestHospital} />
+          <Route path="/claim-profile/:id" component={ClaimProfile} />
+          <Route path="/admin" component={AdminDashboard} />
+          <Route path="/admin/analytics" component={AnalyticsDashboard} />
+          <Route path="/compare" component={ComparePage} />
+          <Route path="/blog" component={BlogPage} />
+          <Route path="/blog/:slug" component={BlogArticlePage} />
+          <Route path="/help" component={HelpCenter} />
+          <Route path="/leaderboard" component={Leaderboard} />
+          <Route path="/guidelines" component={Guidelines} />
+          <Route path="/trust-safety" component={TrustSafety} />
+          <Route path="/about" component={About} />
+          <Route path="/support" component={Support} />
+          <Route path="/privacy-policy" component={PrivacyPolicy} />
+          <Route path="/terms-of-service" component={TermsOfService} />
+          <Route component={NotFound} />
+        </Switch>
+      </Suspense>
     </Layout>
   );
 }

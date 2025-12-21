@@ -2759,6 +2759,9 @@ Sitemap: ${baseUrl}/sitemap.xml
         { url: "/", priority: "1.0", changefreq: "daily" },
         { url: "/search", priority: "0.9", changefreq: "daily" },
         { url: "/blog", priority: "0.9", changefreq: "daily" },
+        { url: "/help", priority: "0.8", changefreq: "weekly" },
+        { url: "/leaderboard", priority: "0.7", changefreq: "daily" },
+        { url: "/compare", priority: "0.7", changefreq: "daily" },
         { url: "/about", priority: "0.7", changefreq: "monthly" },
         { url: "/guidelines", priority: "0.5", changefreq: "monthly" },
         { url: "/trust-safety", priority: "0.5", changefreq: "monthly" },
@@ -2768,7 +2771,7 @@ Sitemap: ${baseUrl}/sitemap.xml
       ];
 
       let xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 `;
 
       for (const page of staticPages) {
