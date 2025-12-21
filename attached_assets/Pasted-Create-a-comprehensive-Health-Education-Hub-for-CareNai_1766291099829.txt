@@ -1,0 +1,83 @@
+Create a comprehensive Health Education Hub for CareNaija with sections for patient education, disease recognition, and healthy lifestyle:
+
+MAIN PAGE STRUCTURE:
+
+1. HERO SECTION:
+   - Title: "Health Education Center"
+   - Subtitle: "Empowering Nigerians with trusted health information"
+   - Search bar: "Search health topics, diseases, symptoms..."
+   - Featured article carousel (3-5 rotating articles with images)
+   - CTA: "Browse All Articles" button
+
+2. CATEGORY GRID (6-8 main categories):
+   - Disease Recognition & Symptoms
+   - Preventive Care & Wellness
+   - Healthy Lifestyle & Nutrition
+   - Women's Health & Maternity
+   - Children's Health & Pediatrics
+   - Mental Health & Wellbeing
+   - Chronic Disease Management
+   - First Aid & Emergency Care
+   
+   Each category card should have:
+   - Icon representing the category
+   - Category name
+   - Number of articles
+   - Brief description (1 line)
+   - "Explore →" link
+
+3. FEATURED ARTICLES SECTION:
+   - "Most Popular This Week" (4 articles)
+   - "Recently Added" (4 articles)
+   - "Editor's Picks" (4 articles)
+   - Each showing: thumbnail, title, excerpt (2 lines), read time, publish date
+
+4. DISEASE LIBRARY QUICK ACCESS:
+   - "Common Diseases in Nigeria" grid
+   - Quick links to: Malaria, Typhoid, Hypertension, Diabetes, HIV/AIDS, Tuberculosis, etc.
+   - Alphabetical disease index (A-Z navigation)
+
+5. HEALTHY LIVING TIPS SECTION:
+   - Daily/weekly health tips
+   - Infographics on nutrition, exercise, sleep
+   - "Tip of the Day" spotlight
+
+6. SYMPTOM CHECKER WIDGET (optional future feature):
+   - "Not feeling well? Check your symptoms"
+   - Link to symptom checker tool
+   - Disclaimer: "Not a substitute for medical advice"
+
+7. NEWSLETTER SIGNUP:
+   - "Get weekly health tips in your inbox"
+   - Email input and subscribe button
+   - "Join 5,000+ subscribers"
+
+DESIGN REQUIREMENTS:
+- Clean, medical/healthcare aesthetic (whites, blues, greens)
+- Easy-to-read fonts (large body text, 16-18px)
+- High-quality medical illustrations/photos
+- Mobile-responsive grid layout
+- Breadcrumb navigation
+- Sidebar with categories (desktop) or hamburger menu (mobile)
+- Search functionality with autocomplete
+- Filter by: category, reading time, date published
+- Sort by: newest, most popular, alphabetical
+
+TECHNICAL FEATURES:
+- Fast loading (lazy load images)
+- SEO-optimized (meta tags, structured data)
+- Social sharing buttons on articles
+- Print-friendly article pages
+- Bookmark/save articles feature (for logged-in users)
+- Related articles suggestions
+- Table of contents for long articles
+- Progress indicator while reading
+
+ACCESSIBILITY:
+- Screen reader friendly
+- High contrast mode option
+- Adjustable font size (A, A+, A++)
+- Keyboard navigation
+- Alt text for all images
+
+Create this as a dedicated section accessible from main navigation with URL structure: carenaija.com/health-education/

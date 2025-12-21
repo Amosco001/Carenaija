@@ -1658,3 +1658,204 @@ export const pointValues = {
   firstReview: 20,
   streakBonus: 10,
 } as const;
+
+// ==================== HEALTH EDUCATION HUB ====================
+
+// Health Education Categories
+export const healthCategories = pgTable("health_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  icon: text("icon").notNull().default("heart"),
+  coverImageUrl: text("cover_image_url"),
+  displayOrder: integer("display_order").notNull().default(0),
+  articleCount: integer("article_count").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_health_categories_slug").on(table.slug),
+  index("IDX_health_categories_active").on(table.isActive),
+]);
+
+export const insertHealthCategorySchema = createInsertSchema(healthCategories).omit({
+  id: true,
+  createdAt: true,
+  articleCount: true,
+});
+
+export type InsertHealthCategory = z.infer<typeof insertHealthCategorySchema>;
+export type HealthCategory = typeof healthCategories.$inferSelect;
+
+// Health Articles
+export const healthArticles = pgTable("health_articles", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  slug: text("slug").notNull().unique(),
+  excerpt: text("excerpt"),
+  content: text("content").notNull(),
+  contentHtml: text("content_html"),
+  coverImageUrl: text("cover_image_url"),
+  coverImageAlt: text("cover_image_alt"),
+  authorId: varchar("author_id").notNull().references(() => users.id),
+  authorName: text("author_name").notNull(),
+  authorCredentials: text("author_credentials"),
+  categoryId: integer("category_id").references(() => healthCategories.id),
+  status: text("status").notNull().default("draft"),
+  publishedAt: timestamp("published_at"),
+  metaTitle: text("meta_title"),
+  metaDescription: text("meta_description"),
+  readingTimeMinutes: integer("reading_time_minutes").notNull().default(5),
+  viewCount: integer("view_count").notNull().default(0),
+  bookmarkCount: integer("bookmark_count").notNull().default(0),
+  shareCount: integer("share_count").notNull().default(0),
+  isFeatured: boolean("is_featured").notNull().default(false),
+  isEditorPick: boolean("is_editor_pick").notNull().default(false),
+  tableOfContents: jsonb("table_of_contents"),
+  relatedDiseases: text("related_diseases").array().notNull().default(sql`'{}'`),
+  symptoms: text("symptoms").array().notNull().default(sql`'{}'`),
+  keywords: text("keywords").array().notNull().default(sql`'{}'`),
+  medicalReviewedBy: text("medical_reviewed_by"),
+  medicalReviewedAt: timestamp("medical_reviewed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("IDX_health_articles_slug").on(table.slug),
+  index("IDX_health_articles_category").on(table.categoryId),
+  index("IDX_health_articles_status").on(table.status),
+  index("IDX_health_articles_featured").on(table.isFeatured),
+  index("IDX_health_articles_published").on(table.publishedAt),
+]);
+
+export const insertHealthArticleSchema = createInsertSchema(healthArticles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  viewCount: true,
+  bookmarkCount: true,
+  shareCount: true,
+});
+
+export type InsertHealthArticle = z.infer<typeof insertHealthArticleSchema>;
+export type HealthArticle = typeof healthArticles.$inferSelect;
+
+// Disease Library
+export const diseases = pgTable("diseases", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  alternateNames: text("alternate_names").array().notNull().default(sql`'{}'`),
+  description: text("description").notNull(),
+  symptoms: text("symptoms").array().notNull().default(sql`'{}'`),
+  causes: text("causes"),
+  riskFactors: text("risk_factors").array().notNull().default(sql`'{}'`),
+  prevention: text("prevention"),
+  treatment: text("treatment"),
+  whenToSeeDoctor: text("when_to_see_doctor"),
+  prevalenceInNigeria: text("prevalence_in_nigeria"),
+  iconUrl: text("icon_url"),
+  viewCount: integer("view_count").notNull().default(0),
+  isCommon: boolean("is_common").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("IDX_diseases_slug").on(table.slug),
+  index("IDX_diseases_common").on(table.isCommon),
+  index("IDX_diseases_name").on(table.name),
+]);
+
+export const insertDiseaseSchema = createInsertSchema(diseases).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  viewCount: true,
+});
+
+export type InsertDisease = z.infer<typeof insertDiseaseSchema>;
+export type Disease = typeof diseases.$inferSelect;
+
+// User Bookmarks for Health Articles
+export const healthBookmarks = pgTable("health_bookmarks", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  articleId: integer("article_id").notNull().references(() => healthArticles.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_health_bookmarks_user").on(table.userId),
+  index("IDX_health_bookmarks_article").on(table.articleId),
+]);
+
+export type HealthBookmark = typeof healthBookmarks.$inferSelect;
+
+// Health Tips (daily/weekly)
+export const healthTips = pgTable("health_tips", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  category: text("category").notNull(),
+  iconUrl: text("icon_url"),
+  displayDate: date("display_date"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_health_tips_date").on(table.displayDate),
+  index("IDX_health_tips_active").on(table.isActive),
+]);
+
+export const insertHealthTipSchema = createInsertSchema(healthTips).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertHealthTip = z.infer<typeof insertHealthTipSchema>;
+export type HealthTip = typeof healthTips.$inferSelect;
+
+// Newsletter Subscribers
+export const newsletterSubscribers = pgTable("newsletter_subscribers", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  name: text("name"),
+  subscribedAt: timestamp("subscribed_at").defaultNow(),
+  unsubscribedAt: timestamp("unsubscribed_at"),
+  isActive: boolean("is_active").notNull().default(true),
+}, (table) => [
+  index("IDX_newsletter_email").on(table.email),
+  index("IDX_newsletter_active").on(table.isActive),
+]);
+
+export const insertNewsletterSubscriberSchema = createInsertSchema(newsletterSubscribers).omit({
+  id: true,
+  subscribedAt: true,
+  unsubscribedAt: true,
+});
+
+export type InsertNewsletterSubscriber = z.infer<typeof insertNewsletterSubscriberSchema>;
+export type NewsletterSubscriber = typeof newsletterSubscribers.$inferSelect;
+
+// Health Education Relations
+export const healthCategoriesRelations = relations(healthCategories, ({ many }) => ({
+  articles: many(healthArticles),
+}));
+
+export const healthArticlesRelations = relations(healthArticles, ({ one, many }) => ({
+  author: one(users, {
+    fields: [healthArticles.authorId],
+    references: [users.id],
+  }),
+  category: one(healthCategories, {
+    fields: [healthArticles.categoryId],
+    references: [healthCategories.id],
+  }),
+  bookmarks: many(healthBookmarks),
+}));
+
+export const healthBookmarksRelations = relations(healthBookmarks, ({ one }) => ({
+  user: one(users, {
+    fields: [healthBookmarks.userId],
+    references: [users.id],
+  }),
+  article: one(healthArticles, {
+    fields: [healthBookmarks.articleId],
+    references: [healthArticles.id],
+  }),
+}));
