@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
+import DOMPurify from "dompurify";
 import { 
   Clock, Eye, Bookmark, BookmarkCheck, ArrowLeft, Share2, 
   Calendar, User, ChevronRight, Check, Facebook, Twitter, 
@@ -162,15 +163,15 @@ function renderContent(content: string): string {
   
   html = html.replace(/^### (.+)$/gm, (_, text) => {
     const id = text.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    return `<h3 id="${id}" class="text-xl font-bold mt-8 mb-4 scroll-mt-24">${text}</h3>`;
+    return `<h3 id="${id}" class="text-xl font-bold mt-8 mb-4 scroll-mt-24">${DOMPurify.sanitize(text)}</h3>`;
   });
   html = html.replace(/^## (.+)$/gm, (_, text) => {
     const id = text.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    return `<h2 id="${id}" class="text-2xl font-bold mt-10 mb-4 scroll-mt-24">${text}</h2>`;
+    return `<h2 id="${id}" class="text-2xl font-bold mt-10 mb-4 scroll-mt-24">${DOMPurify.sanitize(text)}</h2>`;
   });
   html = html.replace(/^# (.+)$/gm, (_, text) => {
     const id = text.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    return `<h1 id="${id}" class="text-3xl font-bold mt-12 mb-6 scroll-mt-24">${text}</h1>`;
+    return `<h1 id="${id}" class="text-3xl font-bold mt-12 mb-6 scroll-mt-24">${DOMPurify.sanitize(text)}</h1>`;
   });
   
   html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
@@ -183,7 +184,7 @@ function renderContent(content: string): string {
   
   html = html.replace(/^(?!<[hul]|<li)(.+)$/gm, '<p class="my-4 text-muted-foreground leading-relaxed">$1</p>');
   
-  return html;
+  return DOMPurify.sanitize(html, { ADD_ATTR: ['id', 'class'] });
 }
 
 export default function HealthArticlePage() {
@@ -410,7 +411,7 @@ export default function HealthArticlePage() {
               {/* Article Content */}
               <div 
                 className="prose prose-lg dark:prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ __html: article.contentHtml || renderContent(article.content) }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.contentHtml || renderContent(article.content), { ADD_ATTR: ['id', 'class'] }) }}
               />
 
               {/* Symptoms & Related Diseases */}

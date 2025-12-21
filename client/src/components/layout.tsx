@@ -42,6 +42,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <Link href="/search" className={`text-sm font-medium transition-colors hover:text-primary ${isActive('/search') ? 'text-primary' : 'text-muted-foreground'}`}>
               Find Hospitals
             </Link>
+            <Link href="/health" className={`text-sm font-medium transition-colors hover:text-primary ${isActive('/health') || location.startsWith('/health/') ? 'text-primary' : 'text-muted-foreground'}`}>
+              Health Hub
+            </Link>
           </nav>
 
           <div className="hidden md:flex items-center gap-4">
@@ -129,6 +132,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <Search className="h-5 w-5" />
                 Find Hospitals
               </Link>
+              <Link 
+                href="/health" 
+                className="mobile-nav-link" 
+                onClick={() => setIsMobileMenuOpen(false)}
+                data-testid="mobile-nav-health"
+              >
+                <Building2 className="h-5 w-5" />
+                Health Hub
+              </Link>
               <div className="h-px bg-border mx-4 my-2" />
               {user ? (
                 <>
@@ -205,6 +217,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <ul className="space-y-2 text-sm">
                 <li><Link href="/about" className="hover:text-white transition-colors">About Us</Link></li>
                 <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
+                <li><Link href="/health" className="hover:text-white transition-colors">Health Hub</Link></li>
                 <li><Link href="/leaderboard" className="hover:text-white transition-colors">Leaderboard</Link></li>
                 <li><Link href="/guidelines" className="hover:text-white transition-colors">Guidelines</Link></li>
                 <li><Link href="/trust-safety" className="hover:text-white transition-colors">Trust & Safety</Link></li>
