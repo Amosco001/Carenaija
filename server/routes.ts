@@ -2193,6 +2193,348 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // ============================================
+  // BLOG SYSTEM ROUTES
+  // ============================================
+
+  // Public blog routes
+  app.get("/api/blog/articles", async (req, res) => {
+    try {
+      const { limit, offset, category, type, search } = req.query;
+      const result = await storage.getPublishedBlogArticles({
+        limit: limit ? parseInt(limit as string) : 10,
+        offset: offset ? parseInt(offset as string) : 0,
+        categorySlug: category as string,
+        articleType: type as string,
+        search: search as string,
+      });
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching blog articles:", error);
+      res.status(500).json({ message: "Failed to fetch articles" });
+    }
+  });
+
+  app.get("/api/blog/articles/featured", async (req, res) => {
+    try {
+      const articles = await storage.getFeaturedBlogArticles(5);
+      res.json(articles);
+    } catch (error) {
+      console.error("Error fetching featured articles:", error);
+      res.status(500).json({ message: "Failed to fetch featured articles" });
+    }
+  });
+
+  app.get("/api/blog/articles/:slug", async (req, res) => {
+    try {
+      const article = await storage.getBlogArticleBySlug(req.params.slug);
+      if (!article) {
+        return res.status(404).json({ message: "Article not found" });
+      }
+      if (article.status !== 'published') {
+        return res.status(404).json({ message: "Article not found" });
+      }
+      await storage.incrementBlogArticleViewCount(article.id);
+      const tags = await storage.getArticleTags(article.id);
+      const category = article.categoryId ? await storage.getBlogCategoryById(article.categoryId) : null;
+      const related = await storage.getRelatedBlogArticles(article.id, article.categoryId, 4);
+      const comments = await storage.getArticleComments(article.id);
+      res.json({ article, tags, category, related, comments });
+    } catch (error) {
+      console.error("Error fetching article:", error);
+      res.status(500).json({ message: "Failed to fetch article" });
+    }
+  });
+
+  app.get("/api/blog/categories", async (req, res) => {
+    try {
+      const categories = await storage.getAllBlogCategories();
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      res.status(500).json({ message: "Failed to fetch categories" });
+    }
+  });
+
+  app.get("/api/blog/categories/:slug", async (req, res) => {
+    try {
+      const category = await storage.getBlogCategoryBySlug(req.params.slug);
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      const { limit, offset } = req.query;
+      const result = await storage.getPublishedBlogArticles({
+        limit: limit ? parseInt(limit as string) : 10,
+        offset: offset ? parseInt(offset as string) : 0,
+        categorySlug: req.params.slug,
+      });
+      res.json({ category, ...result });
+    } catch (error) {
+      console.error("Error fetching category:", error);
+      res.status(500).json({ message: "Failed to fetch category" });
+    }
+  });
+
+  app.get("/api/blog/tags", async (req, res) => {
+    try {
+      const tags = await storage.getAllBlogTags();
+      res.json(tags);
+    } catch (error) {
+      console.error("Error fetching tags:", error);
+      res.status(500).json({ message: "Failed to fetch tags" });
+    }
+  });
+
+  app.get("/api/blog/tags/:slug", async (req, res) => {
+    try {
+      const tag = await storage.getBlogTagBySlug(req.params.slug);
+      if (!tag) {
+        return res.status(404).json({ message: "Tag not found" });
+      }
+      const { limit, offset } = req.query;
+      const result = await storage.getArticlesByTag(
+        req.params.slug,
+        limit ? parseInt(limit as string) : 10,
+        offset ? parseInt(offset as string) : 0
+      );
+      res.json({ tag, ...result });
+    } catch (error) {
+      console.error("Error fetching tag:", error);
+      res.status(500).json({ message: "Failed to fetch tag" });
+    }
+  });
+
+  // Blog comments (authenticated)
+  app.post("/api/blog/articles/:slug/comments", isAuthenticated, securityMiddleware.formRateLimiter, async (req: any, res) => {
+    try {
+      const article = await storage.getBlogArticleBySlug(req.params.slug);
+      if (!article || article.status !== 'published') {
+        return res.status(404).json({ message: "Article not found" });
+      }
+      if (!article.allowComments) {
+        return res.status(403).json({ message: "Comments are disabled for this article" });
+      }
+      const user = req.user;
+      const comment = await storage.createBlogComment({
+        articleId: article.id,
+        userId: user.id,
+        userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Anonymous',
+        userAvatarUrl: user.profileImageUrl,
+        content: req.body.content,
+        parentId: req.body.parentId || null,
+        status: 'approved',
+      });
+      res.status(201).json(comment);
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      res.status(500).json({ message: "Failed to create comment" });
+    }
+  });
+
+  app.delete("/api/blog/comments/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const comment = await storage.getBlogCommentById(id);
+      if (!comment) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+      if (comment.userId !== req.user.id && !req.user.isAdmin) {
+        return res.status(403).json({ message: "Not authorized to delete this comment" });
+      }
+      await storage.deleteBlogComment(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      res.status(500).json({ message: "Failed to delete comment" });
+    }
+  });
+
+  // Admin blog routes
+  app.get("/api/admin/blog/articles", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { status } = req.query;
+      const articles = await storage.getAllBlogArticles(status as string);
+      res.json(articles);
+    } catch (error) {
+      console.error("Error fetching admin articles:", error);
+      res.status(500).json({ message: "Failed to fetch articles" });
+    }
+  });
+
+  app.get("/api/admin/blog/articles/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const article = await storage.getBlogArticleById(id);
+      if (!article) {
+        return res.status(404).json({ message: "Article not found" });
+      }
+      const tags = await storage.getArticleTags(id);
+      res.json({ article, tags });
+    } catch (error) {
+      console.error("Error fetching article:", error);
+      res.status(500).json({ message: "Failed to fetch article" });
+    }
+  });
+
+  app.post("/api/admin/blog/articles", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const user = req.user;
+      const { tagIds, ...articleData } = req.body;
+      
+      const readingTime = Math.ceil((articleData.content?.length || 0) / 1000);
+      
+      const article = await storage.createBlogArticle({
+        ...articleData,
+        authorId: user.id,
+        authorName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Admin',
+        authorAvatarUrl: user.profileImageUrl,
+        readingTimeMinutes: readingTime,
+        publishedAt: articleData.status === 'published' ? new Date() : null,
+      });
+      
+      if (tagIds && tagIds.length > 0) {
+        await storage.setArticleTags(article.id, tagIds);
+      }
+      
+      res.status(201).json(article);
+    } catch (error) {
+      console.error("Error creating article:", error);
+      res.status(500).json({ message: "Failed to create article" });
+    }
+  });
+
+  app.patch("/api/admin/blog/articles/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { tagIds, ...articleData } = req.body;
+      
+      const existing = await storage.getBlogArticleById(id);
+      if (!existing) {
+        return res.status(404).json({ message: "Article not found" });
+      }
+      
+      if (articleData.status === 'published' && existing.status !== 'published') {
+        articleData.publishedAt = new Date();
+      }
+      
+      if (articleData.content) {
+        articleData.readingTimeMinutes = Math.ceil(articleData.content.length / 1000);
+      }
+      
+      const article = await storage.updateBlogArticle(id, articleData);
+      
+      if (tagIds !== undefined) {
+        await storage.setArticleTags(id, tagIds);
+      }
+      
+      res.json(article);
+    } catch (error) {
+      console.error("Error updating article:", error);
+      res.status(500).json({ message: "Failed to update article" });
+    }
+  });
+
+  app.delete("/api/admin/blog/articles/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteBlogArticle(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting article:", error);
+      res.status(500).json({ message: "Failed to delete article" });
+    }
+  });
+
+  // Admin blog categories
+  app.post("/api/admin/blog/categories", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const category = await storage.createBlogCategory(req.body);
+      res.status(201).json(category);
+    } catch (error) {
+      console.error("Error creating category:", error);
+      res.status(500).json({ message: "Failed to create category" });
+    }
+  });
+
+  app.patch("/api/admin/blog/categories/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const category = await storage.updateBlogCategory(id, req.body);
+      res.json(category);
+    } catch (error) {
+      console.error("Error updating category:", error);
+      res.status(500).json({ message: "Failed to update category" });
+    }
+  });
+
+  app.delete("/api/admin/blog/categories/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteBlogCategory(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      res.status(500).json({ message: "Failed to delete category" });
+    }
+  });
+
+  // Admin blog tags
+  app.post("/api/admin/blog/tags", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const tag = await storage.createBlogTag(req.body);
+      res.status(201).json(tag);
+    } catch (error) {
+      console.error("Error creating tag:", error);
+      res.status(500).json({ message: "Failed to create tag" });
+    }
+  });
+
+  app.patch("/api/admin/blog/tags/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tag = await storage.updateBlogTag(id, req.body);
+      res.json(tag);
+    } catch (error) {
+      console.error("Error updating tag:", error);
+      res.status(500).json({ message: "Failed to update tag" });
+    }
+  });
+
+  app.delete("/api/admin/blog/tags/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteBlogTag(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting tag:", error);
+      res.status(500).json({ message: "Failed to delete tag" });
+    }
+  });
+
+  // Admin blog comments moderation
+  app.get("/api/admin/blog/comments", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { status } = req.query;
+      const comments = await storage.getAllBlogComments(status as string);
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      res.status(500).json({ message: "Failed to fetch comments" });
+    }
+  });
+
+  app.patch("/api/admin/blog/comments/:id/moderate", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status } = req.body;
+      const comment = await storage.moderateBlogComment(id, status);
+      res.json(comment);
+    } catch (error) {
+      console.error("Error moderating comment:", error);
+      res.status(500).json({ message: "Failed to moderate comment" });
+    }
+  });
+
   app.get("/robots.txt", (req, res) => {
     const baseUrl = `https://${req.get("host")}`;
     res.type("text/plain");
@@ -2219,6 +2561,7 @@ Sitemap: ${baseUrl}/sitemap.xml
       const staticPages = [
         { url: "/", priority: "1.0", changefreq: "daily" },
         { url: "/search", priority: "0.9", changefreq: "daily" },
+        { url: "/blog", priority: "0.9", changefreq: "daily" },
         { url: "/about", priority: "0.7", changefreq: "monthly" },
         { url: "/guidelines", priority: "0.5", changefreq: "monthly" },
         { url: "/trust-safety", priority: "0.5", changefreq: "monthly" },

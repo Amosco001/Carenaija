@@ -1869,31 +1869,37 @@ export class DatabaseStorage implements IStorage {
     articleType?: string;
     search?: string;
   } = {}): Promise<{ articles: BlogArticle[]; total: number }> {
-    const { limit = 10, offset = 0, categorySlug, tagSlug, articleType, search } = params;
+    const { limit = 10, offset = 0, categorySlug, articleType, search } = params;
     
-    let query = db.select().from(blogArticles).where(eq(blogArticles.status, 'published'));
+    const conditions: any[] = [eq(blogArticles.status, 'published')];
     
     if (categorySlug) {
       const category = await this.getBlogCategoryBySlug(categorySlug);
       if (category) {
-        query = query.where(eq(blogArticles.categoryId, category.id)) as typeof query;
+        conditions.push(eq(blogArticles.categoryId, category.id));
       }
     }
     
     if (articleType) {
-      query = query.where(eq(blogArticles.articleType, articleType)) as typeof query;
+      conditions.push(eq(blogArticles.articleType, articleType));
     }
     
     if (search) {
-      query = query.where(or(
+      conditions.push(or(
         ilike(blogArticles.title, `%${search}%`),
         ilike(blogArticles.excerpt, `%${search}%`),
         ilike(blogArticles.content, `%${search}%`)
-      )) as typeof query;
+      ));
     }
     
-    const [countResult] = await db.select({ count: count() }).from(blogArticles).where(eq(blogArticles.status, 'published'));
-    const articles = await query.orderBy(desc(blogArticles.publishedAt)).limit(limit).offset(offset);
+    const whereClause = conditions.length === 1 ? conditions[0] : and(...conditions);
+    
+    const [countResult] = await db.select({ count: count() }).from(blogArticles).where(whereClause);
+    const articles = await db.select().from(blogArticles)
+      .where(whereClause)
+      .orderBy(desc(blogArticles.publishedAt))
+      .limit(limit)
+      .offset(offset);
     
     return { articles, total: countResult?.count || 0 };
   }
