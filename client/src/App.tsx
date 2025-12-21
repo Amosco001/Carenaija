@@ -35,6 +35,8 @@ const BlogPage = lazy(() => import("@/pages/blog"));
 const BlogArticlePage = lazy(() => import("@/pages/blog-article"));
 const HelpCenter = lazy(() => import("@/pages/help-center"));
 const Leaderboard = lazy(() => import("@/pages/leaderboard"));
+const HealthHub = lazy(() => import("@/pages/health-hub"));
+const HealthArticlePage = lazy(() => import("@/pages/health-article"));
 
 function PageLoader() {
   return (
@@ -62,6 +64,8 @@ function Router() {
           <Route path="/compare" component={ComparePage} />
           <Route path="/blog" component={BlogPage} />
           <Route path="/blog/:slug" component={BlogArticlePage} />
+          <Route path="/health" component={HealthHub} />
+          <Route path="/health/article/:slug" component={HealthArticlePage} />
           <Route path="/help" component={HelpCenter} />
           <Route path="/leaderboard" component={Leaderboard} />
           <Route path="/guidelines" component={Guidelines} />

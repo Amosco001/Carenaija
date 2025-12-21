@@ -289,7 +289,7 @@ export default function HealthHub() {
     enabled: searchQuery.length >= 3,
   });
 
-  const { data: healthTip } = useQuery({
+  const { data: healthTip } = useQuery<{ title: string; content: string } | null>({
     queryKey: ["/api/health/tips/today"],
   });
 
@@ -301,10 +301,10 @@ export default function HealthHub() {
   return (
     <>
       <SEOHead
-        title="Health Education Hub - CareNaija"
+        title="Health Education Hub"
         description="Explore trusted health information, disease prevention guides, and wellness tips tailored for Nigerians. Learn about common diseases, symptoms, and when to see a doctor."
-        url="/health"
-        type="website"
+        canonicalUrl="/health"
+        ogType="website"
       />
 
       <div className="min-h-screen bg-gradient-to-b from-green-50/50 to-white dark:from-green-950/10 dark:to-background">
@@ -346,7 +346,7 @@ export default function HealthHub() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-green-700 dark:text-green-300 mb-1">Health Tip of the Day</h3>
-                    <p className="text-muted-foreground">{(healthTip as any)?.content || "Stay hydrated! Drink at least 8 glasses of water daily for optimal health."}</p>
+                    <p className="text-muted-foreground">{healthTip?.content || "Stay hydrated! Drink at least 8 glasses of water daily for optimal health."}</p>
                   </div>
                 </div>
               </CardContent>
