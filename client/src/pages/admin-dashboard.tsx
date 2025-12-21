@@ -30,7 +30,11 @@ import {
   ChevronRight,
   AlertTriangle,
   Mail,
-  History
+  History,
+  BookOpen,
+  Tag,
+  FolderOpen,
+  Send
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -1253,6 +1257,426 @@ function ActivityLogsTab() {
   );
 }
 
+function BlogTab() {
+  const queryClient = useQueryClient();
+  const [editArticle, setEditArticle] = useState<any>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [activeSubTab, setActiveSubTab] = useState("articles");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const articlesUrl = `/api/admin/blog/articles?search=${encodeURIComponent(searchQuery)}&status=${statusFilter}`;
+  const { data: articlesData, isLoading } = useQuery<{ articles: any[]; total: number }>({
+    queryKey: [articlesUrl],
+  });
+
+  const { data: categories = [] } = useQuery<any[]>({
+    queryKey: ["/api/blog/categories"],
+  });
+
+  const { data: tags = [] } = useQuery<any[]>({
+    queryKey: ["/api/blog/tags"],
+  });
+
+  const { data: commentsData } = useQuery<{ comments: any[] }>({
+    queryKey: ["/api/admin/blog/comments"],
+    enabled: activeSubTab === "comments",
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await fetch("/api/admin/blog/articles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to create");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success("Article created");
+      setIsCreating(false);
+      queryClient.invalidateQueries({ predicate: (query) => Array.isArray(query.queryKey) && query.queryKey.some(k => String(k).includes("/api/admin/blog/articles")) });
+    },
+    onError: () => toast.error("Failed to create article"),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const res = await fetch(`/api/admin/blog/articles/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to update");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success("Article updated");
+      setEditArticle(null);
+      queryClient.invalidateQueries({ predicate: (query) => Array.isArray(query.queryKey) && query.queryKey.some(k => String(k).includes("/api/admin/blog/articles")) });
+    },
+    onError: () => toast.error("Failed to update article"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/admin/blog/articles/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success("Article deleted");
+      queryClient.invalidateQueries({ predicate: (query) => Array.isArray(query.queryKey) && query.queryKey.some(k => String(k).includes("/api/admin/blog/articles")) });
+    },
+    onError: () => toast.error("Failed to delete article"),
+  });
+
+  const moderateCommentMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: string }) => {
+      const res = await fetch(`/api/admin/blog/comments/${id}/moderate`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to moderate");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success("Comment moderated");
+      queryClient.invalidateQueries({ predicate: (query) => Array.isArray(query.queryKey) && query.queryKey.some(k => String(k).includes("/api/admin/blog/comments")) });
+    },
+    onError: () => toast.error("Failed to moderate comment"),
+  });
+
+  const articles = articlesData?.articles || [];
+  const comments = commentsData?.comments || [];
+
+  return (
+    <div className="space-y-4">
+      <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
+        <div className="flex items-center justify-between mb-4">
+          <TabsList>
+            <TabsTrigger value="articles" className="flex items-center gap-2" data-testid="tab-blog-articles">
+              <BookOpen className="w-4 h-4" /> Articles
+            </TabsTrigger>
+            <TabsTrigger value="categories" className="flex items-center gap-2" data-testid="tab-blog-categories">
+              <FolderOpen className="w-4 h-4" /> Categories ({categories.length})
+            </TabsTrigger>
+            <TabsTrigger value="tags" className="flex items-center gap-2" data-testid="tab-blog-tags">
+              <Tag className="w-4 h-4" /> Tags ({tags.length})
+            </TabsTrigger>
+            <TabsTrigger value="comments" className="flex items-center gap-2" data-testid="tab-blog-comments">
+              <MessageSquare className="w-4 h-4" /> Comments
+            </TabsTrigger>
+          </TabsList>
+          {activeSubTab === "articles" && (
+            <Button onClick={() => setIsCreating(true)} data-testid="button-create-article">
+              <Plus className="w-4 h-4 mr-2" /> New Article
+            </Button>
+          )}
+        </div>
+
+        <TabsContent value="articles">
+          <div className="flex gap-4 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input
+                placeholder="Search articles..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+                data-testid="input-search-articles"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40" data-testid="select-status-filter">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="published">Published</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <RefreshCcw className="w-8 h-8 animate-spin text-emerald-600" />
+            </div>
+          ) : articles.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <BookOpen className="w-12 h-12 text-slate-300 mb-4" />
+                <h3 className="text-lg font-semibold">No articles yet</h3>
+                <p className="text-slate-500 mb-4">Create your first blog article to share with readers.</p>
+                <Button onClick={() => setIsCreating(true)} data-testid="button-create-first-article">
+                  <Plus className="w-4 h-4 mr-2" /> Create Article
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {articles.map((article) => (
+                <Card key={article.id} data-testid={`article-card-${article.id}`}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <CardTitle className="text-lg">{article.title}</CardTitle>
+                        <CardDescription className="line-clamp-2">{article.excerpt}</CardDescription>
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                          <span>{article.authorName}</span>
+                          <span>·</span>
+                          <span>{article.readingTimeMinutes} min read</span>
+                          <span>·</span>
+                          <span>{article.viewCount || 0} views</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={article.status === "published" ? "default" : "secondary"}>
+                          {article.status}
+                        </Badge>
+                        <Link href={`/blog/${article.slug}`}>
+                          <Button size="sm" variant="ghost" data-testid={`button-preview-${article.id}`}>
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </Link>
+                        <Button size="sm" variant="ghost" onClick={() => setEditArticle(article)} data-testid={`button-edit-${article.id}`}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-red-600"
+                          onClick={() => {
+                            if (confirm("Delete this article?")) {
+                              deleteMutation.mutate(article.id);
+                            }
+                          }}
+                          data-testid={`button-delete-${article.id}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="categories">
+          <Card>
+            <CardHeader>
+              <CardTitle>Blog Categories</CardTitle>
+              <CardDescription>Organize your articles with categories</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {categories.map((cat: any) => (
+                  <div key={cat.id} className="flex items-center justify-between p-3 border rounded-lg" data-testid={`category-item-${cat.id}`}>
+                    <div>
+                      <span className="font-medium">{cat.name}</span>
+                      <span className="text-sm text-slate-500 ml-2">/{cat.slug}</span>
+                    </div>
+                    <Badge variant="outline">{cat.articleCount || 0} articles</Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="tags">
+          <Card>
+            <CardHeader>
+              <CardTitle>Blog Tags</CardTitle>
+              <CardDescription>Tag articles for easy discovery</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {tags.map((tag: any) => (
+                  <Badge key={tag.id} variant="outline" className="py-2 px-3" data-testid={`tag-item-${tag.id}`}>
+                    {tag.name}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="comments">
+          <Card>
+            <CardHeader>
+              <CardTitle>Comment Moderation</CardTitle>
+              <CardDescription>Review and moderate blog comments</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {comments.length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  No comments to moderate
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {comments.map((comment: any) => (
+                    <div key={comment.id} className="p-4 border rounded-lg" data-testid={`comment-item-${comment.id}`}>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-medium">{comment.authorName}</span>
+                            <StatusBadge status={comment.status} />
+                          </div>
+                          <p className="text-sm text-slate-600">{comment.content}</p>
+                          <p className="text-xs text-slate-500 mt-2">
+                            on "{comment.articleTitle}" · {comment.createdAt ? format(new Date(comment.createdAt), "MMM d, yyyy") : "N/A"}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => moderateCommentMutation.mutate({ id: comment.id, status: "approved" })}
+                            disabled={comment.status === "approved"}
+                            data-testid={`button-approve-comment-${comment.id}`}
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-red-600"
+                            onClick={() => moderateCommentMutation.mutate({ id: comment.id, status: "rejected" })}
+                            disabled={comment.status === "rejected"}
+                            data-testid={`button-reject-comment-${comment.id}`}
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      <Dialog open={isCreating || !!editArticle} onOpenChange={() => { setIsCreating(false); setEditArticle(null); }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>{editArticle ? "Edit Article" : "Create Article"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            const data = {
+              title: formData.get("title"),
+              slug: formData.get("slug"),
+              excerpt: formData.get("excerpt"),
+              content: formData.get("content"),
+              categoryId: formData.get("categoryId") ? Number(formData.get("categoryId")) : null,
+              status: formData.get("status"),
+              isFeatured: formData.get("isFeatured") === "on",
+              metaTitle: formData.get("metaTitle") || null,
+              metaDescription: formData.get("metaDescription") || null,
+            };
+            if (editArticle) {
+              updateMutation.mutate({ id: editArticle.id, data });
+            } else {
+              createMutation.mutate(data);
+            }
+          }}>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Title</Label>
+                  <Input name="title" defaultValue={editArticle?.title || ""} placeholder="Article title" required data-testid="input-article-title" />
+                </div>
+                <div>
+                  <Label>Slug</Label>
+                  <Input name="slug" defaultValue={editArticle?.slug || ""} placeholder="article-url-slug" required data-testid="input-article-slug" />
+                </div>
+              </div>
+              <div>
+                <Label>Excerpt</Label>
+                <Textarea name="excerpt" defaultValue={editArticle?.excerpt || ""} placeholder="Brief summary of the article..." rows={2} data-testid="input-article-excerpt" />
+              </div>
+              <div>
+                <Label>Content (Markdown)</Label>
+                <Textarea name="content" defaultValue={editArticle?.content || ""} placeholder="Write your article content in Markdown..." rows={12} className="font-mono text-sm" required data-testid="input-article-content" />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label>Category</Label>
+                  <Select name="categoryId" defaultValue={editArticle?.categoryId?.toString() || ""}>
+                    <SelectTrigger data-testid="select-article-category">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat: any) => (
+                        <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Status</Label>
+                  <Select name="status" defaultValue={editArticle?.status || "draft"}>
+                    <SelectTrigger data-testid="select-article-status">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="published">Published</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-end">
+                  <Label className="flex items-center gap-2 cursor-pointer">
+                    <Checkbox name="isFeatured" defaultChecked={editArticle?.isFeatured || false} data-testid="checkbox-featured" />
+                    Featured Article
+                  </Label>
+                </div>
+              </div>
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-3">SEO Settings</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Meta Title</Label>
+                    <Input name="metaTitle" defaultValue={editArticle?.metaTitle || ""} placeholder="SEO title" data-testid="input-meta-title" />
+                  </div>
+                  <div>
+                    <Label>Meta Description</Label>
+                    <Input name="metaDescription" defaultValue={editArticle?.metaDescription || ""} placeholder="SEO description" data-testid="input-meta-description" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => { setIsCreating(false); setEditArticle(null); }} data-testid="button-cancel-article">
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending} data-testid="button-save-article">
+                <Send className="w-4 h-4 mr-2" />
+                {editArticle ? "Update Article" : "Create Article"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const { user, isLoading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
@@ -1329,6 +1753,10 @@ export default function AdminDashboard() {
               <Users className="w-4 h-4" />
               Users
             </TabsTrigger>
+            <TabsTrigger value="blog" className="flex items-center gap-2" data-testid="tab-blog">
+              <BookOpen className="w-4 h-4" />
+              Blog
+            </TabsTrigger>
             <TabsTrigger value="content" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               Content
@@ -1357,6 +1785,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="users">
             <UsersTab />
+          </TabsContent>
+
+          <TabsContent value="blog">
+            <BlogTab />
           </TabsContent>
 
           <TabsContent value="content">

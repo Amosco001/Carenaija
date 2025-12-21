@@ -429,7 +429,7 @@ export default function BlogArticlePage() {
             <div className="container mx-auto px-4">
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-2xl font-bold">Related Articles</h2>
-                <Link href="/blog">
+                <Link href="/blog" data-testid="link-view-all-articles">
                   <Button variant="ghost" data-testid="view-all-articles">
                     View All
                     <ArrowRight className="ml-2 h-4 w-4" />
