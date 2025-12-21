@@ -93,6 +93,22 @@ export function useGeolocation() {
   }, []);
 
   const requestLocation = useCallback((forceRefresh = false) => {
+    // Check if running in secure context (HTTPS or localhost)
+    const isSecureContext = window.isSecureContext || 
+      window.location.protocol === 'https:' || 
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1';
+    
+    if (!isSecureContext) {
+      setState(prev => ({
+        ...prev,
+        error: "Location requires a secure connection (HTTPS). Please access the site via HTTPS or the published app URL.",
+        permissionState: "unavailable",
+        isLoading: false,
+      }));
+      return;
+    }
+    
     if (!navigator.geolocation) {
       setState(prev => ({
         ...prev,
@@ -140,12 +156,12 @@ export function useGeolocation() {
         
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            errorMessage = "Location access was denied. Please enable location permissions in your browser settings.";
+            errorMessage = "Location access was denied. Please enable location permissions in your browser settings, or try using the published app URL.";
             permissionState = "denied";
             clearLocationCache();
             break;
           case error.POSITION_UNAVAILABLE:
-            errorMessage = "Location information is unavailable. Please try again.";
+            errorMessage = "Location information is unavailable. Please try again or search for hospitals by state/city instead.";
             break;
           case error.TIMEOUT:
             errorMessage = "Location request timed out. Please try again.";
