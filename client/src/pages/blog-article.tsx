@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { 
@@ -258,6 +258,79 @@ export default function BlogArticlePage() {
 
   const { article, category, tags, related, comments } = data;
   const currentUrl = typeof window !== "undefined" ? window.location.href : "";
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+
+  useEffect(() => {
+    if (article) {
+      const siteBaseUrl = baseUrl || "https://carenaija.com";
+      const pageTitle = article.metaTitle || `${article.title} | CareNaija Blog`;
+      const pageDesc = article.metaDescription || article.excerpt || "";
+      
+      document.title = pageTitle;
+      
+      let metaDesc = document.querySelector('meta[name="description"]') as HTMLMetaElement;
+      if (!metaDesc) {
+        metaDesc = document.createElement("meta");
+        metaDesc.name = "description";
+        document.head.appendChild(metaDesc);
+      }
+      metaDesc.content = pageDesc;
+
+      let ogTitle = document.querySelector('meta[property="og:title"]') as HTMLMetaElement;
+      if (ogTitle) ogTitle.content = pageTitle;
+      
+      let ogDesc = document.querySelector('meta[property="og:description"]') as HTMLMetaElement;
+      if (ogDesc) ogDesc.content = pageDesc;
+      
+      if (article.coverImageUrl) {
+        let ogImage = document.querySelector('meta[property="og:image"]') as HTMLMetaElement;
+        if (ogImage) ogImage.content = article.coverImageUrl;
+      }
+
+      const structuredData = {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": article.title,
+        "description": article.metaDescription || article.excerpt || "",
+        "image": article.coverImageUrl ? [article.coverImageUrl] : [],
+        "datePublished": article.publishedAt ? new Date(article.publishedAt).toISOString() : undefined,
+        "dateModified": article.updatedAt ? new Date(article.updatedAt).toISOString() : article.publishedAt ? new Date(article.publishedAt).toISOString() : undefined,
+        "author": {
+          "@type": "Person",
+          "name": article.authorName || "CareNaija"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "CareNaija",
+          "logo": {
+            "@type": "ImageObject",
+            "url": `${siteBaseUrl}/favicon.ico`
+          }
+        },
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": currentUrl || `${siteBaseUrl}/blog/${article.slug}`
+        },
+        "articleSection": category?.name,
+        "keywords": tags?.map(t => t.name).join(", ")
+      };
+
+      let existingScript = document.querySelector('script#article-structured-data');
+      if (existingScript) {
+        existingScript.remove();
+      }
+      const script = document.createElement("script");
+      script.id = "article-structured-data";
+      script.type = "application/ld+json";
+      script.textContent = JSON.stringify(structuredData);
+      document.head.appendChild(script);
+
+      return () => {
+        const scriptEl = document.querySelector('script#article-structured-data');
+        if (scriptEl) scriptEl.remove();
+      };
+    }
+  }, [article, category, tags, baseUrl, currentUrl]);
 
   return (
     <div className="flex-1 bg-background">

@@ -2597,6 +2597,33 @@ Sitemap: ${baseUrl}/sitemap.xml
 `;
       }
 
+      const blogArticles = await storage.getAllBlogArticles("published");
+      for (const article of blogArticles) {
+        const lastmod = article.updatedAt 
+          ? new Date(article.updatedAt).toISOString().split("T")[0]
+          : article.publishedAt
+          ? new Date(article.publishedAt).toISOString().split("T")[0]
+          : today;
+        xml += `  <url>
+    <loc>${baseUrl}/blog/${article.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+`;
+      }
+
+      const categories = await storage.getAllBlogCategories();
+      for (const category of categories) {
+        xml += `  <url>
+    <loc>${baseUrl}/blog/category/${category.slug}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+`;
+      }
+
       xml += `</urlset>`;
 
       res.type("application/xml");
