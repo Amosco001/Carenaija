@@ -27,6 +27,8 @@ import Profile from "@/pages/profile";
 import AdminDashboard from "@/pages/admin-dashboard";
 import AnalyticsDashboard from "@/pages/analytics-dashboard";
 import ComparePage from "@/pages/compare";
+import BlogPage from "@/pages/blog";
+import BlogArticlePage from "@/pages/blog-article";
 
 function Router() {
   return (
@@ -43,6 +45,8 @@ function Router() {
         <Route path="/admin" component={AdminDashboard} />
         <Route path="/admin/analytics" component={AnalyticsDashboard} />
         <Route path="/compare" component={ComparePage} />
+        <Route path="/blog" component={BlogPage} />
+        <Route path="/blog/:slug" component={BlogArticlePage} />
         <Route path="/guidelines" component={Guidelines} />
         <Route path="/trust-safety" component={TrustSafety} />
         <Route path="/about" component={About} />
