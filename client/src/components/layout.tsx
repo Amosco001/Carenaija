@@ -175,7 +175,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       <footer className="bg-slate-900 text-slate-300 py-12">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-5 gap-8">
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <Building2 className="h-6 w-6 text-primary" />
@@ -201,9 +201,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <h3 className="font-semibold text-white mb-4">Community</h3>
               <ul className="space-y-2 text-sm">
                 <li><Link href="/about" className="hover:text-white transition-colors">About Us</Link></li>
+                <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
                 <li><Link href="/guidelines" className="hover:text-white transition-colors">Guidelines</Link></li>
                 <li><Link href="/trust-safety" className="hover:text-white transition-colors">Trust & Safety</Link></li>
-                <li><Link href="/support" className="hover:text-white transition-colors">Support</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-white mb-4">Support</h3>
+              <ul className="space-y-2 text-sm">
+                <li><Link href="/help" className="hover:text-white transition-colors">Help Center</Link></li>
+                <li><Link href="/support" className="hover:text-white transition-colors">Contact Us</Link></li>
               </ul>
             </div>
 

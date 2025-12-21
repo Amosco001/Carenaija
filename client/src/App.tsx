@@ -29,6 +29,7 @@ import AnalyticsDashboard from "@/pages/analytics-dashboard";
 import ComparePage from "@/pages/compare";
 import BlogPage from "@/pages/blog";
 import BlogArticlePage from "@/pages/blog-article";
+import HelpCenter from "@/pages/help-center";
 
 function Router() {
   return (
@@ -47,6 +48,7 @@ function Router() {
         <Route path="/compare" component={ComparePage} />
         <Route path="/blog" component={BlogPage} />
         <Route path="/blog/:slug" component={BlogArticlePage} />
+        <Route path="/help" component={HelpCenter} />
         <Route path="/guidelines" component={Guidelines} />
         <Route path="/trust-safety" component={TrustSafety} />
         <Route path="/about" component={About} />
