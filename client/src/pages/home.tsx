@@ -1,19 +1,21 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, MapPin, Star, Stethoscope, Briefcase, Heart, Baby, Bone, Brain, Eye, ShieldCheck, ChevronRight, ChevronLeft, Loader2, Users, Building2, MessageSquare, Quote } from "lucide-react";
+import { Search, MapPin, Star, Stethoscope, Briefcase, Heart, Baby, Bone, Brain, Eye, ShieldCheck, ChevronRight, ChevronLeft, Loader2, Users, Building2, MessageSquare, Quote, CheckCircle, Award, Lock, Clock } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState, useEffect, useCallback } from "react";
-import { useHospitals, useAllPatientReviews } from "@/hooks/useHospitals";
+import { useHospitals, useAllPatientReviews, useTrustStats, useTestimonials } from "@/hooks/useHospitals";
 import { Link } from "wouter";
 import generatedHeroImage from "@assets/generated_images/modern_nigerian_hospital_exterior_with_friendly_medical_staff_interaction.png";
 import luthHospitalImage from "@assets/generated_images/luth_hospital_lagos_nigeria.png";
 import neuropsychHospitalImage from "@assets/generated_images/neuropsychiatric_hospital_yaba.png";
 import orthoHospitalImage from "@assets/generated_images/orthopaedic_hospital_igbobi.png";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import useEmblaCarousel from "embla-carousel-react";
 import { SEOHead } from "@/components/seo-head";
 import { SkeletonHospitalCard } from "@/components/skeleton-card";
 import { HospitalCard } from "@/components/hospital-card";
+import { formatDistanceToNow } from "date-fns";
 
 const hospitalImages = [luthHospitalImage, neuropsychHospitalImage, orthoHospitalImage];
 
@@ -23,6 +25,8 @@ export default function Home() {
   const [locationTerm, setLocationTerm] = useState("");
   const { data: hospitals = [], isLoading } = useHospitals();
   const { data: reviews = [], isLoading: reviewsLoading } = useAllPatientReviews();
+  const { data: trustStats } = useTrustStats();
+  const { data: testimonials = [] } = useTestimonials();
 
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: "start" });
   const [canScrollPrev, setCanScrollPrev] = useState(false);
@@ -156,34 +160,41 @@ export default function Home() {
       {/* Trust Indicators with Stats */}
       <section className="py-8 bg-white border-b border-slate-100">
         <div className="container px-4 mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 md:gap-4">
             <div className="text-center" data-testid="stat-hospitals">
               <div className="flex justify-center mb-2">
                 <Building2 className="w-8 h-8 text-emerald-600" />
               </div>
-              <div className="text-2xl md:text-3xl font-bold text-slate-900">{hospitals.length.toLocaleString()}+</div>
+              <div className="text-2xl md:text-3xl font-bold text-slate-900">{(trustStats?.totalHospitals || hospitals.length).toLocaleString()}+</div>
               <div className="text-sm text-slate-500">Hospitals Listed</div>
             </div>
             <div className="text-center" data-testid="stat-reviews">
               <div className="flex justify-center mb-2">
                 <MessageSquare className="w-8 h-8 text-emerald-600" />
               </div>
-              <div className="text-2xl md:text-3xl font-bold text-slate-900">{totalReviews.toLocaleString()}+</div>
+              <div className="text-2xl md:text-3xl font-bold text-slate-900">{(trustStats?.totalReviews || totalReviews).toLocaleString()}+</div>
               <div className="text-sm text-slate-500">Patient Reviews</div>
+            </div>
+            <div className="text-center" data-testid="stat-verified-reviews">
+              <div className="flex justify-center mb-2">
+                <CheckCircle className="w-8 h-8 text-emerald-600" />
+              </div>
+              <div className="text-2xl md:text-3xl font-bold text-slate-900">{(trustStats?.verifiedReviews || 0).toLocaleString()}</div>
+              <div className="text-sm text-slate-500">Verified Reviews</div>
             </div>
             <div className="text-center" data-testid="stat-verified">
               <div className="flex justify-center mb-2">
                 <ShieldCheck className="w-8 h-8 text-emerald-600" />
               </div>
-              <div className="text-2xl md:text-3xl font-bold text-slate-900">{verifiedHospitals || "100"}+</div>
+              <div className="text-2xl md:text-3xl font-bold text-slate-900">{(trustStats?.verifiedHospitals || verifiedHospitals).toLocaleString()}+</div>
               <div className="text-sm text-slate-500">Verified Hospitals</div>
             </div>
             <div className="text-center" data-testid="stat-users">
               <div className="flex justify-center mb-2">
                 <Users className="w-8 h-8 text-emerald-600" />
               </div>
-              <div className="text-2xl md:text-3xl font-bold text-slate-900">10,000+</div>
-              <div className="text-sm text-slate-500">Monthly Visitors</div>
+              <div className="text-2xl md:text-3xl font-bold text-slate-900">{(trustStats?.activeUsersMonth || 0).toLocaleString() || "1,000"}+</div>
+              <div className="text-sm text-slate-500">Active Users This Month</div>
             </div>
           </div>
         </div>
@@ -293,6 +304,8 @@ export default function Home() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {recentReviews.map((review) => {
                 const hospital = hospitals.find(h => h.id === review.hospitalId);
+                const reviewDate = review.createdAt ? new Date(review.createdAt) : null;
+                const recencyText = reviewDate ? formatDistanceToNow(reviewDate, { addSuffix: true }) : null;
                 return (
                   <Card key={review.id} className="bg-white border-slate-200 hover:shadow-md transition-shadow" data-testid={`card-review-${review.id}`}>
                     <CardContent className="p-6">
@@ -303,9 +316,25 @@ export default function Home() {
                           </span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-slate-900 truncate">{review.reviewerName || "Anonymous"}</p>
-                          <div className="flex items-center gap-1 mt-1">
-                            {getRatingStars(review.rating)}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-semibold text-slate-900 truncate">{review.reviewerName || "Anonymous"}</p>
+                            {review.verifiedVisit && (
+                              <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 gap-0.5 text-xs py-0">
+                                <CheckCircle className="w-3 h-3" />
+                                Verified
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <div className="flex items-center gap-0.5">
+                              {getRatingStars(review.rating)}
+                            </div>
+                            {recencyText && (
+                              <span className="text-xs text-slate-400 flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {recencyText}
+                              </span>
+                            )}
                           </div>
                         </div>
                         <Quote className="w-6 h-6 text-emerald-200 flex-shrink-0" />
@@ -314,13 +343,18 @@ export default function Home() {
                       <p className="text-slate-600 text-sm line-clamp-3 mb-4">
                         {review.reviewText}
                       </p>
-                      
-                      {hospital && (
-                        <Link href={`/hospital/${hospital.id}`} className="inline-flex items-center text-sm text-emerald-700 hover:text-emerald-800 font-medium">
-                          <MapPin className="w-3 h-3 mr-1" />
-                          {hospital.name}
-                        </Link>
-                      )}
+
+                      <div className="flex items-center justify-between">
+                        {hospital && (
+                          <Link href={`/hospital/${hospital.id}`} className="inline-flex items-center text-sm text-emerald-700 hover:text-emerald-800 font-medium">
+                            <MapPin className="w-3 h-3 mr-1" />
+                            {hospital.name}
+                          </Link>
+                        )}
+                        {review.helpfulCount > 0 && (
+                          <span className="text-xs text-slate-400">{review.helpfulCount} found helpful</span>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 );
@@ -382,6 +416,71 @@ export default function Home() {
               <p className="text-slate-600 leading-relaxed">
                 Healthcare workers share workplace experiences, helping you understand hospital culture and standards.
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      {testimonials.length > 0 && (
+        <section className="py-16 bg-slate-50">
+          <div className="container px-4 mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4">What Our Users Say</h2>
+              <p className="text-slate-600 max-w-2xl mx-auto">Real feedback from Nigerians who use CareNaija to find quality healthcare</p>
+            </div>
+            
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {testimonials.slice(0, 6).map((testimonial) => (
+                <Card key={testimonial.id} className="bg-white border-slate-200" data-testid={`testimonial-${testimonial.id}`}>
+                  <CardContent className="p-6">
+                    <Quote className="w-8 h-8 text-emerald-200 mb-4" />
+                    <p className="text-slate-600 mb-4 italic">"{testimonial.quote}"</p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                        <span className="text-emerald-700 font-semibold">
+                          {testimonial.name.charAt(0)}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-800">{testimonial.name}</p>
+                        <p className="text-sm text-slate-500">
+                          {testimonial.role}{testimonial.location && `, ${testimonial.location}`}
+                        </p>
+                      </div>
+                    </div>
+                    {testimonial.rating && (
+                      <div className="flex items-center gap-0.5 mt-3">
+                        {getRatingStars(testimonial.rating)}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Trust Seals Section */}
+      <section className="py-10 bg-white border-t border-slate-100">
+        <div className="container px-4 mx-auto">
+          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
+            <div className="flex items-center gap-2 text-slate-500">
+              <Lock className="w-5 h-5 text-emerald-600" />
+              <span className="text-sm font-medium">SSL Secured</span>
+            </div>
+            <div className="flex items-center gap-2 text-slate-500">
+              <ShieldCheck className="w-5 h-5 text-emerald-600" />
+              <span className="text-sm font-medium">Verified Platform</span>
+            </div>
+            <div className="flex items-center gap-2 text-slate-500">
+              <CheckCircle className="w-5 h-5 text-emerald-600" />
+              <span className="text-sm font-medium">Trusted by {(trustStats?.activeUsersMonth || 1000).toLocaleString()}+ Users</span>
+            </div>
+            <div className="flex items-center gap-2 text-slate-500">
+              <Award className="w-5 h-5 text-emerald-600" />
+              <span className="text-sm font-medium">Nigerian Healthcare Directory</span>
             </div>
           </div>
         </div>

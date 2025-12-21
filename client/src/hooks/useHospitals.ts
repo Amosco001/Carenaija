@@ -125,3 +125,113 @@ export function useCreateClaimRequest(hospitalId: number) {
     },
   });
 }
+
+// Trust building hooks
+export function useTrustStats() {
+  return useQuery<{
+    totalReviews: number;
+    verifiedReviews: number;
+    totalHospitals: number;
+    verifiedHospitals: number;
+    activeUsersMonth: number;
+  }>({
+    queryKey: ["/api/trust-stats"],
+  });
+}
+
+export function useTestimonials() {
+  return useQuery<Array<{
+    id: number;
+    name: string;
+    role: string | null;
+    location: string | null;
+    quote: string;
+    rating: number | null;
+    avatarUrl: string | null;
+  }>>({
+    queryKey: ["/api/testimonials"],
+  });
+}
+
+export function usePressMentions() {
+  return useQuery<Array<{
+    id: number;
+    title: string;
+    source: string;
+    sourceLogoUrl: string | null;
+    articleUrl: string | null;
+    excerpt: string | null;
+    mentionType: string;
+  }>>({
+    queryKey: ["/api/press-mentions"],
+  });
+}
+
+export function useUserHelpfulVotes() {
+  return useQuery<Array<{
+    reviewId: number;
+    reviewType: string;
+  }>>({
+    queryKey: ["/api/user/helpful-votes"],
+  });
+}
+
+export function useVoteReviewHelpful() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ reviewId, reviewType }: { reviewId: number; reviewType: string }) => {
+      const res = await fetch(`/api/reviews/${reviewId}/helpful`, {
+        method: "POST",
+        body: JSON.stringify({ reviewType }),
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to vote");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user/helpful-votes"] });
+    },
+  });
+}
+
+export function useRemoveHelpfulVote() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ reviewId, reviewType }: { reviewId: number; reviewType: string }) => {
+      const res = await fetch(`/api/reviews/${reviewId}/helpful?reviewType=${reviewType}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to remove vote");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user/helpful-votes"] });
+    },
+  });
+}
+
+export function useHospitalResponseRate(hospitalId: number) {
+  return useQuery<{ responseRate: number }>({
+    queryKey: [`/api/hospitals/${hospitalId}/response-rate`],
+    enabled: !!hospitalId,
+  });
+}
+
+export function useHospitalResponses(hospitalId: number) {
+  return useQuery<Array<{
+    id: number;
+    reviewId: number;
+    reviewType: string;
+    responseText: string;
+    responderName: string;
+    responderTitle: string | null;
+    createdAt: string;
+  }>>({
+    queryKey: [`/api/hospitals/${hospitalId}/responses`],
+    enabled: !!hospitalId,
+  });
+}

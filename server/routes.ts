@@ -2219,6 +2219,7 @@ Sitemap: ${baseUrl}/sitemap.xml
       const staticPages = [
         { url: "/", priority: "1.0", changefreq: "daily" },
         { url: "/search", priority: "0.9", changefreq: "daily" },
+        { url: "/about", priority: "0.7", changefreq: "monthly" },
         { url: "/guidelines", priority: "0.5", changefreq: "monthly" },
         { url: "/trust-safety", priority: "0.5", changefreq: "monthly" },
         { url: "/support", priority: "0.5", changefreq: "monthly" },

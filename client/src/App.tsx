@@ -18,6 +18,7 @@ import SuggestHospital from "@/pages/suggest-hospital";
 import ClaimProfile from "@/pages/claim-profile";
 import Guidelines from "@/pages/guidelines";
 import TrustSafety from "@/pages/trust-safety";
+import About from "@/pages/about";
 import Support from "@/pages/support";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import TermsOfService from "@/pages/terms-of-service";
@@ -44,6 +45,7 @@ function Router() {
         <Route path="/compare" component={ComparePage} />
         <Route path="/guidelines" component={Guidelines} />
         <Route path="/trust-safety" component={TrustSafety} />
+        <Route path="/about" component={About} />
         <Route path="/support" component={Support} />
         <Route path="/privacy-policy" component={PrivacyPolicy} />
         <Route path="/terms-of-service" component={TermsOfService} />
