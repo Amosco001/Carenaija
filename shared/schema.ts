@@ -28,6 +28,10 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
+// User roles enum
+export const userRoleEnum = ["user", "editor", "moderator", "super_admin"] as const;
+export type UserRole = typeof userRoleEnum[number];
+
 // User storage table.
 // (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
 export const users = pgTable("users", {
@@ -42,10 +46,15 @@ export const users = pgTable("users", {
   phoneVerifiedAt: timestamp("phone_verified_at"),
   lastIpAddress: varchar("last_ip_address"),
   isAdmin: boolean("is_admin").notNull().default(false),
+  role: text("role").notNull().default("user"),
+  suspendedAt: timestamp("suspended_at"),
+  suspensionReason: text("suspension_reason"),
+  suspensionExpiresAt: timestamp("suspension_expires_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   index("IDX_users_email").on(table.email),
+  index("IDX_users_role").on(table.role),
 ]);
 
 export type UpsertUser = typeof users.$inferInsert;
@@ -878,6 +887,139 @@ export const followedHospitalsRelations = relations(followedHospitals, ({ one })
 export const reviewResponsesRelations = relations(reviewResponses, ({ one }) => ({
   responder: one(users, {
     fields: [reviewResponses.responderId],
+    references: [users.id],
+  }),
+}));
+
+// Site Content table - for CMS managed content (homepage, about, FAQs)
+export const siteContent = pgTable("site_content", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  contentType: text("content_type").notNull().default("html"),
+  metadata: jsonb("metadata"),
+  isPublished: boolean("is_published").notNull().default(true),
+  version: integer("version").notNull().default(1),
+  updatedBy: varchar("updated_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("IDX_site_content_key").on(table.key),
+  index("IDX_site_content_published").on(table.isPublished),
+]);
+
+export const insertSiteContentSchema = createInsertSchema(siteContent).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  version: true,
+});
+
+export type InsertSiteContent = z.infer<typeof insertSiteContentSchema>;
+export type SiteContent = typeof siteContent.$inferSelect;
+
+// Site Content History table - for versioning
+export const siteContentHistory = pgTable("site_content_history", {
+  id: serial("id").primaryKey(),
+  contentId: integer("content_id").notNull().references(() => siteContent.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  version: integer("version").notNull(),
+  changedBy: varchar("changed_by").references(() => users.id),
+  changeReason: text("change_reason"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_site_content_history_content").on(table.contentId),
+  index("IDX_site_content_history_version").on(table.version),
+]);
+
+export type SiteContentHistory = typeof siteContentHistory.$inferSelect;
+
+// Site Settings table - for configuration
+export const siteSettings = pgTable("site_settings", {
+  id: serial("id").primaryKey(),
+  category: text("category").notNull(),
+  key: text("key").notNull(),
+  value: jsonb("value").notNull(),
+  label: text("label").notNull(),
+  description: text("description"),
+  fieldType: text("field_type").notNull().default("text"),
+  updatedBy: varchar("updated_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("IDX_site_settings_category").on(table.category),
+  index("IDX_site_settings_key").on(table.key),
+]);
+
+export const insertSiteSettingSchema = createInsertSchema(siteSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertSiteSetting = z.infer<typeof insertSiteSettingSchema>;
+export type SiteSetting = typeof siteSettings.$inferSelect;
+
+// Admin Email Templates table - for customizable email templates
+export const adminEmailTemplates = pgTable("admin_email_templates", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  name: text("name").notNull(),
+  subject: text("subject").notNull(),
+  htmlBody: text("html_body").notNull(),
+  textBody: text("text_body"),
+  description: text("description"),
+  variables: text("variables").array().default(sql`'{}'`),
+  isActive: boolean("is_active").notNull().default(true),
+  updatedBy: varchar("updated_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("IDX_admin_email_templates_key").on(table.key),
+  index("IDX_admin_email_templates_active").on(table.isActive),
+]);
+
+export const insertAdminEmailTemplateSchema = createInsertSchema(adminEmailTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertAdminEmailTemplate = z.infer<typeof insertAdminEmailTemplateSchema>;
+export type AdminEmailTemplate = typeof adminEmailTemplates.$inferSelect;
+
+// Relations for admin tables
+export const siteContentRelations = relations(siteContent, ({ one, many }) => ({
+  updatedByUser: one(users, {
+    fields: [siteContent.updatedBy],
+    references: [users.id],
+  }),
+  history: many(siteContentHistory),
+}));
+
+export const siteContentHistoryRelations = relations(siteContentHistory, ({ one }) => ({
+  content: one(siteContent, {
+    fields: [siteContentHistory.contentId],
+    references: [siteContent.id],
+  }),
+  changedByUser: one(users, {
+    fields: [siteContentHistory.changedBy],
+    references: [users.id],
+  }),
+}));
+
+export const siteSettingsRelations = relations(siteSettings, ({ one }) => ({
+  updatedByUser: one(users, {
+    fields: [siteSettings.updatedBy],
+    references: [users.id],
+  }),
+}));
+
+export const adminEmailTemplatesRelations = relations(adminEmailTemplates, ({ one }) => ({
+  updatedByUser: one(users, {
+    fields: [adminEmailTemplates.updatedBy],
     references: [users.id],
   }),
 }));

@@ -19,6 +19,10 @@ import {
   emailOutbox,
   userReviewStats,
   reviewResponses,
+  siteContent,
+  siteContentHistory,
+  siteSettings,
+  adminEmailTemplates,
   type User,
   type UpsertUser,
   type Hospital,
@@ -54,6 +58,14 @@ import {
   type UserReviewStats,
   type ReviewResponse,
   type InsertReviewResponse,
+  type SiteContent,
+  type InsertSiteContent,
+  type SiteContentHistory,
+  type SiteSetting,
+  type InsertSiteSetting,
+  type AdminEmailTemplate,
+  type InsertAdminEmailTemplate,
+  type UserRole,
   unverifiedSubmissions,
   type UnverifiedSubmission,
   type InsertUnverifiedSubmission,
@@ -178,6 +190,42 @@ export interface IStorage {
   getAverageRatingsByCategory(): Promise<{ category: string; average: number }[]>;
   getRecentActivity(limit: number): Promise<any[]>;
   getHospitalsByState(): Promise<{ state: string; count: number }[]>;
+  
+  // Extended admin methods
+  getAllUsers(params?: { search?: string; role?: string; status?: 'active' | 'suspended'; page?: number; limit?: number }): Promise<{ users: User[]; total: number }>;
+  getUserStats(): Promise<{ total: number; admins: number; suspended: number; byRole: Record<string, number> }>;
+  updateUserRole(userId: string, role: UserRole): Promise<User>;
+  suspendUser(userId: string, reason: string, expiresAt?: Date): Promise<User>;
+  unsuspendUser(userId: string): Promise<User>;
+  deleteUser(userId: string): Promise<void>;
+  deleteHospital(id: number): Promise<void>;
+  bulkUpdateHospitalStatus(ids: number[], verified: boolean): Promise<number>;
+  bulkDeleteHospitals(ids: number[]): Promise<number>;
+  bulkUpdateReviewModeration(ids: number[], status: string, adminUserId: string): Promise<number>;
+  bulkDeleteReviews(ids: number[]): Promise<number>;
+  getAdminDashboardStats(): Promise<{ hospitals: { total: number; verified: number; pending: number }; reviews: { total: number; pending: number; flagged: number }; users: { total: number; admins: number; suspended: number }; flags: { pending: number; resolved: number } }>;
+  
+  // Site content methods
+  getAllSiteContent(): Promise<SiteContent[]>;
+  getSiteContentByKey(key: string): Promise<SiteContent | undefined>;
+  createSiteContent(data: InsertSiteContent): Promise<SiteContent>;
+  updateSiteContent(id: number, data: Partial<InsertSiteContent>, changedBy: string, changeReason?: string): Promise<SiteContent>;
+  deleteSiteContent(id: number): Promise<void>;
+  getSiteContentHistory(contentId: number): Promise<SiteContentHistory[]>;
+  
+  // Site settings methods
+  getAllSiteSettings(): Promise<SiteSetting[]>;
+  getSiteSettingsByCategory(category: string): Promise<SiteSetting[]>;
+  getSiteSetting(category: string, key: string): Promise<SiteSetting | undefined>;
+  upsertSiteSetting(data: InsertSiteSetting): Promise<SiteSetting>;
+  deleteSiteSetting(id: number): Promise<void>;
+  
+  // Email templates methods
+  getAllEmailTemplates(): Promise<AdminEmailTemplate[]>;
+  getEmailTemplateByKey(key: string): Promise<AdminEmailTemplate | undefined>;
+  createEmailTemplate(data: InsertAdminEmailTemplate): Promise<AdminEmailTemplate>;
+  updateEmailTemplate(id: number, data: Partial<InsertAdminEmailTemplate>, updatedBy: string): Promise<AdminEmailTemplate>;
+  deleteEmailTemplate(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1199,6 +1247,316 @@ export class DatabaseStorage implements IStorage {
     await db.update(emailPreferences)
       .set({ lastDigestSentAt: new Date() })
       .where(eq(emailPreferences.userId, userId));
+  }
+
+  // ==================== ADMIN USER MANAGEMENT ====================
+  
+  async getAllUsers(params?: { 
+    search?: string; 
+    role?: string; 
+    status?: 'active' | 'suspended'; 
+    page?: number; 
+    limit?: number 
+  }): Promise<{ users: User[]; total: number }> {
+    const page = params?.page || 1;
+    const limit = params?.limit || 50;
+    const offset = (page - 1) * limit;
+    
+    let query = db.select().from(users).$dynamic();
+    let countQuery = db.select({ count: count() }).from(users).$dynamic();
+    
+    if (params?.search) {
+      const pattern = `%${params.search}%`;
+      const searchCondition = or(
+        ilike(users.email, pattern),
+        ilike(users.firstName, pattern),
+        ilike(users.lastName, pattern)
+      );
+      query = query.where(searchCondition);
+      countQuery = countQuery.where(searchCondition);
+    }
+    
+    if (params?.role) {
+      query = query.where(eq(users.role, params.role));
+      countQuery = countQuery.where(eq(users.role, params.role));
+    }
+    
+    if (params?.status === 'suspended') {
+      query = query.where(sql`${users.suspendedAt} IS NOT NULL`);
+      countQuery = countQuery.where(sql`${users.suspendedAt} IS NOT NULL`);
+    } else if (params?.status === 'active') {
+      query = query.where(sql`${users.suspendedAt} IS NULL`);
+      countQuery = countQuery.where(sql`${users.suspendedAt} IS NULL`);
+    }
+    
+    const [totalResult] = await countQuery;
+    const usersData = await query.orderBy(desc(users.createdAt)).limit(limit).offset(offset);
+    
+    return { users: usersData, total: totalResult?.count || 0 };
+  }
+
+  async updateUserRole(userId: string, role: UserRole): Promise<User> {
+    const [updated] = await db
+      .update(users)
+      .set({ role, isAdmin: role !== 'user', updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return updated;
+  }
+
+  async suspendUser(userId: string, reason: string, expiresAt?: Date): Promise<User> {
+    const [updated] = await db
+      .update(users)
+      .set({ 
+        suspendedAt: new Date(), 
+        suspensionReason: reason, 
+        suspensionExpiresAt: expiresAt || null,
+        updatedAt: new Date() 
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return updated;
+  }
+
+  async unsuspendUser(userId: string): Promise<User> {
+    const [updated] = await db
+      .update(users)
+      .set({ 
+        suspendedAt: null, 
+        suspensionReason: null, 
+        suspensionExpiresAt: null,
+        updatedAt: new Date() 
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return updated;
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, userId));
+  }
+
+  async getUserStats(): Promise<{ total: number; admins: number; suspended: number; byRole: Record<string, number> }> {
+    const [totalResult] = await db.select({ count: count() }).from(users);
+    const [adminsResult] = await db.select({ count: count() }).from(users).where(eq(users.isAdmin, true));
+    const [suspendedResult] = await db.select({ count: count() }).from(users).where(sql`${users.suspendedAt} IS NOT NULL`);
+    
+    const roleCountsResult = await db
+      .select({ role: users.role, count: count() })
+      .from(users)
+      .groupBy(users.role);
+    
+    const byRole = Object.fromEntries(roleCountsResult.map(r => [r.role, r.count]));
+    
+    return {
+      total: totalResult?.count || 0,
+      admins: adminsResult?.count || 0,
+      suspended: suspendedResult?.count || 0,
+      byRole,
+    };
+  }
+
+  // ==================== ADMIN HOSPITAL MANAGEMENT ====================
+  
+  async deleteHospital(id: number): Promise<void> {
+    await db.delete(hospitals).where(eq(hospitals.id, id));
+    this.getAllHospitals.clear();
+    this.getHospitalById.delete(id);
+  }
+
+  async bulkUpdateHospitalStatus(ids: number[], verified: boolean): Promise<number> {
+    const result = await db
+      .update(hospitals)
+      .set({ verified, updatedAt: new Date() })
+      .where(inArray(hospitals.id, ids));
+    this.getAllHospitals.clear();
+    return ids.length;
+  }
+
+  async bulkDeleteHospitals(ids: number[]): Promise<number> {
+    await db.delete(hospitals).where(inArray(hospitals.id, ids));
+    this.getAllHospitals.clear();
+    return ids.length;
+  }
+
+  // ==================== SITE CONTENT MANAGEMENT ====================
+  
+  async getAllSiteContent(): Promise<SiteContent[]> {
+    return db.select().from(siteContent).orderBy(siteContent.key);
+  }
+
+  async getSiteContentByKey(key: string): Promise<SiteContent | undefined> {
+    const [content] = await db.select().from(siteContent).where(eq(siteContent.key, key));
+    return content;
+  }
+
+  async createSiteContent(data: InsertSiteContent): Promise<SiteContent> {
+    const [created] = await db.insert(siteContent).values(data).returning();
+    return created;
+  }
+
+  async updateSiteContent(id: number, data: Partial<InsertSiteContent>, changedBy: string, changeReason?: string): Promise<SiteContent> {
+    const current = await db.select().from(siteContent).where(eq(siteContent.id, id));
+    if (current[0]) {
+      await db.insert(siteContentHistory).values({
+        contentId: id,
+        title: current[0].title,
+        content: current[0].content,
+        version: current[0].version,
+        changedBy,
+        changeReason,
+      });
+    }
+    
+    const [updated] = await db
+      .update(siteContent)
+      .set({ 
+        ...data, 
+        version: sql`version + 1`,
+        updatedBy: changedBy,
+        updatedAt: new Date() 
+      })
+      .where(eq(siteContent.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteSiteContent(id: number): Promise<void> {
+    await db.delete(siteContent).where(eq(siteContent.id, id));
+  }
+
+  async getSiteContentHistory(contentId: number): Promise<SiteContentHistory[]> {
+    return db.select().from(siteContentHistory)
+      .where(eq(siteContentHistory.contentId, contentId))
+      .orderBy(desc(siteContentHistory.version));
+  }
+
+  // ==================== SITE SETTINGS MANAGEMENT ====================
+  
+  async getAllSiteSettings(): Promise<SiteSetting[]> {
+    return db.select().from(siteSettings).orderBy(siteSettings.category, siteSettings.key);
+  }
+
+  async getSiteSettingsByCategory(category: string): Promise<SiteSetting[]> {
+    return db.select().from(siteSettings).where(eq(siteSettings.category, category));
+  }
+
+  async getSiteSetting(category: string, key: string): Promise<SiteSetting | undefined> {
+    const [setting] = await db.select().from(siteSettings)
+      .where(and(eq(siteSettings.category, category), eq(siteSettings.key, key)));
+    return setting;
+  }
+
+  async upsertSiteSetting(data: InsertSiteSetting): Promise<SiteSetting> {
+    const existing = await this.getSiteSetting(data.category, data.key);
+    if (existing) {
+      const [updated] = await db
+        .update(siteSettings)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(siteSettings.id, existing.id))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(siteSettings).values(data).returning();
+    return created;
+  }
+
+  async deleteSiteSetting(id: number): Promise<void> {
+    await db.delete(siteSettings).where(eq(siteSettings.id, id));
+  }
+
+  // ==================== EMAIL TEMPLATES MANAGEMENT ====================
+  
+  async getAllEmailTemplates(): Promise<AdminEmailTemplate[]> {
+    return db.select().from(adminEmailTemplates).orderBy(adminEmailTemplates.key);
+  }
+
+  async getEmailTemplateByKey(key: string): Promise<AdminEmailTemplate | undefined> {
+    const [template] = await db.select().from(adminEmailTemplates).where(eq(adminEmailTemplates.key, key));
+    return template;
+  }
+
+  async createEmailTemplate(data: InsertAdminEmailTemplate): Promise<AdminEmailTemplate> {
+    const [created] = await db.insert(adminEmailTemplates).values(data).returning();
+    return created;
+  }
+
+  async updateEmailTemplate(id: number, data: Partial<InsertAdminEmailTemplate>, updatedBy: string): Promise<AdminEmailTemplate> {
+    const [updated] = await db
+      .update(adminEmailTemplates)
+      .set({ ...data, updatedBy, updatedAt: new Date() })
+      .where(eq(adminEmailTemplates.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteEmailTemplate(id: number): Promise<void> {
+    await db.delete(adminEmailTemplates).where(eq(adminEmailTemplates.id, id));
+  }
+
+  // ==================== BULK REVIEW OPERATIONS ====================
+  
+  async bulkUpdateReviewModeration(reviewIds: number[], status: string, reviewedBy: string): Promise<number> {
+    await db
+      .update(patientReviews)
+      .set({ moderationStatus: status, reviewedBy, reviewedAt: new Date() })
+      .where(inArray(patientReviews.id, reviewIds));
+    return reviewIds.length;
+  }
+
+  async bulkDeleteReviews(reviewIds: number[]): Promise<number> {
+    await db.delete(patientReviews).where(inArray(patientReviews.id, reviewIds));
+    return reviewIds.length;
+  }
+
+  // ==================== ADMIN STATS ====================
+  
+  async getAdminDashboardStats(): Promise<{
+    hospitals: { total: number; verified: number; pending: number };
+    reviews: { total: number; pending: number; flagged: number };
+    users: { total: number; admins: number; suspended: number };
+    flags: { pending: number; resolved: number };
+  }> {
+    const [hospitalTotal] = await db.select({ count: count() }).from(hospitals);
+    const [hospitalVerified] = await db.select({ count: count() }).from(hospitals).where(eq(hospitals.verified, true));
+    const [hospitalPending] = await db.select({ count: count() }).from(pendingHospitals).where(eq(pendingHospitals.status, 'pending'));
+    
+    const [reviewTotal] = await db.select({ count: count() }).from(patientReviews);
+    const [reviewPending] = await db.select({ count: count() }).from(patientReviews).where(eq(patientReviews.moderationStatus, 'pending'));
+    const [reviewFlagged] = await db.select({ count: count() }).from(patientReviews).where(eq(patientReviews.moderationStatus, 'flagged'));
+    
+    const [userTotal] = await db.select({ count: count() }).from(users);
+    const [userAdmins] = await db.select({ count: count() }).from(users).where(eq(users.isAdmin, true));
+    const [userSuspended] = await db.select({ count: count() }).from(users).where(sql`${users.suspendedAt} IS NOT NULL`);
+    
+    const [flagsPending] = await db.select({ count: count() }).from(reviewFlags).where(eq(reviewFlags.status, 'pending'));
+    const [flagsResolved] = await db.select({ count: count() }).from(reviewFlags).where(sql`${reviewFlags.status} != 'pending'`);
+    
+    return {
+      hospitals: {
+        total: hospitalTotal?.count || 0,
+        verified: hospitalVerified?.count || 0,
+        pending: hospitalPending?.count || 0,
+      },
+      reviews: {
+        total: reviewTotal?.count || 0,
+        pending: reviewPending?.count || 0,
+        flagged: reviewFlagged?.count || 0,
+      },
+      users: {
+        total: userTotal?.count || 0,
+        admins: userAdmins?.count || 0,
+        suspended: userSuspended?.count || 0,
+      },
+      flags: {
+        pending: flagsPending?.count || 0,
+        resolved: flagsResolved?.count || 0,
+      },
+    };
+  }
+
+  async getHospital(id: number): Promise<Hospital | undefined> {
+    return this.getHospitalById(id);
   }
 }
 

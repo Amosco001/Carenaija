@@ -1299,6 +1299,662 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // ==================== COMPREHENSIVE ADMIN ROUTES ====================
+
+  // Role-based middleware for different access levels
+  async function hasRole(req: any, res: Response, next: NextFunction, allowedRoles: string[]) {
+    if (!req.user?.claims?.sub) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const user = await storage.getUser(req.user.claims.sub);
+    if (!user || !allowedRoles.includes(user.role)) {
+      return res.status(403).json({ message: "Insufficient permissions" });
+    }
+    req.adminUser = user;
+    next();
+  }
+
+  const isSuperAdmin = (req: any, res: Response, next: NextFunction) => 
+    hasRole(req, res, next, ['super_admin']);
+  
+  const isModerator = (req: any, res: Response, next: NextFunction) => 
+    hasRole(req, res, next, ['super_admin', 'moderator']);
+  
+  const isEditor = (req: any, res: Response, next: NextFunction) => 
+    hasRole(req, res, next, ['super_admin', 'moderator', 'editor']);
+
+  // Admin Dashboard Stats
+  app.get("/api/admin/dashboard-stats", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const stats = await storage.getAdminDashboardStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching admin stats:", error);
+      res.status(500).json({ message: "Failed to fetch stats" });
+    }
+  });
+
+  // ==================== USER MANAGEMENT ====================
+
+  // Get all users with filtering
+  app.get("/api/admin/users", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { search, role, status, page, limit } = req.query;
+      const result = await storage.getAllUsers({
+        search: search as string,
+        role: role as string,
+        status: status as 'active' | 'suspended',
+        page: page ? parseInt(page as string) : 1,
+        limit: limit ? parseInt(limit as string) : 50,
+      });
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  // Get user stats
+  app.get("/api/admin/users/stats", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const stats = await storage.getUserStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching user stats:", error);
+      res.status(500).json({ message: "Failed to fetch user stats" });
+    }
+  });
+
+  // Update user role (super admin only)
+  app.patch("/api/admin/users/:userId/role", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const { role } = req.body;
+      const adminUserId = req.user.claims.sub;
+      
+      if (!['user', 'editor', 'moderator', 'super_admin'].includes(role)) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+      
+      const currentAdmin = await storage.getUser(adminUserId);
+      if (currentAdmin?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Only super admins can change roles" });
+      }
+      
+      const previousUser = await storage.getUser(userId);
+      const updated = await storage.updateUserRole(userId, role);
+      
+      await storage.createAdminAuditLog(
+        adminUserId,
+        'update_role',
+        'user',
+        0,
+        { role: previousUser?.role },
+        { role },
+        `Changed role from ${previousUser?.role} to ${role}`
+      );
+      
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      res.status(500).json({ message: "Failed to update role" });
+    }
+  });
+
+  // Suspend user
+  app.post("/api/admin/users/:userId/suspend", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const { reason, expiresAt } = req.body;
+      const adminUserId = req.user.claims.sub;
+      
+      if (!reason) {
+        return res.status(400).json({ message: "Suspension reason is required" });
+      }
+      
+      const updated = await storage.suspendUser(
+        userId, 
+        reason, 
+        expiresAt ? new Date(expiresAt) : undefined
+      );
+      
+      await storage.createAdminAuditLog(
+        adminUserId,
+        'suspend_user',
+        'user',
+        0,
+        null,
+        { reason, expiresAt },
+        `Suspended user: ${reason}`
+      );
+      
+      res.json(updated);
+    } catch (error) {
+      console.error("Error suspending user:", error);
+      res.status(500).json({ message: "Failed to suspend user" });
+    }
+  });
+
+  // Unsuspend user
+  app.post("/api/admin/users/:userId/unsuspend", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const adminUserId = req.user.claims.sub;
+      
+      const updated = await storage.unsuspendUser(userId);
+      
+      await storage.createAdminAuditLog(
+        adminUserId,
+        'unsuspend_user',
+        'user',
+        0,
+        null,
+        null,
+        'Removed user suspension'
+      );
+      
+      res.json(updated);
+    } catch (error) {
+      console.error("Error unsuspending user:", error);
+      res.status(500).json({ message: "Failed to unsuspend user" });
+    }
+  });
+
+  // Delete user (super admin only)
+  app.delete("/api/admin/users/:userId", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const adminUserId = req.user.claims.sub;
+      
+      const currentAdmin = await storage.getUser(adminUserId);
+      if (currentAdmin?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Only super admins can delete users" });
+      }
+      
+      if (userId === adminUserId) {
+        return res.status(400).json({ message: "Cannot delete your own account" });
+      }
+      
+      await storage.deleteUser(userId);
+      
+      await storage.createAdminAuditLog(
+        adminUserId,
+        'delete_user',
+        'user',
+        0,
+        null,
+        null,
+        'Deleted user account'
+      );
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
+  // ==================== HOSPITAL MANAGEMENT ====================
+
+  // Get all hospitals with pagination
+  app.get("/api/admin/hospitals", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { page, limit, search, verified } = req.query;
+      
+      if (search) {
+        const results = await storage.searchHospitals(search as string);
+        res.json({ data: results, total: results.length });
+      } else {
+        const result = await storage.getHospitalsPaginated({
+          page: page ? parseInt(page as string) : 1,
+          limit: limit ? parseInt(limit as string) : 50,
+        });
+        res.json(result);
+      }
+    } catch (error) {
+      console.error("Error fetching hospitals:", error);
+      res.status(500).json({ message: "Failed to fetch hospitals" });
+    }
+  });
+
+  // Create hospital
+  app.post("/api/admin/hospitals", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const adminUserId = req.user.claims.sub;
+      const hospital = await storage.createHospital(req.body);
+      
+      await storage.createAdminAuditLog(
+        adminUserId,
+        'create_hospital',
+        'hospital',
+        hospital.id,
+        null,
+        hospital,
+        'Created new hospital'
+      );
+      
+      res.status(201).json(hospital);
+    } catch (error) {
+      console.error("Error creating hospital:", error);
+      res.status(400).json({ message: "Failed to create hospital" });
+    }
+  });
+
+  // Update hospital
+  app.patch("/api/admin/hospitals/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const adminUserId = req.user.claims.sub;
+      
+      const previous = await storage.getHospitalById(id);
+      const updated = await storage.updateHospital(id, req.body);
+      
+      await storage.createAdminAuditLog(
+        adminUserId,
+        'update_hospital',
+        'hospital',
+        id,
+        previous,
+        updated,
+        'Updated hospital details'
+      );
+      
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating hospital:", error);
+      res.status(500).json({ message: "Failed to update hospital" });
+    }
+  });
+
+  // Delete hospital
+  app.delete("/api/admin/hospitals/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const adminUserId = req.user.claims.sub;
+      
+      const currentAdmin = await storage.getUser(adminUserId);
+      if (currentAdmin?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Only super admins can delete hospitals" });
+      }
+      
+      const hospital = await storage.getHospitalById(id);
+      await storage.deleteHospital(id);
+      
+      await storage.createAdminAuditLog(
+        adminUserId,
+        'delete_hospital',
+        'hospital',
+        id,
+        hospital,
+        null,
+        'Deleted hospital'
+      );
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting hospital:", error);
+      res.status(500).json({ message: "Failed to delete hospital" });
+    }
+  });
+
+  // Bulk update hospitals
+  app.post("/api/admin/hospitals/bulk-update", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { ids, verified } = req.body;
+      const adminUserId = req.user.claims.sub;
+      
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ message: "No hospital IDs provided" });
+      }
+      
+      const count = await storage.bulkUpdateHospitalStatus(ids, verified);
+      
+      await storage.createAdminAuditLog(
+        adminUserId,
+        'bulk_update_hospitals',
+        'hospital',
+        0,
+        null,
+        { ids, verified },
+        `Bulk updated ${count} hospitals`
+      );
+      
+      res.json({ success: true, updated: count });
+    } catch (error) {
+      console.error("Error bulk updating hospitals:", error);
+      res.status(500).json({ message: "Failed to bulk update hospitals" });
+    }
+  });
+
+  // Bulk delete hospitals
+  app.post("/api/admin/hospitals/bulk-delete", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { ids } = req.body;
+      const adminUserId = req.user.claims.sub;
+      
+      const currentAdmin = await storage.getUser(adminUserId);
+      if (currentAdmin?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Only super admins can bulk delete" });
+      }
+      
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ message: "No hospital IDs provided" });
+      }
+      
+      const count = await storage.bulkDeleteHospitals(ids);
+      
+      await storage.createAdminAuditLog(
+        adminUserId,
+        'bulk_delete_hospitals',
+        'hospital',
+        0,
+        { ids },
+        null,
+        `Bulk deleted ${count} hospitals`
+      );
+      
+      res.json({ success: true, deleted: count });
+    } catch (error) {
+      console.error("Error bulk deleting hospitals:", error);
+      res.status(500).json({ message: "Failed to bulk delete hospitals" });
+    }
+  });
+
+  // ==================== BULK REVIEW OPERATIONS ====================
+
+  // Bulk update reviews
+  app.post("/api/admin/reviews/bulk-update", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { ids, status } = req.body;
+      const adminUserId = req.user.claims.sub;
+      
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ message: "No review IDs provided" });
+      }
+      
+      const count = await storage.bulkUpdateReviewModeration(ids, status, adminUserId);
+      
+      await storage.createAdminAuditLog(
+        adminUserId,
+        'bulk_update_reviews',
+        'patient_review',
+        0,
+        null,
+        { ids, status },
+        `Bulk updated ${count} reviews to ${status}`
+      );
+      
+      res.json({ success: true, updated: count });
+    } catch (error) {
+      console.error("Error bulk updating reviews:", error);
+      res.status(500).json({ message: "Failed to bulk update reviews" });
+    }
+  });
+
+  // Bulk delete reviews
+  app.post("/api/admin/reviews/bulk-delete", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { ids } = req.body;
+      const adminUserId = req.user.claims.sub;
+      
+      const currentAdmin = await storage.getUser(adminUserId);
+      if (currentAdmin?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Only super admins can bulk delete reviews" });
+      }
+      
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ message: "No review IDs provided" });
+      }
+      
+      const count = await storage.bulkDeleteReviews(ids);
+      
+      await storage.createAdminAuditLog(
+        adminUserId,
+        'bulk_delete_reviews',
+        'patient_review',
+        0,
+        { ids },
+        null,
+        `Bulk deleted ${count} reviews`
+      );
+      
+      res.json({ success: true, deleted: count });
+    } catch (error) {
+      console.error("Error bulk deleting reviews:", error);
+      res.status(500).json({ message: "Failed to bulk delete reviews" });
+    }
+  });
+
+  // ==================== CONTENT MANAGEMENT ====================
+
+  // Get all site content
+  app.get("/api/admin/content", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const content = await storage.getAllSiteContent();
+      res.json(content);
+    } catch (error) {
+      console.error("Error fetching content:", error);
+      res.status(500).json({ message: "Failed to fetch content" });
+    }
+  });
+
+  // Get single content by key
+  app.get("/api/admin/content/:key", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const content = await storage.getSiteContentByKey(req.params.key);
+      if (!content) {
+        return res.status(404).json({ message: "Content not found" });
+      }
+      res.json(content);
+    } catch (error) {
+      console.error("Error fetching content:", error);
+      res.status(500).json({ message: "Failed to fetch content" });
+    }
+  });
+
+  // Create content
+  app.post("/api/admin/content", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const adminUserId = req.user.claims.sub;
+      const content = await storage.createSiteContent({
+        ...req.body,
+        updatedBy: adminUserId,
+      });
+      res.status(201).json(content);
+    } catch (error) {
+      console.error("Error creating content:", error);
+      res.status(400).json({ message: "Failed to create content" });
+    }
+  });
+
+  // Update content
+  app.patch("/api/admin/content/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const adminUserId = req.user.claims.sub;
+      const { changeReason, ...data } = req.body;
+      
+      const updated = await storage.updateSiteContent(id, data, adminUserId, changeReason);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating content:", error);
+      res.status(500).json({ message: "Failed to update content" });
+    }
+  });
+
+  // Delete content
+  app.delete("/api/admin/content/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteSiteContent(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting content:", error);
+      res.status(500).json({ message: "Failed to delete content" });
+    }
+  });
+
+  // Get content history
+  app.get("/api/admin/content/:id/history", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const history = await storage.getSiteContentHistory(id);
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching content history:", error);
+      res.status(500).json({ message: "Failed to fetch history" });
+    }
+  });
+
+  // ==================== SITE SETTINGS ====================
+
+  // Get all settings
+  app.get("/api/admin/settings", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const settings = await storage.getAllSiteSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching settings:", error);
+      res.status(500).json({ message: "Failed to fetch settings" });
+    }
+  });
+
+  // Get settings by category
+  app.get("/api/admin/settings/:category", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const settings = await storage.getSiteSettingsByCategory(req.params.category);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching settings:", error);
+      res.status(500).json({ message: "Failed to fetch settings" });
+    }
+  });
+
+  // Update/create setting
+  app.put("/api/admin/settings", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const adminUserId = req.user.claims.sub;
+      const setting = await storage.upsertSiteSetting({
+        ...req.body,
+        updatedBy: adminUserId,
+      });
+      res.json(setting);
+    } catch (error) {
+      console.error("Error updating setting:", error);
+      res.status(500).json({ message: "Failed to update setting" });
+    }
+  });
+
+  // Delete setting
+  app.delete("/api/admin/settings/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteSiteSetting(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting setting:", error);
+      res.status(500).json({ message: "Failed to delete setting" });
+    }
+  });
+
+  // ==================== EMAIL TEMPLATES ====================
+
+  // Get all email templates
+  app.get("/api/admin/email-templates", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const templates = await storage.getAllEmailTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching templates:", error);
+      res.status(500).json({ message: "Failed to fetch templates" });
+    }
+  });
+
+  // Get template by key
+  app.get("/api/admin/email-templates/:key", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const template = await storage.getEmailTemplateByKey(req.params.key);
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching template:", error);
+      res.status(500).json({ message: "Failed to fetch template" });
+    }
+  });
+
+  // Create template
+  app.post("/api/admin/email-templates", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const adminUserId = req.user.claims.sub;
+      const template = await storage.createEmailTemplate({
+        ...req.body,
+        updatedBy: adminUserId,
+      });
+      res.status(201).json(template);
+    } catch (error) {
+      console.error("Error creating template:", error);
+      res.status(400).json({ message: "Failed to create template" });
+    }
+  });
+
+  // Update template
+  app.patch("/api/admin/email-templates/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const adminUserId = req.user.claims.sub;
+      const updated = await storage.updateEmailTemplate(id, req.body, adminUserId);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating template:", error);
+      res.status(500).json({ message: "Failed to update template" });
+    }
+  });
+
+  // Delete template
+  app.delete("/api/admin/email-templates/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteEmailTemplate(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting template:", error);
+      res.status(500).json({ message: "Failed to delete template" });
+    }
+  });
+
+  // ==================== ACTIVITY LOGS ====================
+
+  // Get admin audit logs
+  app.get("/api/admin/activity-logs", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { targetType, targetId } = req.query;
+      const logs = await storage.getAdminAuditLogs(
+        targetType as string,
+        targetId ? parseInt(targetId as string) : undefined
+      );
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching activity logs:", error);
+      res.status(500).json({ message: "Failed to fetch logs" });
+    }
+  });
+
+  // Public content endpoint (no auth)
+  app.get("/api/content/:key", async (req, res) => {
+    try {
+      const content = await storage.getSiteContentByKey(req.params.key);
+      if (!content || !content.isPublished) {
+        return res.status(404).json({ message: "Content not found" });
+      }
+      res.json(content);
+    } catch (error) {
+      console.error("Error fetching content:", error);
+      res.status(500).json({ message: "Failed to fetch content" });
+    }
+  });
+
   app.get("/robots.txt", (req, res) => {
     const baseUrl = `https://${req.get("host")}`;
     res.type("text/plain");
