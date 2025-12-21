@@ -1397,3 +1397,264 @@ export const blogCommentsRelations = relations(blogComments, ({ one, many }) => 
   }),
   replies: many(blogComments),
 }));
+
+// User Engagement System
+
+// Badge Definitions - all possible badges
+export const badges = pgTable("badges", {
+  id: serial("id").primaryKey(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  icon: text("icon").notNull(),
+  category: text("category").notNull(),
+  rarity: text("rarity").notNull().default("common"),
+  pointsRequired: integer("points_required"),
+  reviewsRequired: integer("reviews_required"),
+  helpfulVotesRequired: integer("helpful_votes_required"),
+  isSecret: boolean("is_secret").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_badges_code").on(table.code),
+  index("IDX_badges_category").on(table.category),
+]);
+
+export const insertBadgeSchema = createInsertSchema(badges).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertBadge = z.infer<typeof insertBadgeSchema>;
+export type Badge = typeof badges.$inferSelect;
+
+// User Badges - badges earned by users
+export const userBadges = pgTable("user_badges", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  badgeId: integer("badge_id").notNull().references(() => badges.id, { onDelete: "cascade" }),
+  earnedAt: timestamp("earned_at").defaultNow(),
+  notified: boolean("notified").notNull().default(false),
+}, (table) => [
+  index("IDX_user_badges_user").on(table.userId),
+  index("IDX_user_badges_badge").on(table.badgeId),
+]);
+
+export const insertUserBadgeSchema = createInsertSchema(userBadges).omit({
+  id: true,
+  earnedAt: true,
+  notified: true,
+});
+
+export type InsertUserBadge = z.infer<typeof insertUserBadgeSchema>;
+export type UserBadge = typeof userBadges.$inferSelect;
+
+// User Points - current point balance and level
+export const userPoints = pgTable("user_points", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
+  totalPoints: integer("total_points").notNull().default(0),
+  currentLevel: text("current_level").notNull().default("novice"),
+  reviewCount: integer("review_count").notNull().default(0),
+  helpfulVotesReceived: integer("helpful_votes_received").notNull().default(0),
+  helpfulVotesGiven: integer("helpful_votes_given").notNull().default(0),
+  referralCount: integer("referral_count").notNull().default(0),
+  streak: integer("streak").notNull().default(0),
+  lastActivityAt: timestamp("last_activity_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("IDX_user_points_user").on(table.userId),
+  index("IDX_user_points_total").on(table.totalPoints),
+  index("IDX_user_points_level").on(table.currentLevel),
+]);
+
+export const insertUserPointsSchema = createInsertSchema(userPoints).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertUserPoints = z.infer<typeof insertUserPointsSchema>;
+export type UserPoints = typeof userPoints.$inferSelect;
+
+// Point Transactions - log of all point earnings/deductions
+export const pointTransactions = pgTable("point_transactions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  points: integer("points").notNull(),
+  action: text("action").notNull(),
+  description: text("description"),
+  referenceType: text("reference_type"),
+  referenceId: integer("reference_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_point_transactions_user").on(table.userId),
+  index("IDX_point_transactions_action").on(table.action),
+  index("IDX_point_transactions_created").on(table.createdAt),
+]);
+
+export const insertPointTransactionSchema = createInsertSchema(pointTransactions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertPointTransaction = z.infer<typeof insertPointTransactionSchema>;
+export type PointTransaction = typeof pointTransactions.$inferSelect;
+
+// Referrals - track referral program
+export const referrals = pgTable("referrals", {
+  id: serial("id").primaryKey(),
+  referrerId: varchar("referrer_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  referredId: varchar("referred_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  referralCode: varchar("referral_code", { length: 20 }).notNull(),
+  status: text("status").notNull().default("pending"),
+  pointsAwarded: integer("points_awarded").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+}, (table) => [
+  index("IDX_referrals_referrer").on(table.referrerId),
+  index("IDX_referrals_referred").on(table.referredId),
+  index("IDX_referrals_code").on(table.referralCode),
+  index("IDX_referrals_status").on(table.status),
+]);
+
+export const insertReferralSchema = createInsertSchema(referrals).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true,
+  pointsAwarded: true,
+});
+
+export type InsertReferral = z.infer<typeof insertReferralSchema>;
+export type Referral = typeof referrals.$inferSelect;
+
+// Achievement Notifications - for showing unlocked achievements
+export const achievementNotifications = pgTable("achievement_notifications", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  badgeId: integer("badge_id").references(() => badges.id),
+  pointsEarned: integer("points_earned"),
+  read: boolean("read").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_achievement_notifications_user").on(table.userId),
+  index("IDX_achievement_notifications_read").on(table.read),
+  index("IDX_achievement_notifications_created").on(table.createdAt),
+]);
+
+export const insertAchievementNotificationSchema = createInsertSchema(achievementNotifications).omit({
+  id: true,
+  createdAt: true,
+  read: true,
+});
+
+export type InsertAchievementNotification = z.infer<typeof insertAchievementNotificationSchema>;
+export type AchievementNotification = typeof achievementNotifications.$inferSelect;
+
+// Featured Reviewers - monthly featured reviewers
+export const featuredReviewers = pgTable("featured_reviewers", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  month: integer("month").notNull(),
+  year: integer("year").notNull(),
+  reason: text("reason"),
+  reviewCount: integer("review_count").notNull().default(0),
+  helpfulVotes: integer("helpful_votes").notNull().default(0),
+  featuredReviewId: integer("featured_review_id"),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_featured_reviewers_user").on(table.userId),
+  index("IDX_featured_reviewers_month_year").on(table.month, table.year),
+  index("IDX_featured_reviewers_active").on(table.active),
+]);
+
+export const insertFeaturedReviewerSchema = createInsertSchema(featuredReviewers).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertFeaturedReviewer = z.infer<typeof insertFeaturedReviewerSchema>;
+export type FeaturedReviewer = typeof featuredReviewers.$inferSelect;
+
+// Engagement Relations
+export const badgesRelations = relations(badges, ({ many }) => ({
+  userBadges: many(userBadges),
+}));
+
+export const userBadgesRelations = relations(userBadges, ({ one }) => ({
+  user: one(users, {
+    fields: [userBadges.userId],
+    references: [users.id],
+  }),
+  badge: one(badges, {
+    fields: [userBadges.badgeId],
+    references: [badges.id],
+  }),
+}));
+
+export const userPointsRelations = relations(userPoints, ({ one }) => ({
+  user: one(users, {
+    fields: [userPoints.userId],
+    references: [users.id],
+  }),
+}));
+
+export const pointTransactionsRelations = relations(pointTransactions, ({ one }) => ({
+  user: one(users, {
+    fields: [pointTransactions.userId],
+    references: [users.id],
+  }),
+}));
+
+export const referralsRelations = relations(referrals, ({ one }) => ({
+  referrer: one(users, {
+    fields: [referrals.referrerId],
+    references: [users.id],
+  }),
+  referred: one(users, {
+    fields: [referrals.referredId],
+    references: [users.id],
+  }),
+}));
+
+export const achievementNotificationsRelations = relations(achievementNotifications, ({ one }) => ({
+  user: one(users, {
+    fields: [achievementNotifications.userId],
+    references: [users.id],
+  }),
+  badge: one(badges, {
+    fields: [achievementNotifications.badgeId],
+    references: [badges.id],
+  }),
+}));
+
+export const featuredReviewersRelations = relations(featuredReviewers, ({ one }) => ({
+  user: one(users, {
+    fields: [featuredReviewers.userId],
+    references: [users.id],
+  }),
+}));
+
+// Profile levels configuration
+export const profileLevels = {
+  novice: { name: "Novice", minPoints: 0, color: "gray" },
+  contributor: { name: "Contributor", minPoints: 100, color: "blue" },
+  expert: { name: "Expert", minPoints: 500, color: "purple" },
+  superReviewer: { name: "Super Reviewer", minPoints: 1500, color: "gold" },
+} as const;
+
+export type ProfileLevel = keyof typeof profileLevels;
+
+// Point values for activities
+export const pointValues = {
+  writeReview: 25,
+  receiveHelpfulVote: 5,
+  giveHelpfulVote: 2,
+  verifiedReview: 10,
+  qualityReviewBonus: 15,
+  referralComplete: 50,
+  firstReview: 20,
+  streakBonus: 10,
+} as const;

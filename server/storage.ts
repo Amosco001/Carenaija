@@ -33,6 +33,15 @@ import {
   blogArticles,
   blogArticleTags,
   blogComments,
+  badges,
+  userBadges,
+  userPoints,
+  pointTransactions,
+  referrals,
+  achievementNotifications,
+  featuredReviewers,
+  profileLevels,
+  pointValues,
   type User,
   type UpsertUser,
   type Hospital,
@@ -97,6 +106,20 @@ import {
   type BlogArticleTag,
   type BlogComment,
   type InsertBlogComment,
+  type Badge,
+  type InsertBadge,
+  type UserBadge,
+  type InsertUserBadge,
+  type UserPoints,
+  type InsertUserPoints,
+  type PointTransaction,
+  type InsertPointTransaction,
+  type Referral,
+  type InsertReferral,
+  type AchievementNotification,
+  type InsertAchievementNotification,
+  type FeaturedReviewer,
+  type InsertFeaturedReviewer,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, ilike, or, desc, count, gte, inArray } from "drizzle-orm";
@@ -2045,6 +2068,338 @@ export class DatabaseStorage implements IStorage {
   async moderateBlogComment(id: number, status: string): Promise<BlogComment | undefined> {
     const [updated] = await db.update(blogComments).set({ status }).where(eq(blogComments.id, id)).returning();
     return updated;
+  }
+
+  // Engagement System Methods
+
+  // Badges
+  async getAllBadges(): Promise<Badge[]> {
+    return db.select().from(badges).orderBy(badges.category, badges.name);
+  }
+
+  async getBadgeByCode(code: string): Promise<Badge | undefined> {
+    const [badge] = await db.select().from(badges).where(eq(badges.code, code));
+    return badge;
+  }
+
+  async createBadge(badge: InsertBadge): Promise<Badge> {
+    const [created] = await db.insert(badges).values(badge).returning();
+    return created;
+  }
+
+  async getUserBadges(userId: string): Promise<(UserBadge & { badge: Badge })[]> {
+    const userBadgesList = await db.select().from(userBadges).where(eq(userBadges.userId, userId));
+    if (userBadgesList.length === 0) return [];
+    const badgeIds = userBadgesList.map(ub => ub.badgeId);
+    const badgesList = await db.select().from(badges).where(inArray(badges.id, badgeIds));
+    const badgeMap = new Map(badgesList.map(b => [b.id, b]));
+    return userBadgesList.map(ub => ({ ...ub, badge: badgeMap.get(ub.badgeId)! }));
+  }
+
+  async awardBadge(userId: string, badgeId: number): Promise<UserBadge> {
+    const existing = await db.select().from(userBadges)
+      .where(and(eq(userBadges.userId, userId), eq(userBadges.badgeId, badgeId)));
+    if (existing.length > 0) return existing[0];
+    const [created] = await db.insert(userBadges).values({ userId, badgeId }).returning();
+    return created;
+  }
+
+  async hasUserBadge(userId: string, badgeCode: string): Promise<boolean> {
+    const badge = await this.getBadgeByCode(badgeCode);
+    if (!badge) return false;
+    const [userBadge] = await db.select().from(userBadges)
+      .where(and(eq(userBadges.userId, userId), eq(userBadges.badgeId, badge.id)));
+    return !!userBadge;
+  }
+
+  // User Points
+  async getUserPoints(userId: string): Promise<UserPoints | undefined> {
+    const [points] = await db.select().from(userPoints).where(eq(userPoints.userId, userId));
+    return points;
+  }
+
+  async getOrCreateUserPoints(userId: string): Promise<UserPoints> {
+    let points = await this.getUserPoints(userId);
+    if (!points) {
+      const [created] = await db.insert(userPoints).values({ userId, totalPoints: 0, currentLevel: 'novice' }).returning();
+      points = created;
+    }
+    return points;
+  }
+
+  async addPoints(userId: string, pointsToAdd: number, action: string, description?: string, referenceType?: string, referenceId?: number): Promise<UserPoints> {
+    const userPts = await this.getOrCreateUserPoints(userId);
+    const newTotal = userPts.totalPoints + pointsToAdd;
+    const newLevel = this.calculateLevel(newTotal);
+    
+    const [updated] = await db.update(userPoints)
+      .set({ 
+        totalPoints: newTotal, 
+        currentLevel: newLevel,
+        lastActivityAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(userPoints.userId, userId))
+      .returning();
+    
+    await db.insert(pointTransactions).values({
+      userId,
+      points: pointsToAdd,
+      action,
+      description,
+      referenceType,
+      referenceId
+    });
+    
+    return updated;
+  }
+
+  calculateLevel(points: number): string {
+    if (points >= profileLevels.superReviewer.minPoints) return 'superReviewer';
+    if (points >= profileLevels.expert.minPoints) return 'expert';
+    if (points >= profileLevels.contributor.minPoints) return 'contributor';
+    return 'novice';
+  }
+
+  async updateUserReviewCount(userId: string, increment: number = 1): Promise<void> {
+    await db.update(userPoints)
+      .set({ reviewCount: sql`${userPoints.reviewCount} + ${increment}` })
+      .where(eq(userPoints.userId, userId));
+  }
+
+  async updateUserHelpfulVotes(userId: string, received: number = 0, given: number = 0): Promise<void> {
+    await db.update(userPoints)
+      .set({ 
+        helpfulVotesReceived: sql`${userPoints.helpfulVotesReceived} + ${received}`,
+        helpfulVotesGiven: sql`${userPoints.helpfulVotesGiven} + ${given}`
+      })
+      .where(eq(userPoints.userId, userId));
+  }
+
+  // Point Transactions
+  async getUserPointTransactions(userId: string, limit: number = 20): Promise<PointTransaction[]> {
+    return db.select().from(pointTransactions)
+      .where(eq(pointTransactions.userId, userId))
+      .orderBy(desc(pointTransactions.createdAt))
+      .limit(limit);
+  }
+
+  // Leaderboard
+  async getLeaderboard(limit: number = 10, period?: 'week' | 'month' | 'all'): Promise<(UserPoints & { user: User })[]> {
+    const leaderboardPoints = await db.select().from(userPoints)
+      .orderBy(desc(userPoints.totalPoints))
+      .limit(limit);
+    
+    if (leaderboardPoints.length === 0) return [];
+    
+    const userIds = leaderboardPoints.map(p => p.userId);
+    const usersList = await db.select().from(users).where(inArray(users.id, userIds));
+    const userMap = new Map(usersList.map(u => [u.id, u]));
+    
+    return leaderboardPoints
+      .filter(p => userMap.has(p.userId))
+      .map(p => ({ ...p, user: userMap.get(p.userId)! }));
+  }
+
+  // Referrals
+  async createReferral(referrerId: string, referralCode: string): Promise<Referral> {
+    const [created] = await db.insert(referrals).values({
+      referrerId,
+      referredId: referrerId,
+      referralCode,
+      status: 'pending'
+    }).returning();
+    return created;
+  }
+
+  async getReferralByCode(code: string): Promise<Referral | undefined> {
+    const [referral] = await db.select().from(referrals).where(eq(referrals.referralCode, code));
+    return referral;
+  }
+
+  async getUserReferrals(userId: string): Promise<Referral[]> {
+    return db.select().from(referrals).where(eq(referrals.referrerId, userId)).orderBy(desc(referrals.createdAt));
+  }
+
+  async completeReferral(referralId: number, referredUserId: string): Promise<Referral> {
+    const [updated] = await db.update(referrals)
+      .set({ 
+        referredId: referredUserId,
+        status: 'completed', 
+        completedAt: new Date(),
+        pointsAwarded: pointValues.referralComplete
+      })
+      .where(eq(referrals.id, referralId))
+      .returning();
+    
+    await db.update(userPoints)
+      .set({ referralCount: sql`${userPoints.referralCount} + 1` })
+      .where(eq(userPoints.userId, updated.referrerId));
+    
+    return updated;
+  }
+
+  async generateReferralCode(userId: string): Promise<string> {
+    const code = `REF${userId.substring(0, 4).toUpperCase()}${Date.now().toString(36).toUpperCase()}`;
+    return code;
+  }
+
+  // Achievement Notifications
+  async createAchievementNotification(notification: InsertAchievementNotification): Promise<AchievementNotification> {
+    const [created] = await db.insert(achievementNotifications).values(notification).returning();
+    return created;
+  }
+
+  async getUserUnreadNotifications(userId: string): Promise<AchievementNotification[]> {
+    return db.select().from(achievementNotifications)
+      .where(and(eq(achievementNotifications.userId, userId), eq(achievementNotifications.read, false)))
+      .orderBy(desc(achievementNotifications.createdAt));
+  }
+
+  async markNotificationRead(notificationId: number): Promise<void> {
+    await db.update(achievementNotifications)
+      .set({ read: true })
+      .where(eq(achievementNotifications.id, notificationId));
+  }
+
+  async markAllNotificationsRead(userId: string): Promise<void> {
+    await db.update(achievementNotifications)
+      .set({ read: true })
+      .where(eq(achievementNotifications.userId, userId));
+  }
+
+  // Featured Reviewers
+  async getCurrentFeaturedReviewer(): Promise<(FeaturedReviewer & { user: User }) | undefined> {
+    const now = new Date();
+    const [featured] = await db.select().from(featuredReviewers)
+      .where(and(
+        eq(featuredReviewers.month, now.getMonth() + 1),
+        eq(featuredReviewers.year, now.getFullYear()),
+        eq(featuredReviewers.active, true)
+      ));
+    
+    if (!featured) return undefined;
+    
+    const [user] = await db.select().from(users).where(eq(users.id, featured.userId));
+    if (!user) return undefined;
+    
+    return { ...featured, user };
+  }
+
+  async createFeaturedReviewer(data: InsertFeaturedReviewer): Promise<FeaturedReviewer> {
+    const [created] = await db.insert(featuredReviewers).values(data).returning();
+    return created;
+  }
+
+  async getFeaturedReviewerHistory(limit: number = 12): Promise<(FeaturedReviewer & { user: User })[]> {
+    const featured = await db.select().from(featuredReviewers)
+      .orderBy(desc(featuredReviewers.year), desc(featuredReviewers.month))
+      .limit(limit);
+    
+    if (featured.length === 0) return [];
+    
+    const userIds = featured.map(f => f.userId);
+    const usersList = await db.select().from(users).where(inArray(users.id, userIds));
+    const userMap = new Map(usersList.map(u => [u.id, u]));
+    
+    return featured
+      .filter(f => userMap.has(f.userId))
+      .map(f => ({ ...f, user: userMap.get(f.userId)! }));
+  }
+
+  // Check and award badges based on user activity
+  async checkAndAwardBadges(userId: string): Promise<Badge[]> {
+    const awarded: Badge[] = [];
+    const userPts = await this.getOrCreateUserPoints(userId);
+    const allBadges = await this.getAllBadges();
+    
+    for (const badge of allBadges) {
+      const hasBadge = await this.hasUserBadge(userId, badge.code);
+      if (hasBadge) continue;
+      
+      let shouldAward = false;
+      
+      if (badge.reviewsRequired && userPts.reviewCount >= badge.reviewsRequired) {
+        shouldAward = true;
+      }
+      if (badge.pointsRequired && userPts.totalPoints >= badge.pointsRequired) {
+        shouldAward = true;
+      }
+      if (badge.helpfulVotesRequired && userPts.helpfulVotesReceived >= badge.helpfulVotesRequired) {
+        shouldAward = true;
+      }
+      
+      if (shouldAward) {
+        await this.awardBadge(userId, badge.id);
+        await this.createAchievementNotification({
+          userId,
+          type: 'badge_earned',
+          title: `Badge Earned: ${badge.name}`,
+          message: badge.description,
+          badgeId: badge.id
+        });
+        awarded.push(badge);
+      }
+    }
+    
+    return awarded;
+  }
+
+  // Get user engagement profile (for display on user profile)
+  async getUserEngagementProfile(userId: string): Promise<{
+    points: UserPoints | null;
+    badges: (UserBadge & { badge: Badge })[];
+    recentTransactions: PointTransaction[];
+    rank: number;
+    isFeatured: boolean;
+  }> {
+    const points = await this.getUserPoints(userId);
+    const userBadgesList = await this.getUserBadges(userId);
+    const transactions = await this.getUserPointTransactions(userId, 10);
+    
+    let rank = 0;
+    if (points) {
+      const [rankResult] = await db.select({ count: count() }).from(userPoints)
+        .where(sql`${userPoints.totalPoints} > ${points.totalPoints}`);
+      rank = (rankResult?.count || 0) + 1;
+    }
+    
+    const featured = await this.getCurrentFeaturedReviewer();
+    const isFeatured = featured?.userId === userId;
+    
+    return {
+      points: points || null,
+      badges: userBadgesList,
+      recentTransactions: transactions,
+      rank,
+      isFeatured
+    };
+  }
+
+  // Seed default badges
+  async seedDefaultBadges(): Promise<void> {
+    const defaultBadges: InsertBadge[] = [
+      { code: 'first_review', name: 'First Review', description: 'Wrote your first review', icon: 'star', category: 'reviews', rarity: 'common', reviewsRequired: 1 },
+      { code: 'reviewer_5', name: '5 Reviews', description: 'Wrote 5 reviews', icon: 'stars', category: 'reviews', rarity: 'common', reviewsRequired: 5 },
+      { code: 'reviewer_10', name: 'Dedicated Reviewer', description: 'Wrote 10 reviews', icon: 'award', category: 'reviews', rarity: 'uncommon', reviewsRequired: 10 },
+      { code: 'reviewer_25', name: 'Expert Reviewer', description: 'Wrote 25 reviews', icon: 'trophy', category: 'reviews', rarity: 'rare', reviewsRequired: 25 },
+      { code: 'reviewer_50', name: 'Super Reviewer', description: 'Wrote 50 reviews', icon: 'crown', category: 'reviews', rarity: 'epic', reviewsRequired: 50 },
+      { code: 'helpful_10', name: 'Helpful', description: 'Received 10 helpful votes', icon: 'thumbs-up', category: 'community', rarity: 'common', helpfulVotesRequired: 10 },
+      { code: 'helpful_50', name: 'Very Helpful', description: 'Received 50 helpful votes', icon: 'heart', category: 'community', rarity: 'uncommon', helpfulVotesRequired: 50 },
+      { code: 'helpful_100', name: 'Community Hero', description: 'Received 100 helpful votes', icon: 'shield', category: 'community', rarity: 'rare', helpfulVotesRequired: 100 },
+      { code: 'points_100', name: 'Rising Star', description: 'Earned 100 points', icon: 'trending-up', category: 'points', rarity: 'common', pointsRequired: 100 },
+      { code: 'points_500', name: 'Contributor', description: 'Earned 500 points', icon: 'zap', category: 'points', rarity: 'uncommon', pointsRequired: 500 },
+      { code: 'points_1500', name: 'Top Contributor', description: 'Earned 1500 points', icon: 'flame', category: 'points', rarity: 'rare', pointsRequired: 1500 },
+      { code: 'verified_expert', name: 'Verified Expert', description: 'Healthcare professional with verified credentials', icon: 'check-circle', category: 'special', rarity: 'legendary', isSecret: true },
+      { code: 'early_adopter', name: 'Early Adopter', description: 'Among the first 100 users to join', icon: 'rocket', category: 'special', rarity: 'legendary', isSecret: true },
+    ];
+    
+    for (const badge of defaultBadges) {
+      const existing = await this.getBadgeByCode(badge.code);
+      if (!existing) {
+        await this.createBadge(badge);
+      }
+    }
   }
 }
 
