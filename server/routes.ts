@@ -2749,6 +2749,245 @@ Sitemap: ${baseUrl}/sitemap.xml
     }
   });
 
+  // ==================== HEALTH EDUCATION HUB ====================
+
+  // Get all health categories
+  app.get("/api/health/categories", async (req, res) => {
+    try {
+      const categories = await storage.getAllHealthCategories();
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching health categories:", error);
+      res.status(500).json({ message: "Failed to fetch categories" });
+    }
+  });
+
+  // Get category by slug
+  app.get("/api/health/categories/:slug", async (req, res) => {
+    try {
+      const category = await storage.getHealthCategoryBySlug(req.params.slug);
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      const articles = await storage.getHealthArticlesByCategory(category.id);
+      res.json({ category, articles });
+    } catch (error) {
+      console.error("Error fetching category:", error);
+      res.status(500).json({ message: "Failed to fetch category" });
+    }
+  });
+
+  // Get featured articles for hub page
+  app.get("/api/health/articles/featured", async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 5;
+      const articles = await storage.getFeaturedHealthArticles(limit);
+      res.json(articles);
+    } catch (error) {
+      console.error("Error fetching featured articles:", error);
+      res.status(500).json({ message: "Failed to fetch featured articles" });
+    }
+  });
+
+  // Get popular articles
+  app.get("/api/health/articles/popular", async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 4;
+      const articles = await storage.getPopularHealthArticles(limit);
+      res.json(articles);
+    } catch (error) {
+      console.error("Error fetching popular articles:", error);
+      res.status(500).json({ message: "Failed to fetch popular articles" });
+    }
+  });
+
+  // Get recent articles
+  app.get("/api/health/articles/recent", async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 6;
+      const articles = await storage.getRecentHealthArticles(limit);
+      res.json(articles);
+    } catch (error) {
+      console.error("Error fetching recent articles:", error);
+      res.status(500).json({ message: "Failed to fetch recent articles" });
+    }
+  });
+
+  // Get editor picks
+  app.get("/api/health/articles/editor-picks", async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 4;
+      const articles = await storage.getEditorPickHealthArticles(limit);
+      res.json(articles);
+    } catch (error) {
+      console.error("Error fetching editor picks:", error);
+      res.status(500).json({ message: "Failed to fetch editor picks" });
+    }
+  });
+
+  // Search health articles
+  app.get("/api/health/articles/search", async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      if (!query) {
+        return res.status(400).json({ message: "Search query required" });
+      }
+      const articles = await storage.searchHealthArticles(query);
+      res.json(articles);
+    } catch (error) {
+      console.error("Error searching articles:", error);
+      res.status(500).json({ message: "Failed to search articles" });
+    }
+  });
+
+  // Get article by slug
+  app.get("/api/health/articles/:slug", async (req, res) => {
+    try {
+      const article = await storage.getHealthArticleBySlug(req.params.slug);
+      if (!article) {
+        return res.status(404).json({ message: "Article not found" });
+      }
+      await storage.incrementHealthArticleViews(article.id);
+      res.json(article);
+    } catch (error) {
+      console.error("Error fetching article:", error);
+      res.status(500).json({ message: "Failed to fetch article" });
+    }
+  });
+
+  // Get all diseases
+  app.get("/api/health/diseases", async (req, res) => {
+    try {
+      const common = req.query.common === "true";
+      const diseasesList = common 
+        ? await storage.getCommonDiseases()
+        : await storage.getAllDiseases();
+      res.json(diseasesList);
+    } catch (error) {
+      console.error("Error fetching diseases:", error);
+      res.status(500).json({ message: "Failed to fetch diseases" });
+    }
+  });
+
+  // Get disease by slug
+  app.get("/api/health/diseases/:slug", async (req, res) => {
+    try {
+      const disease = await storage.getDiseaseBySlug(req.params.slug);
+      if (!disease) {
+        return res.status(404).json({ message: "Disease not found" });
+      }
+      await storage.incrementDiseaseViews(disease.id);
+      res.json(disease);
+    } catch (error) {
+      console.error("Error fetching disease:", error);
+      res.status(500).json({ message: "Failed to fetch disease" });
+    }
+  });
+
+  // Get today's health tip
+  app.get("/api/health/tips/today", async (req, res) => {
+    try {
+      const tip = await storage.getTodayHealthTip();
+      res.json(tip || null);
+    } catch (error) {
+      console.error("Error fetching health tip:", error);
+      res.status(500).json({ message: "Failed to fetch health tip" });
+    }
+  });
+
+  // Subscribe to newsletter
+  app.post("/api/health/newsletter/subscribe", async (req, res) => {
+    try {
+      const { email, name } = req.body;
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+      const subscriber = await storage.subscribeNewsletter({ email, name, isActive: true });
+      res.json({ success: true, subscriber });
+    } catch (error) {
+      console.error("Error subscribing to newsletter:", error);
+      res.status(500).json({ message: "Failed to subscribe" });
+    }
+  });
+
+  // Unsubscribe from newsletter
+  app.post("/api/health/newsletter/unsubscribe", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+      await storage.unsubscribeNewsletter(email);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error unsubscribing:", error);
+      res.status(500).json({ message: "Failed to unsubscribe" });
+    }
+  });
+
+  // Get user's bookmarked articles (requires auth)
+  app.get("/api/health/bookmarks", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const bookmarkedArticles = await storage.getUserHealthBookmarks(userId);
+      res.json(bookmarkedArticles);
+    } catch (error) {
+      console.error("Error fetching bookmarks:", error);
+      res.status(500).json({ message: "Failed to fetch bookmarks" });
+    }
+  });
+
+  // Add bookmark (requires auth)
+  app.post("/api/health/bookmarks/:articleId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const articleId = parseInt(req.params.articleId);
+      await storage.addHealthBookmark(userId, articleId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error adding bookmark:", error);
+      res.status(500).json({ message: "Failed to add bookmark" });
+    }
+  });
+
+  // Remove bookmark (requires auth)
+  app.delete("/api/health/bookmarks/:articleId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const articleId = parseInt(req.params.articleId);
+      await storage.removeHealthBookmark(userId, articleId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing bookmark:", error);
+      res.status(500).json({ message: "Failed to remove bookmark" });
+    }
+  });
+
+  // Check if article is bookmarked (requires auth)
+  app.get("/api/health/bookmarks/:articleId/check", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const articleId = parseInt(req.params.articleId);
+      const isBookmarked = await storage.isArticleBookmarked(userId, articleId);
+      res.json({ isBookmarked });
+    } catch (error) {
+      console.error("Error checking bookmark:", error);
+      res.status(500).json({ message: "Failed to check bookmark" });
+    }
+  });
+
+  // Seed health data (admin only)
+  app.post("/api/admin/health/seed", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      await storage.seedHealthCategories();
+      await storage.seedCommonDiseases();
+      res.json({ success: true, message: "Health data seeded successfully" });
+    } catch (error) {
+      console.error("Error seeding health data:", error);
+      res.status(500).json({ message: "Failed to seed health data" });
+    }
+  });
+
   app.get("/sitemap.xml", async (req, res) => {
     try {
       const baseUrl = `https://${req.get("host")}`;
