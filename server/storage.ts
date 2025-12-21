@@ -42,6 +42,12 @@ import {
   featuredReviewers,
   profileLevels,
   pointValues,
+  healthCategories,
+  healthArticles,
+  diseases,
+  healthBookmarks,
+  healthTips,
+  newsletterSubscribers,
   type User,
   type UpsertUser,
   type Hospital,
@@ -120,6 +126,17 @@ import {
   type InsertAchievementNotification,
   type FeaturedReviewer,
   type InsertFeaturedReviewer,
+  type HealthCategory,
+  type InsertHealthCategory,
+  type HealthArticle,
+  type InsertHealthArticle,
+  type Disease,
+  type InsertDisease,
+  type HealthBookmark,
+  type HealthTip,
+  type InsertHealthTip,
+  type NewsletterSubscriber,
+  type InsertNewsletterSubscriber,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, ilike, or, desc, count, gte, inArray } from "drizzle-orm";
@@ -2398,6 +2415,275 @@ export class DatabaseStorage implements IStorage {
       const existing = await this.getBadgeByCode(badge.code);
       if (!existing) {
         await this.createBadge(badge);
+      }
+    }
+  }
+
+  // ==================== HEALTH EDUCATION HUB ====================
+
+  // Health Categories
+  async getAllHealthCategories(): Promise<HealthCategory[]> {
+    return await db.select().from(healthCategories)
+      .where(eq(healthCategories.isActive, true))
+      .orderBy(healthCategories.displayOrder);
+  }
+
+  async getHealthCategoryBySlug(slug: string): Promise<HealthCategory | undefined> {
+    const [category] = await db.select().from(healthCategories)
+      .where(eq(healthCategories.slug, slug));
+    return category;
+  }
+
+  async createHealthCategory(data: InsertHealthCategory): Promise<HealthCategory> {
+    const [category] = await db.insert(healthCategories).values(data).returning();
+    return category;
+  }
+
+  // Health Articles
+  async getAllHealthArticles(status?: string): Promise<HealthArticle[]> {
+    if (status) {
+      return await db.select().from(healthArticles)
+        .where(eq(healthArticles.status, status))
+        .orderBy(desc(healthArticles.publishedAt));
+    }
+    return await db.select().from(healthArticles)
+      .orderBy(desc(healthArticles.publishedAt));
+  }
+
+  async getHealthArticleBySlug(slug: string): Promise<HealthArticle | undefined> {
+    const [article] = await db.select().from(healthArticles)
+      .where(eq(healthArticles.slug, slug));
+    return article;
+  }
+
+  async getHealthArticlesByCategory(categoryId: number): Promise<HealthArticle[]> {
+    return await db.select().from(healthArticles)
+      .where(and(
+        eq(healthArticles.categoryId, categoryId),
+        eq(healthArticles.status, 'published')
+      ))
+      .orderBy(desc(healthArticles.publishedAt));
+  }
+
+  async getFeaturedHealthArticles(limit = 5): Promise<HealthArticle[]> {
+    return await db.select().from(healthArticles)
+      .where(and(
+        eq(healthArticles.isFeatured, true),
+        eq(healthArticles.status, 'published')
+      ))
+      .orderBy(desc(healthArticles.publishedAt))
+      .limit(limit);
+  }
+
+  async getPopularHealthArticles(limit = 4): Promise<HealthArticle[]> {
+    return await db.select().from(healthArticles)
+      .where(eq(healthArticles.status, 'published'))
+      .orderBy(desc(healthArticles.viewCount))
+      .limit(limit);
+  }
+
+  async getRecentHealthArticles(limit = 4): Promise<HealthArticle[]> {
+    return await db.select().from(healthArticles)
+      .where(eq(healthArticles.status, 'published'))
+      .orderBy(desc(healthArticles.publishedAt))
+      .limit(limit);
+  }
+
+  async getEditorPickHealthArticles(limit = 4): Promise<HealthArticle[]> {
+    return await db.select().from(healthArticles)
+      .where(and(
+        eq(healthArticles.isEditorPick, true),
+        eq(healthArticles.status, 'published')
+      ))
+      .orderBy(desc(healthArticles.publishedAt))
+      .limit(limit);
+  }
+
+  async createHealthArticle(data: InsertHealthArticle): Promise<HealthArticle> {
+    const [article] = await db.insert(healthArticles).values(data).returning();
+    if (data.categoryId) {
+      await db.update(healthCategories)
+        .set({ articleCount: sql`${healthCategories.articleCount} + 1` })
+        .where(eq(healthCategories.id, data.categoryId));
+    }
+    return article;
+  }
+
+  async incrementHealthArticleViews(id: number): Promise<void> {
+    await db.update(healthArticles)
+      .set({ viewCount: sql`${healthArticles.viewCount} + 1` })
+      .where(eq(healthArticles.id, id));
+  }
+
+  async searchHealthArticles(query: string): Promise<HealthArticle[]> {
+    return await db.select().from(healthArticles)
+      .where(and(
+        eq(healthArticles.status, 'published'),
+        or(
+          ilike(healthArticles.title, `%${query}%`),
+          ilike(healthArticles.excerpt, `%${query}%`),
+          ilike(healthArticles.content, `%${query}%`)
+        )
+      ))
+      .orderBy(desc(healthArticles.viewCount))
+      .limit(20);
+  }
+
+  // Disease Library
+  async getAllDiseases(): Promise<Disease[]> {
+    return await db.select().from(diseases)
+      .orderBy(diseases.name);
+  }
+
+  async getCommonDiseases(): Promise<Disease[]> {
+    return await db.select().from(diseases)
+      .where(eq(diseases.isCommon, true))
+      .orderBy(diseases.name);
+  }
+
+  async getDiseaseBySlug(slug: string): Promise<Disease | undefined> {
+    const [disease] = await db.select().from(diseases)
+      .where(eq(diseases.slug, slug));
+    return disease;
+  }
+
+  async createDisease(data: InsertDisease): Promise<Disease> {
+    const [disease] = await db.insert(diseases).values(data).returning();
+    return disease;
+  }
+
+  async incrementDiseaseViews(id: number): Promise<void> {
+    await db.update(diseases)
+      .set({ viewCount: sql`${diseases.viewCount} + 1` })
+      .where(eq(diseases.id, id));
+  }
+
+  // Health Bookmarks
+  async getUserHealthBookmarks(userId: string): Promise<HealthArticle[]> {
+    const bookmarksList = await db.select({ articleId: healthBookmarks.articleId })
+      .from(healthBookmarks)
+      .where(eq(healthBookmarks.userId, userId));
+    
+    if (bookmarksList.length === 0) return [];
+    
+    const articleIds = bookmarksList.map(b => b.articleId);
+    return await db.select().from(healthArticles)
+      .where(inArray(healthArticles.id, articleIds));
+  }
+
+  async addHealthBookmark(userId: string, articleId: number): Promise<void> {
+    await db.insert(healthBookmarks)
+      .values({ userId, articleId })
+      .onConflictDoNothing();
+    await db.update(healthArticles)
+      .set({ bookmarkCount: sql`${healthArticles.bookmarkCount} + 1` })
+      .where(eq(healthArticles.id, articleId));
+  }
+
+  async removeHealthBookmark(userId: string, articleId: number): Promise<void> {
+    await db.delete(healthBookmarks)
+      .where(and(
+        eq(healthBookmarks.userId, userId),
+        eq(healthBookmarks.articleId, articleId)
+      ));
+    await db.update(healthArticles)
+      .set({ bookmarkCount: sql`${healthArticles.bookmarkCount} - 1` })
+      .where(eq(healthArticles.id, articleId));
+  }
+
+  async isArticleBookmarked(userId: string, articleId: number): Promise<boolean> {
+    const [bookmark] = await db.select().from(healthBookmarks)
+      .where(and(
+        eq(healthBookmarks.userId, userId),
+        eq(healthBookmarks.articleId, articleId)
+      ));
+    return !!bookmark;
+  }
+
+  // Health Tips
+  async getTodayHealthTip(): Promise<HealthTip | undefined> {
+    const today = new Date().toISOString().split('T')[0];
+    const [tip] = await db.select().from(healthTips)
+      .where(and(
+        eq(healthTips.displayDate, today),
+        eq(healthTips.isActive, true)
+      ));
+    if (tip) return tip;
+    
+    const [randomTip] = await db.select().from(healthTips)
+      .where(eq(healthTips.isActive, true))
+      .orderBy(sql`RANDOM()`)
+      .limit(1);
+    return randomTip;
+  }
+
+  async createHealthTip(data: InsertHealthTip): Promise<HealthTip> {
+    const [tip] = await db.insert(healthTips).values(data).returning();
+    return tip;
+  }
+
+  // Newsletter
+  async subscribeNewsletter(data: InsertNewsletterSubscriber): Promise<NewsletterSubscriber> {
+    const [subscriber] = await db.insert(newsletterSubscribers)
+      .values(data)
+      .onConflictDoUpdate({
+        target: newsletterSubscribers.email,
+        set: { isActive: true, unsubscribedAt: null }
+      })
+      .returning();
+    return subscriber;
+  }
+
+  async unsubscribeNewsletter(email: string): Promise<void> {
+    await db.update(newsletterSubscribers)
+      .set({ isActive: false, unsubscribedAt: new Date() })
+      .where(eq(newsletterSubscribers.email, email));
+  }
+
+  async getNewsletterSubscriberCount(): Promise<number> {
+    const [result] = await db.select({ count: count() }).from(newsletterSubscribers)
+      .where(eq(newsletterSubscribers.isActive, true));
+    return result?.count || 0;
+  }
+
+  // Seed default health categories
+  async seedHealthCategories(): Promise<void> {
+    const defaultCategories: InsertHealthCategory[] = [
+      { name: 'Disease Recognition & Symptoms', slug: 'disease-recognition', description: 'Learn to identify common health conditions and their symptoms', icon: 'stethoscope', displayOrder: 1 },
+      { name: 'Preventive Care & Wellness', slug: 'preventive-care', description: 'Tips and guidance for staying healthy and preventing illness', icon: 'shield-check', displayOrder: 2 },
+      { name: 'Healthy Lifestyle & Nutrition', slug: 'nutrition-lifestyle', description: 'Nutrition advice, exercise tips, and healthy living guides', icon: 'apple', displayOrder: 3 },
+      { name: "Women's Health & Maternity", slug: 'womens-health', description: 'Reproductive health, pregnancy, and wellness for women', icon: 'heart', displayOrder: 4 },
+      { name: "Children's Health & Pediatrics", slug: 'pediatrics', description: 'Healthcare guidance for infants, children, and adolescents', icon: 'baby', displayOrder: 5 },
+      { name: 'Mental Health & Wellbeing', slug: 'mental-health', description: 'Mental wellness, stress management, and emotional health', icon: 'brain', displayOrder: 6 },
+      { name: 'Chronic Disease Management', slug: 'chronic-disease', description: 'Living with and managing chronic health conditions', icon: 'activity', displayOrder: 7 },
+      { name: 'First Aid & Emergency Care', slug: 'first-aid', description: 'Emergency response, first aid tips, and urgent care guidance', icon: 'ambulance', displayOrder: 8 },
+    ];
+    
+    for (const category of defaultCategories) {
+      const existing = await this.getHealthCategoryBySlug(category.slug);
+      if (!existing) {
+        await this.createHealthCategory(category);
+      }
+    }
+  }
+
+  // Seed common diseases in Nigeria
+  async seedCommonDiseases(): Promise<void> {
+    const commonDiseases: InsertDisease[] = [
+      { name: 'Malaria', slug: 'malaria', description: 'A life-threatening disease caused by parasites transmitted through infected mosquito bites.', symptoms: ['Fever', 'Chills', 'Headache', 'Body aches', 'Fatigue', 'Nausea'], isCommon: true, prevalenceInNigeria: 'Very High - Nigeria accounts for about 27% of global malaria cases' },
+      { name: 'Typhoid Fever', slug: 'typhoid', description: 'A bacterial infection caused by Salmonella typhi, spread through contaminated food and water.', symptoms: ['High fever', 'Weakness', 'Stomach pain', 'Headache', 'Loss of appetite'], isCommon: true, prevalenceInNigeria: 'High - Common in areas with poor sanitation' },
+      { name: 'Hypertension', slug: 'hypertension', description: 'A chronic condition where blood pressure against artery walls is consistently too high.', symptoms: ['Often no symptoms', 'Headaches', 'Shortness of breath', 'Nosebleeds'], isCommon: true, prevalenceInNigeria: 'High - Affects about 30% of Nigerian adults' },
+      { name: 'Diabetes', slug: 'diabetes', description: 'A metabolic disease causing high blood sugar levels over a prolonged period.', symptoms: ['Increased thirst', 'Frequent urination', 'Unexplained weight loss', 'Fatigue', 'Blurred vision'], isCommon: true, prevalenceInNigeria: 'Increasing - About 5.8% of adults affected' },
+      { name: 'HIV/AIDS', slug: 'hiv-aids', description: 'A virus that attacks the immune system and can lead to AIDS if not treated.', symptoms: ['Initial flu-like symptoms', 'Later: weight loss', 'Recurring infections', 'Night sweats'], isCommon: true, prevalenceInNigeria: 'Significant - Nigeria has the second-largest HIV epidemic globally' },
+      { name: 'Tuberculosis', slug: 'tuberculosis', description: 'A bacterial infection that mainly affects the lungs but can spread to other organs.', symptoms: ['Persistent cough', 'Coughing blood', 'Chest pain', 'Weight loss', 'Night sweats'], isCommon: true, prevalenceInNigeria: 'High - Nigeria is among countries with highest TB burden' },
+      { name: 'Cholera', slug: 'cholera', description: 'An acute diarrheal infection caused by ingesting contaminated food or water.', symptoms: ['Severe watery diarrhea', 'Vomiting', 'Dehydration', 'Leg cramps'], isCommon: true, prevalenceInNigeria: 'Seasonal outbreaks common' },
+      { name: 'Lassa Fever', slug: 'lassa-fever', description: 'A viral hemorrhagic fever endemic to West Africa, spread by rodents.', symptoms: ['Fever', 'Weakness', 'Headache', 'Bleeding', 'Respiratory problems'], isCommon: true, prevalenceInNigeria: 'Endemic - Seasonal outbreaks occur' },
+    ];
+    
+    for (const disease of commonDiseases) {
+      const existing = await this.getDiseaseBySlug(disease.slug);
+      if (!existing) {
+        await this.createDisease(disease);
       }
     }
   }
