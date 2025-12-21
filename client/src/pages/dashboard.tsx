@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { StarRating } from "@/components/star-rating";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EngagementProfileCard, ReferralCard } from "@/components/engagement-profile";
 import {
   User, Star, Bookmark, Settings, PenSquare, Building2,
   Calendar, ChevronRight, MapPin, Loader2, LogOut
@@ -112,6 +113,14 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>
+            
+            <div className="mt-6">
+              <EngagementProfileCard />
+            </div>
+            
+            <div className="mt-6">
+              <ReferralCard />
+            </div>
           </div>
 
           <div className="md:col-span-2">

@@ -30,6 +30,7 @@ import ComparePage from "@/pages/compare";
 import BlogPage from "@/pages/blog";
 import BlogArticlePage from "@/pages/blog-article";
 import HelpCenter from "@/pages/help-center";
+import Leaderboard from "@/pages/leaderboard";
 
 function Router() {
   return (
@@ -49,6 +50,7 @@ function Router() {
         <Route path="/blog" component={BlogPage} />
         <Route path="/blog/:slug" component={BlogArticlePage} />
         <Route path="/help" component={HelpCenter} />
+        <Route path="/leaderboard" component={Leaderboard} />
         <Route path="/guidelines" component={Guidelines} />
         <Route path="/trust-safety" component={TrustSafety} />
         <Route path="/about" component={About} />

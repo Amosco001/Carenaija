@@ -10,8 +10,9 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Menu, X, User as UserIcon, LogOut, Building2, Search } from "lucide-react";
+import { Menu, X, User as UserIcon, LogOut, Building2, Search, Trophy } from "lucide-react";
 import { useState } from "react";
+import { AchievementNotifications } from "@/components/engagement-profile";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
@@ -172,6 +173,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <main className="flex-1">
         {children}
       </main>
+      
+      {user && <AchievementNotifications />}
 
       <footer className="bg-slate-900 text-slate-300 py-12">
         <div className="container mx-auto px-4">
@@ -202,6 +205,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <ul className="space-y-2 text-sm">
                 <li><Link href="/about" className="hover:text-white transition-colors">About Us</Link></li>
                 <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
+                <li><Link href="/leaderboard" className="hover:text-white transition-colors">Leaderboard</Link></li>
                 <li><Link href="/guidelines" className="hover:text-white transition-colors">Guidelines</Link></li>
                 <li><Link href="/trust-safety" className="hover:text-white transition-colors">Trust & Safety</Link></li>
               </ul>

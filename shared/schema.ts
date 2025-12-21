@@ -1639,10 +1639,10 @@ export const featuredReviewersRelations = relations(featuredReviewers, ({ one })
 
 // Profile levels configuration
 export const profileLevels = {
-  novice: { name: "Novice", minPoints: 0, color: "gray" },
-  contributor: { name: "Contributor", minPoints: 100, color: "blue" },
-  expert: { name: "Expert", minPoints: 500, color: "purple" },
-  superReviewer: { name: "Super Reviewer", minPoints: 1500, color: "gold" },
+  novice: { name: "Novice", minPoints: 0, color: "gray", description: "Just getting started! Write your first review to begin earning points." },
+  contributor: { name: "Contributor", minPoints: 100, color: "blue", description: "Active member helping others find quality healthcare." },
+  expert: { name: "Expert", minPoints: 500, color: "purple", description: "Trusted reviewer with valuable healthcare insights." },
+  superReviewer: { name: "Super Reviewer", minPoints: 1500, color: "gold", description: "Top contributor making a real difference in healthcare transparency." },
 } as const;
 
 export type ProfileLevel = keyof typeof profileLevels;
