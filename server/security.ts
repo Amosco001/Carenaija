@@ -22,7 +22,7 @@ export const securityMiddleware = {
         imgSrc: ["'self'", "data:", "https:", "blob:"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         connectSrc: ["'self'", "https://maps.googleapis.com", "wss:", "ws:"],
-        frameSrc: ["'self'", "https://maps.google.com"],
+        frameSrc: ["'self'", "https://maps.google.com", "https://www.google.com", "https://*.google.com"],
         objectSrc: ["'none'"],
         upgradeInsecureRequests: process.env.NODE_ENV === "production" ? [] : null,
       },
