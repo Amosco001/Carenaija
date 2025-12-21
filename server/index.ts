@@ -4,9 +4,18 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { autoSeedDatabase } from "./auto-seed";
+import { 
+  securityMiddleware, 
+  secureHeaders, 
+  sanitizeRequestBody,
+  securityAuditMiddleware 
+} from "./security";
 
 const app = express();
 
+app.use(securityMiddleware.httpsRedirect);
+app.use(securityMiddleware.helmet);
+app.use(secureHeaders);
 app.use(compression());
 const httpServer = createServer(app);
 
@@ -25,6 +34,10 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false }));
+
+app.use(sanitizeRequestBody);
+app.use(securityAuditMiddleware);
+app.use("/api/", securityMiddleware.apiRateLimiter);
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {

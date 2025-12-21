@@ -13,6 +13,14 @@ import {
 } from "@shared/schema";
 import { notificationService } from "./services/notification";
 import crypto from "crypto";
+import { 
+  securityMiddleware, 
+  bruteForceProtection, 
+  logSecurityEvent,
+  setCsrfToken,
+  generateCsrfToken,
+  inputValidators,
+} from "./security";
 
 function getClientIp(req: Request): string {
   const forwarded = req.headers["x-forwarded-for"];
@@ -110,6 +118,16 @@ async function calculateSpamScore(reviewText: string, clientIp: string): Promise
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   await setupAuth(app);
 
+  app.use(setCsrfToken);
+
+  app.get('/api/csrf-token', (req: any, res) => {
+    const token = (req.session as any)?.csrfToken || generateCsrfToken();
+    if (!(req.session as any)?.csrfToken) {
+      (req.session as any).csrfToken = token;
+    }
+    res.json({ csrfToken: token });
+  });
+
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -199,7 +217,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  app.post("/api/hospitals/:id/patient-reviews", isAuthenticated, async (req: any, res) => {
+  app.post("/api/hospitals/:id/patient-reviews", isAuthenticated, securityMiddleware.formRateLimiter, async (req: any, res) => {
     try {
       const hospitalId = parseInt(req.params.id);
       if (isNaN(hospitalId)) {
@@ -254,7 +272,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  app.post("/api/hospitals/:id/employee-reviews", isAuthenticated, async (req: any, res) => {
+  app.post("/api/hospitals/:id/employee-reviews", isAuthenticated, securityMiddleware.formRateLimiter, async (req: any, res) => {
     try {
       const hospitalId = parseInt(req.params.id);
       if (isNaN(hospitalId)) {
@@ -294,7 +312,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  app.post("/api/hospital-suggestions", isAuthenticated, async (req: any, res) => {
+  app.post("/api/hospital-suggestions", isAuthenticated, securityMiddleware.formRateLimiter, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const validatedData = insertHospitalSuggestionSchema.parse({
@@ -310,7 +328,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  app.post("/api/hospitals/:id/claim-requests", isAuthenticated, async (req: any, res) => {
+  app.post("/api/hospitals/:id/claim-requests", isAuthenticated, securityMiddleware.strictRateLimiter, async (req: any, res) => {
     try {
       const hospitalId = parseInt(req.params.id);
       if (isNaN(hospitalId)) {
@@ -492,7 +510,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // ==================== REVIEW FLAGGING/REPORTING ROUTES ====================
 
   // Report a review
-  app.post("/api/reviews/:id/flag", isAuthenticated, async (req: any, res) => {
+  app.post("/api/reviews/:id/flag", isAuthenticated, securityMiddleware.formRateLimiter, async (req: any, res) => {
     try {
       const reviewId = parseInt(req.params.id);
       if (isNaN(reviewId)) {
@@ -768,7 +786,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // ==================== VERIFICATION TOKENS ====================
 
   // Send email verification
-  app.post("/api/auth/send-verification", isAuthenticated, async (req: any, res) => {
+  app.post("/api/auth/send-verification", isAuthenticated, securityMiddleware.authRateLimiter, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -830,7 +848,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // Request phone verification (placeholder for Twilio)
-  app.post("/api/auth/send-phone-verification", isAuthenticated, async (req: any, res) => {
+  app.post("/api/auth/send-phone-verification", isAuthenticated, securityMiddleware.authRateLimiter, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { phoneNumber } = req.body;

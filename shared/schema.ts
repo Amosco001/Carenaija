@@ -538,6 +538,44 @@ export const adminAuditLog = pgTable("admin_audit_log", {
 
 export type AdminAuditLog = typeof adminAuditLog.$inferSelect;
 
+// Login Attempts table - for brute force protection
+export const loginAttempts = pgTable("login_attempts", {
+  id: serial("id").primaryKey(),
+  identifier: varchar("identifier").notNull(),
+  attemptCount: integer("attempt_count").notNull().default(0),
+  lastAttempt: timestamp("last_attempt").defaultNow(),
+  lockedUntil: timestamp("locked_until"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_login_attempts_identifier").on(table.identifier),
+  index("IDX_login_attempts_locked").on(table.lockedUntil),
+]);
+
+export type LoginAttempt = typeof loginAttempts.$inferSelect;
+
+// Security Events table - for comprehensive security audit logging
+export const securityEvents = pgTable("security_events", {
+  id: serial("id").primaryKey(),
+  eventType: text("event_type").notNull(),
+  userId: varchar("user_id"),
+  ipAddress: varchar("ip_address").notNull(),
+  userAgent: text("user_agent"),
+  requestPath: text("request_path"),
+  requestMethod: varchar("request_method"),
+  statusCode: integer("status_code"),
+  severity: text("severity").notNull().default("info"),
+  details: jsonb("details"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_security_events_type").on(table.eventType),
+  index("IDX_security_events_ip").on(table.ipAddress),
+  index("IDX_security_events_severity").on(table.severity),
+  index("IDX_security_events_created").on(table.createdAt),
+]);
+
+export type SecurityEvent = typeof securityEvents.$inferSelect;
+export type InsertSecurityEvent = typeof securityEvents.$inferInsert;
+
 // Pending Hospitals table - for scraped hospitals awaiting verification
 export const pendingHospitals = pgTable("pending_hospitals", {
   id: serial("id").primaryKey(),
