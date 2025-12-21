@@ -1187,3 +1187,213 @@ export const hospitalResponsesRelations = relations(hospitalResponses, ({ one })
     references: [users.id],
   }),
 }));
+
+// ============================================
+// BLOG SYSTEM TABLES
+// ============================================
+
+// Blog Categories table
+export const blogCategories = pgTable("blog_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  coverImageUrl: text("cover_image_url"),
+  parentId: integer("parent_id"),
+  displayOrder: integer("display_order").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_blog_categories_slug").on(table.slug),
+  index("IDX_blog_categories_active").on(table.isActive),
+]);
+
+export const insertBlogCategorySchema = createInsertSchema(blogCategories).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertBlogCategory = z.infer<typeof insertBlogCategorySchema>;
+export type BlogCategory = typeof blogCategories.$inferSelect;
+
+// Blog Tags table
+export const blogTags = pgTable("blog_tags", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  usageCount: integer("usage_count").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_blog_tags_slug").on(table.slug),
+  index("IDX_blog_tags_usage").on(table.usageCount),
+]);
+
+export const insertBlogTagSchema = createInsertSchema(blogTags).omit({
+  id: true,
+  createdAt: true,
+  usageCount: true,
+});
+
+export type InsertBlogTag = z.infer<typeof insertBlogTagSchema>;
+export type BlogTag = typeof blogTags.$inferSelect;
+
+// Blog article status enum
+export const blogArticleStatusEnum = ["draft", "published", "scheduled", "archived"] as const;
+export type BlogArticleStatus = typeof blogArticleStatusEnum[number];
+
+// Blog article type enum
+export const blogArticleTypeEnum = ["article", "hospital_guide", "specialty_guide", "healthcare_tips", "news"] as const;
+export type BlogArticleType = typeof blogArticleTypeEnum[number];
+
+// Blog Articles table
+export const blogArticles = pgTable("blog_articles", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  slug: text("slug").notNull().unique(),
+  excerpt: text("excerpt"),
+  content: text("content").notNull(),
+  contentHtml: text("content_html"),
+  coverImageUrl: text("cover_image_url"),
+  coverImageAlt: text("cover_image_alt"),
+  authorId: varchar("author_id").notNull().references(() => users.id),
+  authorName: text("author_name").notNull(),
+  authorBio: text("author_bio"),
+  authorAvatarUrl: text("author_avatar_url"),
+  categoryId: integer("category_id").references(() => blogCategories.id),
+  articleType: text("article_type").notNull().default("article"),
+  status: text("status").notNull().default("draft"),
+  publishedAt: timestamp("published_at"),
+  scheduledAt: timestamp("scheduled_at"),
+  metaTitle: text("meta_title"),
+  metaDescription: text("meta_description"),
+  canonicalUrl: text("canonical_url"),
+  readingTimeMinutes: integer("reading_time_minutes").notNull().default(5),
+  viewCount: integer("view_count").notNull().default(0),
+  likeCount: integer("like_count").notNull().default(0),
+  commentCount: integer("comment_count").notNull().default(0),
+  isFeatured: boolean("is_featured").notNull().default(false),
+  allowComments: boolean("allow_comments").notNull().default(true),
+  relatedHospitalId: integer("related_hospital_id").references(() => hospitals.id),
+  relatedCity: text("related_city"),
+  relatedState: text("related_state"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("IDX_blog_articles_slug").on(table.slug),
+  index("IDX_blog_articles_status").on(table.status),
+  index("IDX_blog_articles_published").on(table.publishedAt),
+  index("IDX_blog_articles_category").on(table.categoryId),
+  index("IDX_blog_articles_type").on(table.articleType),
+  index("IDX_blog_articles_featured").on(table.isFeatured),
+  index("IDX_blog_articles_author").on(table.authorId),
+]);
+
+export const insertBlogArticleSchema = createInsertSchema(blogArticles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  viewCount: true,
+  likeCount: true,
+  commentCount: true,
+});
+
+export type InsertBlogArticle = z.infer<typeof insertBlogArticleSchema>;
+export type BlogArticle = typeof blogArticles.$inferSelect;
+
+// Blog Article Tags junction table
+export const blogArticleTags = pgTable("blog_article_tags", {
+  id: serial("id").primaryKey(),
+  articleId: integer("article_id").notNull().references(() => blogArticles.id, { onDelete: "cascade" }),
+  tagId: integer("tag_id").notNull().references(() => blogTags.id, { onDelete: "cascade" }),
+}, (table) => [
+  index("IDX_blog_article_tags_article").on(table.articleId),
+  index("IDX_blog_article_tags_tag").on(table.tagId),
+]);
+
+export type BlogArticleTag = typeof blogArticleTags.$inferSelect;
+
+// Blog Comments table
+export const blogComments = pgTable("blog_comments", {
+  id: serial("id").primaryKey(),
+  articleId: integer("article_id").notNull().references(() => blogArticles.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  userName: text("user_name").notNull(),
+  userAvatarUrl: text("user_avatar_url"),
+  content: text("content").notNull(),
+  parentId: integer("parent_id"),
+  likeCount: integer("like_count").notNull().default(0),
+  status: text("status").notNull().default("approved"),
+  isEdited: boolean("is_edited").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("IDX_blog_comments_article").on(table.articleId),
+  index("IDX_blog_comments_user").on(table.userId),
+  index("IDX_blog_comments_parent").on(table.parentId),
+  index("IDX_blog_comments_status").on(table.status),
+]);
+
+export const insertBlogCommentSchema = createInsertSchema(blogComments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  likeCount: true,
+  isEdited: true,
+});
+
+export type InsertBlogComment = z.infer<typeof insertBlogCommentSchema>;
+export type BlogComment = typeof blogComments.$inferSelect;
+
+// Blog Relations
+export const blogCategoriesRelations = relations(blogCategories, ({ many, one }) => ({
+  articles: many(blogArticles),
+  parent: one(blogCategories, {
+    fields: [blogCategories.parentId],
+    references: [blogCategories.id],
+  }),
+}));
+
+export const blogArticlesRelations = relations(blogArticles, ({ one, many }) => ({
+  author: one(users, {
+    fields: [blogArticles.authorId],
+    references: [users.id],
+  }),
+  category: one(blogCategories, {
+    fields: [blogArticles.categoryId],
+    references: [blogCategories.id],
+  }),
+  relatedHospital: one(hospitals, {
+    fields: [blogArticles.relatedHospitalId],
+    references: [hospitals.id],
+  }),
+  tags: many(blogArticleTags),
+  comments: many(blogComments),
+}));
+
+export const blogArticleTagsRelations = relations(blogArticleTags, ({ one }) => ({
+  article: one(blogArticles, {
+    fields: [blogArticleTags.articleId],
+    references: [blogArticles.id],
+  }),
+  tag: one(blogTags, {
+    fields: [blogArticleTags.tagId],
+    references: [blogTags.id],
+  }),
+}));
+
+export const blogCommentsRelations = relations(blogComments, ({ one, many }) => ({
+  article: one(blogArticles, {
+    fields: [blogComments.articleId],
+    references: [blogArticles.id],
+  }),
+  user: one(users, {
+    fields: [blogComments.userId],
+    references: [users.id],
+  }),
+  parent: one(blogComments, {
+    fields: [blogComments.parentId],
+    references: [blogComments.id],
+  }),
+  replies: many(blogComments),
+}));
