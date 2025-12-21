@@ -1061,3 +1061,129 @@ export const adminEmailTemplatesRelations = relations(adminEmailTemplates, ({ on
     references: [users.id],
   }),
 }));
+
+// Review Helpful Votes table - track who found reviews helpful
+export const reviewHelpfulVotes = pgTable("review_helpful_votes", {
+  id: serial("id").primaryKey(),
+  reviewId: integer("review_id").notNull(),
+  reviewType: text("review_type").notNull().default("patient"),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_review_helpful_votes_review").on(table.reviewId, table.reviewType),
+  index("IDX_review_helpful_votes_user").on(table.userId),
+]);
+
+export type ReviewHelpfulVote = typeof reviewHelpfulVotes.$inferSelect;
+export type InsertReviewHelpfulVote = typeof reviewHelpfulVotes.$inferInsert;
+
+// Hospital Responses table - hospital responses to reviews
+export const hospitalResponses = pgTable("hospital_responses", {
+  id: serial("id").primaryKey(),
+  reviewId: integer("review_id").notNull(),
+  reviewType: text("review_type").notNull().default("patient"),
+  hospitalId: integer("hospital_id").notNull().references(() => hospitals.id, { onDelete: "cascade" }),
+  responderId: varchar("responder_id").notNull().references(() => users.id),
+  responderName: text("responder_name").notNull(),
+  responderTitle: text("responder_title"),
+  responseText: text("response_text").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("IDX_hospital_responses_review").on(table.reviewId, table.reviewType),
+  index("IDX_hospital_responses_hospital").on(table.hospitalId),
+]);
+
+export const insertHospitalResponseSchema = createInsertSchema(hospitalResponses).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertHospitalResponse = z.infer<typeof insertHospitalResponseSchema>;
+export type HospitalResponse = typeof hospitalResponses.$inferSelect;
+
+// Testimonials table - featured user testimonials for homepage
+export const testimonials = pgTable("testimonials", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  role: text("role"),
+  location: text("location"),
+  quote: text("quote").notNull(),
+  rating: integer("rating"),
+  avatarUrl: text("avatar_url"),
+  isActive: boolean("is_active").notNull().default(true),
+  displayOrder: integer("display_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_testimonials_active").on(table.isActive),
+  index("IDX_testimonials_order").on(table.displayOrder),
+]);
+
+export const insertTestimonialSchema = createInsertSchema(testimonials).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTestimonial = z.infer<typeof insertTestimonialSchema>;
+export type Testimonial = typeof testimonials.$inferSelect;
+
+// Press Mentions table - media coverage and awards
+export const pressMentions = pgTable("press_mentions", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  source: text("source").notNull(),
+  sourceLogoUrl: text("source_logo_url"),
+  articleUrl: text("article_url"),
+  excerpt: text("excerpt"),
+  mentionType: text("mention_type").notNull().default("press"),
+  publishedAt: timestamp("published_at"),
+  isActive: boolean("is_active").notNull().default(true),
+  displayOrder: integer("display_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_press_mentions_active").on(table.isActive),
+  index("IDX_press_mentions_type").on(table.mentionType),
+]);
+
+export const insertPressMentionSchema = createInsertSchema(pressMentions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertPressMention = z.infer<typeof insertPressMentionSchema>;
+export type PressMention = typeof pressMentions.$inferSelect;
+
+// Platform Stats table - cached platform statistics
+export const platformStats = pgTable("platform_stats", {
+  id: serial("id").primaryKey(),
+  statKey: text("stat_key").notNull().unique(),
+  statValue: integer("stat_value").notNull().default(0),
+  displayLabel: text("display_label").notNull(),
+  lastCalculated: timestamp("last_calculated").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_platform_stats_key").on(table.statKey),
+]);
+
+export type PlatformStat = typeof platformStats.$inferSelect;
+export type InsertPlatformStat = typeof platformStats.$inferInsert;
+
+// Relations for trust building tables
+export const reviewHelpfulVotesRelations = relations(reviewHelpfulVotes, ({ one }) => ({
+  user: one(users, {
+    fields: [reviewHelpfulVotes.userId],
+    references: [users.id],
+  }),
+}));
+
+export const hospitalResponsesRelations = relations(hospitalResponses, ({ one }) => ({
+  hospital: one(hospitals, {
+    fields: [hospitalResponses.hospitalId],
+    references: [hospitals.id],
+  }),
+  responder: one(users, {
+    fields: [hospitalResponses.responderId],
+    references: [users.id],
+  }),
+}));

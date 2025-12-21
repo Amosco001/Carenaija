@@ -1973,6 +1973,226 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // ==================== TRUST BUILDING ROUTES ====================
+
+  // Get trust stats for homepage
+  app.get("/api/trust-stats", async (req, res) => {
+    try {
+      const stats = await storage.getTrustStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching trust stats:", error);
+      res.status(500).json({ message: "Failed to fetch trust stats" });
+    }
+  });
+
+  // Get active testimonials for homepage
+  app.get("/api/testimonials", async (req, res) => {
+    try {
+      const testimonialsList = await storage.getActiveTestimonials();
+      res.json(testimonialsList);
+    } catch (error) {
+      console.error("Error fetching testimonials:", error);
+      res.status(500).json({ message: "Failed to fetch testimonials" });
+    }
+  });
+
+  // Get active press mentions for homepage
+  app.get("/api/press-mentions", async (req, res) => {
+    try {
+      const mentions = await storage.getActivePressMentions();
+      res.json(mentions);
+    } catch (error) {
+      console.error("Error fetching press mentions:", error);
+      res.status(500).json({ message: "Failed to fetch press mentions" });
+    }
+  });
+
+  // Vote a review as helpful
+  app.post("/api/reviews/:id/helpful", isAuthenticated, securityMiddleware.formRateLimiter, async (req: any, res) => {
+    try {
+      const reviewId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const { reviewType = 'patient' } = req.body;
+      
+      await storage.addHelpfulVote(reviewId, reviewType, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error adding helpful vote:", error);
+      res.status(500).json({ message: "Failed to add helpful vote" });
+    }
+  });
+
+  // Remove helpful vote from a review
+  app.delete("/api/reviews/:id/helpful", isAuthenticated, async (req: any, res) => {
+    try {
+      const reviewId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const reviewType = req.query.reviewType || 'patient';
+      
+      await storage.removeHelpfulVote(reviewId, reviewType as string, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing helpful vote:", error);
+      res.status(500).json({ message: "Failed to remove helpful vote" });
+    }
+  });
+
+  // Get user's helpful votes
+  app.get("/api/user/helpful-votes", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const votes = await storage.getUserHelpfulVotes(userId);
+      res.json(votes);
+    } catch (error) {
+      console.error("Error fetching helpful votes:", error);
+      res.status(500).json({ message: "Failed to fetch helpful votes" });
+    }
+  });
+
+  // Get hospital response rate
+  app.get("/api/hospitals/:id/response-rate", async (req, res) => {
+    try {
+      const hospitalId = parseInt(req.params.id);
+      const responseRate = await storage.getHospitalResponseRate(hospitalId);
+      res.json({ responseRate });
+    } catch (error) {
+      console.error("Error fetching response rate:", error);
+      res.status(500).json({ message: "Failed to fetch response rate" });
+    }
+  });
+
+  // Get hospital responses (for hospital owners)
+  app.get("/api/hospitals/:id/responses", async (req, res) => {
+    try {
+      const hospitalId = parseInt(req.params.id);
+      const responses = await storage.getHospitalResponses(hospitalId);
+      res.json(responses);
+    } catch (error) {
+      console.error("Error fetching hospital responses:", error);
+      res.status(500).json({ message: "Failed to fetch hospital responses" });
+    }
+  });
+
+  // Create hospital response to a review (for claimed hospital owners)
+  app.post("/api/hospitals/:id/respond-to-review", isAuthenticated, securityMiddleware.formRateLimiter, async (req: any, res) => {
+    try {
+      const hospitalId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const { reviewId, reviewType, responseText, responderName, responderTitle } = req.body;
+      
+      const hospital = await storage.getHospitalById(hospitalId);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+      
+      if (hospital.claimedBy !== userId && !req.user.isAdmin) {
+        return res.status(403).json({ message: "Not authorized to respond for this hospital" });
+      }
+      
+      const response = await storage.createHospitalResponse({
+        reviewId,
+        reviewType: reviewType || 'patient',
+        hospitalId,
+        responderId: userId,
+        responderName,
+        responderTitle,
+        responseText,
+      });
+      
+      res.status(201).json(response);
+    } catch (error) {
+      console.error("Error creating hospital response:", error);
+      res.status(500).json({ message: "Failed to create hospital response" });
+    }
+  });
+
+  // Admin routes for testimonials
+  app.get("/api/admin/testimonials", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const testimonialsList = await storage.getAllTestimonials();
+      res.json(testimonialsList);
+    } catch (error) {
+      console.error("Error fetching testimonials:", error);
+      res.status(500).json({ message: "Failed to fetch testimonials" });
+    }
+  });
+
+  app.post("/api/admin/testimonials", isAuthenticated, isAdmin, securityMiddleware.formRateLimiter, async (req: any, res) => {
+    try {
+      const testimonial = await storage.createTestimonial(req.body);
+      res.status(201).json(testimonial);
+    } catch (error) {
+      console.error("Error creating testimonial:", error);
+      res.status(400).json({ message: "Failed to create testimonial" });
+    }
+  });
+
+  app.patch("/api/admin/testimonials/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updated = await storage.updateTestimonial(id, req.body);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating testimonial:", error);
+      res.status(500).json({ message: "Failed to update testimonial" });
+    }
+  });
+
+  app.delete("/api/admin/testimonials/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteTestimonial(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting testimonial:", error);
+      res.status(500).json({ message: "Failed to delete testimonial" });
+    }
+  });
+
+  // Admin routes for press mentions
+  app.get("/api/admin/press-mentions", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const mentions = await storage.getAllPressMentions();
+      res.json(mentions);
+    } catch (error) {
+      console.error("Error fetching press mentions:", error);
+      res.status(500).json({ message: "Failed to fetch press mentions" });
+    }
+  });
+
+  app.post("/api/admin/press-mentions", isAuthenticated, isAdmin, securityMiddleware.formRateLimiter, async (req: any, res) => {
+    try {
+      const mention = await storage.createPressMention(req.body);
+      res.status(201).json(mention);
+    } catch (error) {
+      console.error("Error creating press mention:", error);
+      res.status(400).json({ message: "Failed to create press mention" });
+    }
+  });
+
+  app.patch("/api/admin/press-mentions/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updated = await storage.updatePressMention(id, req.body);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating press mention:", error);
+      res.status(500).json({ message: "Failed to update press mention" });
+    }
+  });
+
+  app.delete("/api/admin/press-mentions/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deletePressMention(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting press mention:", error);
+      res.status(500).json({ message: "Failed to delete press mention" });
+    }
+  });
+
   app.get("/robots.txt", (req, res) => {
     const baseUrl = `https://${req.get("host")}`;
     res.type("text/plain");

@@ -23,6 +23,11 @@ import {
   siteContentHistory,
   siteSettings,
   adminEmailTemplates,
+  reviewHelpfulVotes,
+  hospitalResponses,
+  testimonials,
+  pressMentions,
+  platformStats,
   type User,
   type UpsertUser,
   type Hospital,
@@ -69,6 +74,15 @@ import {
   unverifiedSubmissions,
   type UnverifiedSubmission,
   type InsertUnverifiedSubmission,
+  type ReviewHelpfulVote,
+  type InsertReviewHelpfulVote,
+  type HospitalResponse,
+  type InsertHospitalResponse,
+  type Testimonial,
+  type InsertTestimonial,
+  type PressMention,
+  type InsertPressMention,
+  type PlatformStat,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, ilike, or, desc, count, gte, inArray } from "drizzle-orm";
@@ -1557,6 +1571,211 @@ export class DatabaseStorage implements IStorage {
 
   async getHospital(id: number): Promise<Hospital | undefined> {
     return this.getHospitalById(id);
+  }
+
+  // ==================== REVIEW HELPFUL VOTES ====================
+  
+  async addHelpfulVote(reviewId: number, reviewType: string, userId: string): Promise<void> {
+    const existing = await db.select().from(reviewHelpfulVotes)
+      .where(and(
+        eq(reviewHelpfulVotes.reviewId, reviewId),
+        eq(reviewHelpfulVotes.reviewType, reviewType),
+        eq(reviewHelpfulVotes.userId, userId)
+      ));
+    
+    if (existing.length === 0) {
+      await db.insert(reviewHelpfulVotes).values({ reviewId, reviewType, userId });
+      if (reviewType === 'patient') {
+        await db.update(patientReviews)
+          .set({ helpfulCount: sql`${patientReviews.helpfulCount} + 1` })
+          .where(eq(patientReviews.id, reviewId));
+      } else {
+        await db.update(employeeReviews)
+          .set({ helpfulCount: sql`${employeeReviews.helpfulCount} + 1` })
+          .where(eq(employeeReviews.id, reviewId));
+      }
+    }
+  }
+
+  async removeHelpfulVote(reviewId: number, reviewType: string, userId: string): Promise<void> {
+    const [deleted] = await db.delete(reviewHelpfulVotes)
+      .where(and(
+        eq(reviewHelpfulVotes.reviewId, reviewId),
+        eq(reviewHelpfulVotes.reviewType, reviewType),
+        eq(reviewHelpfulVotes.userId, userId)
+      ))
+      .returning();
+    
+    if (deleted) {
+      if (reviewType === 'patient') {
+        await db.update(patientReviews)
+          .set({ helpfulCount: sql`GREATEST(${patientReviews.helpfulCount} - 1, 0)` })
+          .where(eq(patientReviews.id, reviewId));
+      } else {
+        await db.update(employeeReviews)
+          .set({ helpfulCount: sql`GREATEST(${employeeReviews.helpfulCount} - 1, 0)` })
+          .where(eq(employeeReviews.id, reviewId));
+      }
+    }
+  }
+
+  async getUserHelpfulVotes(userId: string): Promise<ReviewHelpfulVote[]> {
+    return db.select().from(reviewHelpfulVotes).where(eq(reviewHelpfulVotes.userId, userId));
+  }
+
+  async hasUserVotedHelpful(reviewId: number, reviewType: string, userId: string): Promise<boolean> {
+    const [vote] = await db.select().from(reviewHelpfulVotes)
+      .where(and(
+        eq(reviewHelpfulVotes.reviewId, reviewId),
+        eq(reviewHelpfulVotes.reviewType, reviewType),
+        eq(reviewHelpfulVotes.userId, userId)
+      ));
+    return !!vote;
+  }
+
+  // ==================== HOSPITAL RESPONSES ====================
+  
+  async getHospitalResponses(hospitalId: number): Promise<HospitalResponse[]> {
+    return db.select().from(hospitalResponses)
+      .where(eq(hospitalResponses.hospitalId, hospitalId))
+      .orderBy(desc(hospitalResponses.createdAt));
+  }
+
+  async getHospitalReviewResponse(reviewId: number, reviewType: string): Promise<HospitalResponse | undefined> {
+    const [response] = await db.select().from(hospitalResponses)
+      .where(and(
+        eq(hospitalResponses.reviewId, reviewId),
+        eq(hospitalResponses.reviewType, reviewType)
+      ));
+    return response;
+  }
+
+  async createHospitalResponse(data: InsertHospitalResponse): Promise<HospitalResponse> {
+    const [created] = await db.insert(hospitalResponses).values(data).returning();
+    return created;
+  }
+
+  async getHospitalResponseRate(hospitalId: number): Promise<number> {
+    const [reviewCount] = await db.select({ count: count() }).from(patientReviews)
+      .where(eq(patientReviews.hospitalId, hospitalId));
+    const [responseCount] = await db.select({ count: count() }).from(hospitalResponses)
+      .where(eq(hospitalResponses.hospitalId, hospitalId));
+    
+    if (!reviewCount?.count || reviewCount.count === 0) return 0;
+    return Math.round((responseCount?.count || 0) / reviewCount.count * 100);
+  }
+
+  // ==================== TESTIMONIALS ====================
+  
+  async getActiveTestimonials(): Promise<Testimonial[]> {
+    return db.select().from(testimonials)
+      .where(eq(testimonials.isActive, true))
+      .orderBy(testimonials.displayOrder);
+  }
+
+  async getAllTestimonials(): Promise<Testimonial[]> {
+    return db.select().from(testimonials).orderBy(testimonials.displayOrder);
+  }
+
+  async createTestimonial(data: InsertTestimonial): Promise<Testimonial> {
+    const [created] = await db.insert(testimonials).values(data).returning();
+    return created;
+  }
+
+  async updateTestimonial(id: number, data: Partial<InsertTestimonial>): Promise<Testimonial> {
+    const [updated] = await db.update(testimonials).set(data).where(eq(testimonials.id, id)).returning();
+    return updated;
+  }
+
+  async deleteTestimonial(id: number): Promise<void> {
+    await db.delete(testimonials).where(eq(testimonials.id, id));
+  }
+
+  // ==================== PRESS MENTIONS ====================
+  
+  async getActivePressMentions(): Promise<PressMention[]> {
+    return db.select().from(pressMentions)
+      .where(eq(pressMentions.isActive, true))
+      .orderBy(pressMentions.displayOrder);
+  }
+
+  async getAllPressMentions(): Promise<PressMention[]> {
+    return db.select().from(pressMentions).orderBy(pressMentions.displayOrder);
+  }
+
+  async createPressMention(data: InsertPressMention): Promise<PressMention> {
+    const [created] = await db.insert(pressMentions).values(data).returning();
+    return created;
+  }
+
+  async updatePressMention(id: number, data: Partial<InsertPressMention>): Promise<PressMention> {
+    const [updated] = await db.update(pressMentions).set(data).where(eq(pressMentions.id, id)).returning();
+    return updated;
+  }
+
+  async deletePressMention(id: number): Promise<void> {
+    await db.delete(pressMentions).where(eq(pressMentions.id, id));
+  }
+
+  // ==================== PLATFORM STATS ====================
+  
+  async getPlatformStats(): Promise<PlatformStat[]> {
+    return db.select().from(platformStats);
+  }
+
+  async updatePlatformStat(key: string, value: number, label: string): Promise<void> {
+    const existing = await db.select().from(platformStats).where(eq(platformStats.statKey, key));
+    if (existing.length > 0) {
+      await db.update(platformStats)
+        .set({ statValue: value, lastCalculated: new Date() })
+        .where(eq(platformStats.statKey, key));
+    } else {
+      await db.insert(platformStats).values({ statKey: key, statValue: value, displayLabel: label });
+    }
+  }
+
+  async calculateAndUpdatePlatformStats(): Promise<void> {
+    const [hospitalCount] = await db.select({ count: count() }).from(hospitals);
+    const [verifiedHospitalCount] = await db.select({ count: count() }).from(hospitals).where(eq(hospitals.verified, true));
+    const [reviewCount] = await db.select({ count: count() }).from(patientReviews);
+    const [verifiedReviewCount] = await db.select({ count: count() }).from(patientReviews).where(eq(patientReviews.verifiedVisit, true));
+    const [userCount] = await db.select({ count: count() }).from(users);
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const [activeUserCount] = await db.select({ count: count() }).from(users)
+      .where(gte(users.updatedAt, thirtyDaysAgo));
+    
+    await this.updatePlatformStat('total_hospitals', hospitalCount?.count || 0, 'Total Hospitals');
+    await this.updatePlatformStat('verified_hospitals', verifiedHospitalCount?.count || 0, 'Verified Hospitals');
+    await this.updatePlatformStat('total_reviews', reviewCount?.count || 0, 'Patient Reviews');
+    await this.updatePlatformStat('verified_reviews', verifiedReviewCount?.count || 0, 'Verified Reviews');
+    await this.updatePlatformStat('total_users', userCount?.count || 0, 'Registered Users');
+    await this.updatePlatformStat('active_users_month', activeUserCount?.count || 0, 'Active Users This Month');
+  }
+
+  async getTrustStats(): Promise<{
+    totalReviews: number;
+    verifiedReviews: number;
+    totalHospitals: number;
+    verifiedHospitals: number;
+    activeUsersMonth: number;
+  }> {
+    const [reviewCount] = await db.select({ count: count() }).from(patientReviews);
+    const [verifiedReviewCount] = await db.select({ count: count() }).from(patientReviews).where(eq(patientReviews.verifiedVisit, true));
+    const [hospitalCount] = await db.select({ count: count() }).from(hospitals);
+    const [verifiedHospitalCount] = await db.select({ count: count() }).from(hospitals).where(eq(hospitals.verified, true));
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const [activeUserCount] = await db.select({ count: count() }).from(users)
+      .where(gte(users.updatedAt, thirtyDaysAgo));
+    
+    return {
+      totalReviews: reviewCount?.count || 0,
+      verifiedReviews: verifiedReviewCount?.count || 0,
+      totalHospitals: hospitalCount?.count || 0,
+      verifiedHospitals: verifiedHospitalCount?.count || 0,
+      activeUsersMonth: activeUserCount?.count || 0,
+    };
   }
 }
 
