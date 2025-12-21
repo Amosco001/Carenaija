@@ -1,8 +1,22 @@
-import { Shield, Eye, Lock, AlertTriangle } from "lucide-react";
+import { Link } from "wouter";
+import { Shield, Eye, Lock, AlertTriangle, ChevronRight } from "lucide-react";
 
 export default function TrustSafety() {
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl">
+    <div className="flex-1 bg-background">
+      <div className="border-b bg-muted/30">
+        <div className="container mx-auto px-4 py-4">
+          <nav className="flex items-center gap-2 text-sm text-muted-foreground" data-testid="breadcrumb-trust-safety">
+            <Link href="/" className="hover:text-foreground" data-testid="link-trust-home">Home</Link>
+            <ChevronRight className="h-4 w-4" />
+            <Link href="/help" className="hover:text-foreground" data-testid="link-trust-help">Help Center</Link>
+            <ChevronRight className="h-4 w-4" />
+            <span className="text-foreground" data-testid="text-trust-current">Trust & Safety</span>
+          </nav>
+        </div>
+      </div>
+      
+      <div className="container mx-auto px-4 py-12 max-w-4xl">
         <h1 className="text-3xl font-bold mb-8" data-testid="text-trust-safety-title">Trust & Safety</h1>
         
         <div className="prose prose-slate max-w-none space-y-8">
@@ -71,5 +85,6 @@ export default function TrustSafety() {
           </section>
         </div>
       </div>
+    </div>
   );
 }

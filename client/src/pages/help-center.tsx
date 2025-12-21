@@ -241,10 +241,10 @@ export default function HelpCenter() {
     <div className="flex-1 bg-background">
       <div className="border-b bg-muted/30">
         <div className="container mx-auto px-4 py-4">
-          <nav className="flex items-center gap-2 text-sm text-muted-foreground" data-testid="breadcrumb">
-            <Link href="/" className="hover:text-foreground" data-testid="breadcrumb-home">Home</Link>
+          <nav className="flex items-center gap-2 text-sm text-muted-foreground" data-testid="breadcrumb-help-center">
+            <Link href="/" className="hover:text-foreground" data-testid="link-help-home">Home</Link>
             <ChevronRight className="h-4 w-4" />
-            <span className="text-foreground" data-testid="breadcrumb-current">Help Center</span>
+            <span className="text-foreground" data-testid="text-help-current">Help Center</span>
           </nav>
         </div>
       </div>

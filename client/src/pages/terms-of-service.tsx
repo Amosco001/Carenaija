@@ -1,6 +1,22 @@
+import { Link } from "wouter";
+import { ChevronRight } from "lucide-react";
+
 export default function TermsOfService() {
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl">
+    <div className="flex-1 bg-background">
+      <div className="border-b bg-muted/30">
+        <div className="container mx-auto px-4 py-4">
+          <nav className="flex items-center gap-2 text-sm text-muted-foreground" data-testid="breadcrumb-terms">
+            <Link href="/" className="hover:text-foreground" data-testid="link-terms-home">Home</Link>
+            <ChevronRight className="h-4 w-4" />
+            <Link href="/help" className="hover:text-foreground" data-testid="link-terms-help">Help Center</Link>
+            <ChevronRight className="h-4 w-4" />
+            <span className="text-foreground" data-testid="text-terms-current">Terms of Service</span>
+          </nav>
+        </div>
+      </div>
+      
+      <div className="container mx-auto px-4 py-12 max-w-4xl">
         <h1 className="text-3xl font-bold mb-2" data-testid="text-terms-title">Terms of Service</h1>
         <p className="text-slate-500 mb-8">Last updated: December 2025</p>
         
@@ -118,5 +134,6 @@ export default function TermsOfService() {
           </section>
         </div>
       </div>
+    </div>
   );
 }
