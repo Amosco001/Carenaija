@@ -2515,6 +2515,33 @@ export class DatabaseStorage implements IStorage {
       .where(eq(healthArticles.id, id));
   }
 
+  async updateHealthArticle(id: number, data: Partial<InsertHealthArticle>): Promise<HealthArticle | undefined> {
+    const [article] = await db.update(healthArticles)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(healthArticles.id, id))
+      .returning();
+    return article;
+  }
+
+  async deleteHealthArticle(id: number): Promise<boolean> {
+    const [article] = await db.select().from(healthArticles).where(eq(healthArticles.id, id));
+    if (!article) return false;
+    
+    await db.delete(healthArticles).where(eq(healthArticles.id, id));
+    
+    if (article.categoryId) {
+      await db.update(healthCategories)
+        .set({ articleCount: sql`${healthCategories.articleCount} - 1` })
+        .where(eq(healthCategories.id, article.categoryId));
+    }
+    return true;
+  }
+
+  async getHealthArticleById(id: number): Promise<HealthArticle | undefined> {
+    const [article] = await db.select().from(healthArticles).where(eq(healthArticles.id, id));
+    return article;
+  }
+
   async searchHealthArticles(query: string): Promise<HealthArticle[]> {
     return await db.select().from(healthArticles)
       .where(and(

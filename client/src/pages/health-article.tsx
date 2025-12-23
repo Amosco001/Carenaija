@@ -442,6 +442,43 @@ export default function HealthArticlePage() {
                 </Card>
               )}
 
+              {/* Sources & References */}
+              {article.sources && article.sources.length > 0 && (
+                <Card className="mt-8 border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-semibold flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+                      </svg>
+                      Sources & References
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+                      {article.sources.map((source, i) => (
+                        <li key={i} className="leading-relaxed">
+                          {source.startsWith("http") ? (
+                            <a 
+                              href={source} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-blue-600 hover:underline break-all"
+                            >
+                              {source}
+                            </a>
+                          ) : (
+                            <span>{source}</span>
+                          )}
+                        </li>
+                      ))}
+                    </ol>
+                    <p className="text-xs text-muted-foreground mt-4 italic">
+                      This article is for informational purposes only and should not replace professional medical advice.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
               <Separator className="my-8" />
 
               {/* Back to Hub */}

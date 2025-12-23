@@ -1715,6 +1715,7 @@ export const healthArticles = pgTable("health_articles", {
   relatedDiseases: text("related_diseases").array().notNull().default(sql`'{}'`),
   symptoms: text("symptoms").array().notNull().default(sql`'{}'`),
   keywords: text("keywords").array().notNull().default(sql`'{}'`),
+  sources: text("sources").array().notNull().default(sql`'{}'`),
   medicalReviewedBy: text("medical_reviewed_by"),
   medicalReviewedAt: timestamp("medical_reviewed_at"),
   createdAt: timestamp("created_at").defaultNow(),

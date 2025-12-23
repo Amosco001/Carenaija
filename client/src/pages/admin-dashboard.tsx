@@ -34,7 +34,9 @@ import {
   BookOpen,
   Tag,
   FolderOpen,
-  Send
+  Send,
+  Heart,
+  ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -925,6 +927,395 @@ function ReviewsTab() {
   );
 }
 
+function HealthArticlesTab() {
+  const queryClient = useQueryClient();
+  const [editArticle, setEditArticle] = useState<any>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [formData, setFormData] = useState({
+    title: "",
+    excerpt: "",
+    content: "",
+    authorName: "CareNaija Health Team",
+    authorCredentials: "Healthcare Professionals",
+    categoryId: null as number | null,
+    status: "draft",
+    isFeatured: false,
+    isEditorPick: false,
+    readingTimeMinutes: 5,
+    medicalReviewedBy: "",
+    sources: [] as string[],
+    symptoms: [] as string[],
+    relatedDiseases: [] as string[],
+    keywords: [] as string[],
+  });
+  const [newSource, setNewSource] = useState("");
+
+  const { data: articles = [], isLoading } = useQuery<any[]>({
+    queryKey: ["/api/admin/health/articles"],
+  });
+
+  const { data: categories = [] } = useQuery<any[]>({
+    queryKey: ["/api/admin/health/categories"],
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await fetch("/api/admin/health/articles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to create article");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success("Health article created");
+      setIsCreating(false);
+      resetForm();
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/health/articles"] });
+    },
+    onError: () => toast.error("Failed to create article"),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const res = await fetch(`/api/admin/health/articles/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to update article");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success("Article updated");
+      setEditArticle(null);
+      resetForm();
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/health/articles"] });
+    },
+    onError: () => toast.error("Failed to update article"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/admin/health/articles/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete article");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success("Article deleted");
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/health/articles"] });
+    },
+    onError: () => toast.error("Failed to delete article"),
+  });
+
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      excerpt: "",
+      content: "",
+      authorName: "CareNaija Health Team",
+      authorCredentials: "Healthcare Professionals",
+      categoryId: null,
+      status: "draft",
+      isFeatured: false,
+      isEditorPick: false,
+      readingTimeMinutes: 5,
+      medicalReviewedBy: "",
+      sources: [],
+      symptoms: [],
+      relatedDiseases: [],
+      keywords: [],
+    });
+    setNewSource("");
+  };
+
+  const addSource = () => {
+    if (newSource.trim()) {
+      setFormData({ ...formData, sources: [...formData.sources, newSource.trim()] });
+      setNewSource("");
+    }
+  };
+
+  const removeSource = (index: number) => {
+    setFormData({ ...formData, sources: formData.sources.filter((_, i) => i !== index) });
+  };
+
+  const handleSubmit = () => {
+    if (!formData.title || !formData.content) {
+      toast.error("Title and content are required");
+      return;
+    }
+    if (editArticle) {
+      updateMutation.mutate({ id: editArticle.id, data: formData });
+    } else {
+      createMutation.mutate(formData);
+    }
+  };
+
+  const openEdit = (article: any) => {
+    setEditArticle(article);
+    setFormData({
+      title: article.title || "",
+      excerpt: article.excerpt || "",
+      content: article.content || "",
+      authorName: article.authorName || "CareNaija Health Team",
+      authorCredentials: article.authorCredentials || "",
+      categoryId: article.categoryId || null,
+      status: article.status || "draft",
+      isFeatured: article.isFeatured || false,
+      isEditorPick: article.isEditorPick || false,
+      readingTimeMinutes: article.readingTimeMinutes || 5,
+      medicalReviewedBy: article.medicalReviewedBy || "",
+      sources: article.sources || [],
+      symptoms: article.symptoms || [],
+      relatedDiseases: article.relatedDiseases || [],
+      keywords: article.keywords || [],
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold">Health Education Hub</h2>
+          <p className="text-sm text-muted-foreground">Create and manage health articles with medical sources</p>
+        </div>
+        <Dialog open={isCreating || !!editArticle} onOpenChange={(open) => { 
+          if (!open) { setIsCreating(false); setEditArticle(null); resetForm(); }
+        }}>
+          <DialogTrigger asChild>
+            <Button onClick={() => setIsCreating(true)} data-testid="button-create-health-article">
+              <Plus className="w-4 h-4 mr-2" /> New Article
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editArticle ? "Edit Health Article" : "Create Health Article"}</DialogTitle>
+              <DialogDescription>
+                Add trusted health information with proper medical sources and references.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Title *</Label>
+                  <Input
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="Understanding Malaria Prevention"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Category</Label>
+                  <Select 
+                    value={formData.categoryId?.toString() || ""} 
+                    onValueChange={(v) => setFormData({ ...formData, categoryId: v ? parseInt(v) : null })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat: any) => (
+                        <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Excerpt</Label>
+                <Textarea
+                  value={formData.excerpt}
+                  onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
+                  placeholder="A brief summary of the article..."
+                  rows={2}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Content * (Markdown supported)</Label>
+                <Textarea
+                  value={formData.content}
+                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                  placeholder="## Introduction&#10;&#10;Write your health article content here using Markdown..."
+                  rows={10}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Author Name</Label>
+                  <Input
+                    value={formData.authorName}
+                    onChange={(e) => setFormData({ ...formData, authorName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Author Credentials</Label>
+                  <Input
+                    value={formData.authorCredentials}
+                    onChange={(e) => setFormData({ ...formData, authorCredentials: e.target.value })}
+                    placeholder="MD, MPH"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Medical Reviewer</Label>
+                  <Input
+                    value={formData.medicalReviewedBy}
+                    onChange={(e) => setFormData({ ...formData, medicalReviewedBy: e.target.value })}
+                    placeholder="Dr. John Doe, MBBS"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Reading Time (minutes)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={formData.readingTimeMinutes}
+                    onChange={(e) => setFormData({ ...formData, readingTimeMinutes: parseInt(e.target.value) || 5 })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Heart className="w-4 h-4 text-blue-600" /> Sources & References
+                </Label>
+                <p className="text-xs text-muted-foreground">Add medical sources like WHO, CDC, NCDC links or citations</p>
+                <div className="flex gap-2">
+                  <Input
+                    value={newSource}
+                    onChange={(e) => setNewSource(e.target.value)}
+                    placeholder="https://www.who.int/... or WHO Guidelines 2024"
+                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSource())}
+                  />
+                  <Button type="button" variant="outline" onClick={addSource}>
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+                {formData.sources.length > 0 && (
+                  <div className="space-y-1 mt-2">
+                    {formData.sources.map((source, i) => (
+                      <div key={i} className="flex items-center gap-2 text-sm bg-blue-50 dark:bg-blue-950/20 p-2 rounded">
+                        <span className="flex-1 truncate">{source}</span>
+                        <Button size="sm" variant="ghost" onClick={() => removeSource(i)}>
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="published">Published</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2 pt-6">
+                  <Checkbox 
+                    checked={formData.isFeatured} 
+                    onCheckedChange={(v) => setFormData({ ...formData, isFeatured: !!v })} 
+                  />
+                  <Label className="cursor-pointer">Featured</Label>
+                </div>
+                <div className="flex items-center gap-2 pt-6">
+                  <Checkbox 
+                    checked={formData.isEditorPick} 
+                    onCheckedChange={(v) => setFormData({ ...formData, isEditorPick: !!v })} 
+                  />
+                  <Label className="cursor-pointer">Editor's Pick</Label>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setIsCreating(false); setEditArticle(null); resetForm(); }}>
+                Cancel
+              </Button>
+              <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending}>
+                {editArticle ? "Save Changes" : "Create Article"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {isLoading ? (
+        <div className="text-center py-8">Loading articles...</div>
+      ) : articles.length === 0 ? (
+        <Card>
+          <CardContent className="py-8 text-center text-muted-foreground">
+            No health articles yet. Create your first article to get started.
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {articles.map((article: any) => (
+            <Card key={article.id}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-semibold">{article.title}</h3>
+                      <StatusBadge status={article.status} />
+                      {article.isFeatured && <Badge variant="secondary">Featured</Badge>}
+                    </div>
+                    <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{article.excerpt}</p>
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <span>{article.authorName}</span>
+                      <span>{article.readingTimeMinutes} min read</span>
+                      <span>{article.viewCount || 0} views</span>
+                      {article.sources?.length > 0 && (
+                        <span className="text-blue-600">{article.sources.length} sources</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Link href={`/health/article/${article.slug}`} target="_blank">
+                      <Button size="sm" variant="ghost">
+                        <ExternalLink className="w-4 h-4" />
+                      </Button>
+                    </Link>
+                    <Button size="sm" variant="outline" onClick={() => openEdit(article)}>
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="destructive" 
+                      onClick={() => deleteMutation.mutate(article.id)}
+                      disabled={deleteMutation.isPending}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ContentTab() {
   const queryClient = useQueryClient();
   const [editContent, setEditContent] = useState<any>(null);
@@ -1720,7 +2111,7 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <Badge variant="outline" className="capitalize">{user.role || 'admin'}</Badge>
+              <Badge variant="outline" className="capitalize">{(user as any).role || 'admin'}</Badge>
               <Link href="/">
                 <Button variant="outline" size="sm">
                   Back to Site
@@ -1757,6 +2148,10 @@ export default function AdminDashboard() {
               <BookOpen className="w-4 h-4" />
               Blog
             </TabsTrigger>
+            <TabsTrigger value="health" className="flex items-center gap-2" data-testid="tab-health">
+              <Heart className="w-4 h-4" />
+              Health
+            </TabsTrigger>
             <TabsTrigger value="content" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               Content
@@ -1789,6 +2184,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="blog">
             <BlogTab />
+          </TabsContent>
+
+          <TabsContent value="health">
+            <HealthArticlesTab />
           </TabsContent>
 
           <TabsContent value="content">

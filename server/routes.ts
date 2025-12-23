@@ -2988,6 +2988,100 @@ Sitemap: ${baseUrl}/sitemap.xml
     }
   });
 
+  // Admin: Get all health articles
+  app.get("/api/admin/health/articles", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const status = req.query.status as string | undefined;
+      const articles = await storage.getAllHealthArticles(status);
+      res.json(articles);
+    } catch (error) {
+      console.error("Error fetching health articles:", error);
+      res.status(500).json({ message: "Failed to fetch health articles" });
+    }
+  });
+
+  // Admin: Get single health article by ID
+  app.get("/api/admin/health/articles/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const article = await storage.getHealthArticleById(parseInt(req.params.id));
+      if (!article) {
+        return res.status(404).json({ message: "Article not found" });
+      }
+      res.json(article);
+    } catch (error) {
+      console.error("Error fetching health article:", error);
+      res.status(500).json({ message: "Failed to fetch health article" });
+    }
+  });
+
+  // Admin: Create health article
+  app.post("/api/admin/health/articles", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      const data = {
+        ...req.body,
+        authorId: userId || null,
+        slug: req.body.slug || req.body.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+        publishedAt: req.body.status === 'published' ? new Date() : null,
+      };
+      const article = await storage.createHealthArticle(data);
+      res.json(article);
+    } catch (error) {
+      console.error("Error creating health article:", error);
+      res.status(500).json({ message: "Failed to create health article" });
+    }
+  });
+
+  // Admin: Update health article
+  app.patch("/api/admin/health/articles/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const existingArticle = await storage.getHealthArticleById(id);
+      if (!existingArticle) {
+        return res.status(404).json({ message: "Article not found" });
+      }
+      
+      const data = {
+        ...req.body,
+        publishedAt: req.body.status === 'published' && !existingArticle.publishedAt 
+          ? new Date() 
+          : existingArticle.publishedAt,
+      };
+      
+      const article = await storage.updateHealthArticle(id, data);
+      res.json(article);
+    } catch (error) {
+      console.error("Error updating health article:", error);
+      res.status(500).json({ message: "Failed to update health article" });
+    }
+  });
+
+  // Admin: Delete health article
+  app.delete("/api/admin/health/articles/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteHealthArticle(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Article not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting health article:", error);
+      res.status(500).json({ message: "Failed to delete health article" });
+    }
+  });
+
+  // Admin: Get health categories
+  app.get("/api/admin/health/categories", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const categories = await storage.getAllHealthCategories();
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching health categories:", error);
+      res.status(500).json({ message: "Failed to fetch health categories" });
+    }
+  });
+
   app.get("/sitemap.xml", async (req, res) => {
     try {
       const baseUrl = `https://${req.get("host")}`;
