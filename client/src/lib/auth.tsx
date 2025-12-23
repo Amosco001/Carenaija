@@ -3,12 +3,13 @@ import { useToast } from "@/hooks/use-toast";
 
 type User = {
   id: string;
-  username: string;
+  username?: string;
   firstName?: string;
   lastName?: string;
   email?: string;
   profileImageUrl?: string;
   isAdmin?: boolean;
+  role?: string;
   createdAt?: string;
 };
 
