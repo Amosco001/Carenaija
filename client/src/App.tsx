@@ -37,6 +37,9 @@ const HelpCenter = lazy(() => import("@/pages/help-center"));
 const Leaderboard = lazy(() => import("@/pages/leaderboard"));
 const HealthHub = lazy(() => import("@/pages/health-hub"));
 const HealthArticlePage = lazy(() => import("@/pages/health-article"));
+const HealthCategoryPage = lazy(() => import("@/pages/health-category"));
+const HealthDiseasesPage = lazy(() => import("@/pages/health-diseases"));
+const HealthDiseasePage = lazy(() => import("@/pages/health-disease"));
 const AuthPage = lazy(() => import("@/pages/auth-pages"));
 
 function PageLoader() {
@@ -68,6 +71,9 @@ function Router() {
           <Route path="/blog/:slug" component={BlogArticlePage} />
           <Route path="/health" component={HealthHub} />
           <Route path="/health/article/:slug" component={HealthArticlePage} />
+          <Route path="/health/category/:slug" component={HealthCategoryPage} />
+          <Route path="/health/diseases" component={HealthDiseasesPage} />
+          <Route path="/health/disease/:slug" component={HealthDiseasePage} />
           <Route path="/help" component={HelpCenter} />
           <Route path="/leaderboard" component={Leaderboard} />
           <Route path="/guidelines" component={Guidelines} />
