@@ -1,107 +1,81 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 type User = {
   id: string;
-  name: string;
-  email: string;
-  role: "patient" | "employee" | "admin";
-  createdAt: string;
-};
-
-type LoginCredentials = {
-  email: string;
-  password: string;
-};
-
-type RegisterCredentials = {
-  name: string;
-  email: string;
-  password: string;
-  role: "patient" | "employee";
+  username: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  profileImageUrl?: string;
+  isAdmin?: boolean;
+  createdAt?: string;
 };
 
 type AuthContextType = {
   user: User | null;
-  login: (credentials: LoginCredentials) => Promise<void>;
-  register: (credentials: RegisterCredentials) => Promise<void>;
-  logout: () => void;
   isLoading: boolean;
+  isAuthenticated: boolean;
+  login: () => void;
+  logout: () => void;
+  refetchUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+async function fetchUser(): Promise<User | null> {
+  try {
+    const response = await fetch("/api/auth/user", {
+      credentials: "include",
+    });
+    if (!response.ok) {
+      if (response.status === 401) {
+        return null;
+      }
+      throw new Error("Failed to fetch user");
+    }
+    return response.json();
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  const login = async (credentials: LoginCredentials) => {
+  const refetchUser = useCallback(async () => {
     setIsLoading(true);
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    // Mock login logic
-    if (credentials.email === "patient@example.com") {
-      setUser({
-        id: "1",
-        name: "Chidi Okonkwo",
-        email: "patient@example.com",
-        role: "patient",
-        createdAt: new Date().toISOString()
-      });
-      toast({ title: "Welcome back, Chidi!" });
-    } else if (credentials.email === "admin@example.com") {
-      setUser({
-        id: "2",
-        name: "Admin User",
-        email: "admin@example.com",
-        role: "admin",
-        createdAt: new Date().toISOString()
-      });
-      toast({ title: "Admin dashboard access granted." });
-    } else if (credentials.email === "doctor@example.com") {
-      setUser({
-        id: "3",
-        name: "Dr. Amara",
-        email: "doctor@example.com",
-        role: "employee",
-        createdAt: new Date().toISOString()
-      });
-      toast({ title: "Welcome back, Dr. Amara!" });
-    } else {
-      toast({ 
-        title: "Login failed", 
-        description: "Invalid credentials. Try patient@example.com / password",
-        variant: "destructive" 
-      });
-    }
+    const userData = await fetchUser();
+    setUser(userData);
     setIsLoading(false);
-  };
+  }, []);
 
-  const register = async (credentials: RegisterCredentials) => {
-    setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    setUser({
-      id: Math.random().toString(),
-      name: credentials.name,
-      email: credentials.email,
-      role: credentials.role,
-      createdAt: new Date().toISOString()
-    });
-    
-    toast({ title: "Account created successfully!" });
-    setIsLoading(false);
+  useEffect(() => {
+    refetchUser();
+  }, [refetchUser]);
+
+  const login = () => {
+    window.location.href = "/api/login";
   };
 
   const logout = () => {
-    setUser(null);
-    toast({ title: "Logged out successfully" });
+    window.location.href = "/api/logout";
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        isAuthenticated: !!user,
+        login,
+        logout,
+        refetchUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

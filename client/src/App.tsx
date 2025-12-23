@@ -37,6 +37,7 @@ const HelpCenter = lazy(() => import("@/pages/help-center"));
 const Leaderboard = lazy(() => import("@/pages/leaderboard"));
 const HealthHub = lazy(() => import("@/pages/health-hub"));
 const HealthArticlePage = lazy(() => import("@/pages/health-article"));
+const AuthPage = lazy(() => import("@/pages/auth-pages"));
 
 function PageLoader() {
   return (
@@ -52,6 +53,7 @@ function Router() {
       <Suspense fallback={<PageLoader />}>
         <Switch>
           <Route path="/" component={Home} />
+          <Route path="/login" component={AuthPage} />
           <Route path="/search" component={SearchPage} />
           <Route path="/hospital/:id" component={HospitalDetails} />
           <Route path="/dashboard" component={Dashboard} />
