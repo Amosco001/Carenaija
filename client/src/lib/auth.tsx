@@ -16,9 +16,11 @@ type AuthContextType = {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: () => void;
+  login: (returnTo?: string) => void;
   logout: () => void;
   refetchUser: () => Promise<void>;
+  getReturnUrl: () => string | null;
+  clearReturnUrl: () => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -57,12 +59,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refetchUser();
   }, [refetchUser]);
 
-  const login = () => {
+  const login = (returnTo?: string) => {
+    const currentUrl = returnTo || (window.location.pathname + window.location.search + window.location.hash);
+    if (currentUrl && currentUrl !== '/login' && currentUrl !== '/' && !currentUrl.startsWith('http')) {
+      sessionStorage.setItem('returnTo', currentUrl);
+    }
     window.location.href = "/api/login";
   };
 
   const logout = () => {
     window.location.href = "/api/logout";
+  };
+
+  const getReturnUrl = () => {
+    return sessionStorage.getItem('returnTo');
+  };
+
+  const clearReturnUrl = () => {
+    sessionStorage.removeItem('returnTo');
   };
 
   return (
@@ -74,6 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         refetchUser,
+        getReturnUrl,
+        clearReturnUrl,
       }}
     >
       {children}
