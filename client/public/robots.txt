@@ -1,0 +1,42 @@
+# CareNaija - Hospital Review Platform
+# https://carenaija.com
+
+User-agent: *
+Allow: /
+
+# Allow indexing of main content
+Allow: /hospitals
+Allow: /hospital/
+Allow: /health
+Allow: /health/
+Allow: /reviews
+Allow: /search
+
+# Disallow admin and private areas
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /settings
+Disallow: /profile/edit
+
+# Disallow query parameters that create duplicate content
+Disallow: /*?sort=
+Disallow: /*?page=
+Disallow: /*?filter=
+
+# Crawl-delay for polite crawling
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://carenaija.com/sitemap.xml
+
+# Google specific
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+# Bing specific
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
