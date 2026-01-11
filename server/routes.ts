@@ -3158,6 +3158,59 @@ Sitemap: ${baseUrl}/sitemap.xml
 `;
       }
 
+      // Health articles
+      const healthArticles = await storage.getAllHealthArticles("published");
+      for (const article of healthArticles) {
+        const lastmod = article.updatedAt 
+          ? new Date(article.updatedAt).toISOString().split("T")[0]
+          : article.publishedAt
+          ? new Date(article.publishedAt).toISOString().split("T")[0]
+          : today;
+        xml += `  <url>
+    <loc>${baseUrl}/health/article/${article.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+`;
+      }
+
+      // Health categories
+      const healthCategories = await storage.getAllHealthCategories();
+      for (const category of healthCategories) {
+        xml += `  <url>
+    <loc>${baseUrl}/health/category/${category.slug}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+`;
+      }
+
+      // Disease library
+      xml += `  <url>
+    <loc>${baseUrl}/health/diseases</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+`;
+
+      // Individual diseases
+      const diseases = await storage.getAllDiseases();
+      for (const disease of diseases) {
+        const lastmod = disease.updatedAt 
+          ? new Date(disease.updatedAt).toISOString().split("T")[0]
+          : today;
+        xml += `  <url>
+    <loc>${baseUrl}/health/disease/${disease.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+`;
+      }
+
       xml += `</urlset>`;
 
       res.type("application/xml");
