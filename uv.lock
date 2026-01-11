@@ -1109,6 +1109,7 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "requests" },
     { name = "tenacity" },
+    { name = "urllib3" },
 ]
 
 [package.metadata]
@@ -1123,6 +1124,7 @@ requires-dist = [
     { name = "python-dotenv", specifier = ">=1.2.1" },
     { name = "requests", specifier = ">=2.32.5" },
     { name = "tenacity", specifier = ">=9.1.2" },
+    { name = "urllib3", specifier = ">=2.3.0" },
 ]
 
 [[package]]
