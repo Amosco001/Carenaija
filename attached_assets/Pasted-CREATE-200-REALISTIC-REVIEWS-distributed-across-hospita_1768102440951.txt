@@ -1,0 +1,54 @@
+CREATE 200 REALISTIC REVIEWS distributed across hospitals:
+
+Nigerian names to use (mix ethnicities):
+- Yoruba: Adebayo, Oluwaseun, Folake, Temitope, Ayodele
+- Igbo: Chinedu, Ngozi, Obiora, Adaeze, Emeka
+- Hausa: Abubakar, Fatima, Usman, Aisha, Ibrahim
+- Others: David, Grace, Peter, Mary, John
+
+Rating distribution:
+- 40% = 5 stars
+- 30% = 4 stars  
+- 20% = 3 stars
+- 7% = 2 stars
+- 3% = 1 star
+
+Review content templates (vary these):
+
+5-star reviews:
+- "Excellent care at [Hospital]. Dr. [Name] was thorough and caring. Wait time was reasonable. Clean facilities. Highly recommend!"
+- "Best hospital experience in [City]. Staff were professional from reception to discharge. Will definitely return."
+- "Brought my child for vaccination. Nurses were gentle and reassuring. Quick service, fair pricing at ₦[amount]."
+
+4-star reviews:
+- "Good hospital overall. Treatment was effective. Only issue was the 2-hour wait time. Otherwise professional staff."
+- "Visited for [department]. Doctor knew his stuff. Facility could use some updating but care quality is top-notch."
+
+3-star reviews:
+- "Average experience. Long wait times but doctors are competent. Pharmacy prices are high. Parking is limited."
+- "Mixed feelings. The doctor was good but the front desk staff could be more helpful. Facility is okay."
+
+2-star reviews:
+- "Waited 4 hours to see a doctor. When I finally did, consultation felt rushed. Won't be returning."
+- "Overpriced for the service received. ₦25,000 for basic consultation. Staff attitude needs improvement."
+
+1-star reviews:
+- "Terrible experience. Rude staff, dirty toilets, lost my file. Never again."
+- "Avoid! Misdiagnosed my condition. Had to go elsewhere for proper treatment."
+
+Include in reviews:
+- Visit date (random dates in last 6 months)
+- Department visited (Emergency, Outpatient, Maternity, Lab, Pharmacy)
+- Some with "Would recommend: Yes/No"
+- Some with hospital management responses
+
+2. MARK 50 HOSPITALS AS VERIFIED (verified: true)
+   Priority: Teaching hospitals, Federal Medical Centres, major private hospitals
+
+3. ADD 15 TESTIMONIALS for homepage:
+   Format: Quote, Name, Location, Date
+   Example: "CareNaija helped me find the right specialist for my mother's condition. The reviews were invaluable!" - Ngozi A., Lagos
+
+4. UPDATE trust-stats endpoint to return real counts
+
+DO NOT modify database schema. Only add seed data via migration/seed script.
