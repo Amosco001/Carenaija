@@ -98,7 +98,7 @@ export function generateHospitalSchema(hospital: {
       "addressRegion": hospital.state,
       "addressCountry": "NG"
     },
-    "url": `https://carenaija.replit.app/hospital/${hospital.id}`,
+    "url": `https://www.carenaija.com/hospital/${hospital.id}`,
     ...(hospital.phone && { "telephone": hospital.phone }),
     ...(hospital.email && { "email": hospital.email }),
     ...(hospital.website && { "sameAs": hospital.website }),

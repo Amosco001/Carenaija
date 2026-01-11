@@ -3084,19 +3084,30 @@ Sitemap: ${baseUrl}/sitemap.xml
 
   app.get("/sitemap.xml", async (req, res) => {
     try {
-      const baseUrl = `https://${req.get("host")}`;
+      const baseUrl = "https://www.carenaija.com";
       const hospitals = await storage.getAllHospitals();
       const today = new Date().toISOString().split("T")[0];
 
+      // Nigerian states for search pages
+      const nigerianStates = [
+        "Lagos", "Abuja", "Rivers", "Oyo", "Kano", "Kaduna", "Ogun", "Edo", 
+        "Delta", "Enugu", "Anambra", "Imo", "Akwa Ibom", "Cross River", 
+        "Abia", "Kwara", "Plateau", "Benue", "Osun", "Ondo", "Ekiti",
+        "Bayelsa", "Adamawa", "Borno", "Gombe", "Bauchi", "Taraba",
+        "Niger", "Kogi", "Nasarawa", "Sokoto", "Kebbi", "Zamfara",
+        "Katsina", "Jigawa", "Yobe", "Ebonyi"
+      ];
+
       const staticPages = [
         { url: "/", priority: "1.0", changefreq: "daily" },
-        { url: "/search", priority: "0.9", changefreq: "daily" },
-        { url: "/blog", priority: "0.9", changefreq: "daily" },
-        { url: "/health", priority: "0.9", changefreq: "daily" },
-        { url: "/help", priority: "0.8", changefreq: "weekly" },
-        { url: "/leaderboard", priority: "0.7", changefreq: "daily" },
-        { url: "/compare", priority: "0.7", changefreq: "daily" },
+        { url: "/search", priority: "0.6", changefreq: "daily" },
+        { url: "/blog", priority: "0.8", changefreq: "daily" },
+        { url: "/health", priority: "0.8", changefreq: "daily" },
+        { url: "/health/diseases", priority: "0.8", changefreq: "weekly" },
         { url: "/about", priority: "0.7", changefreq: "monthly" },
+        { url: "/help", priority: "0.7", changefreq: "weekly" },
+        { url: "/leaderboard", priority: "0.6", changefreq: "daily" },
+        { url: "/compare", priority: "0.6", changefreq: "daily" },
         { url: "/guidelines", priority: "0.5", changefreq: "monthly" },
         { url: "/trust-safety", priority: "0.5", changefreq: "monthly" },
         { url: "/support", priority: "0.5", changefreq: "monthly" },
@@ -3104,11 +3115,29 @@ Sitemap: ${baseUrl}/sitemap.xml
         { url: "/terms-of-service", priority: "0.3", changefreq: "yearly" },
       ];
 
+      // Add state-based search pages
+      const searchPages = nigerianStates.map(state => ({
+        url: `/search?state=${encodeURIComponent(state)}`,
+        priority: "0.6",
+        changefreq: "daily"
+      }));
+
       let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 `;
 
       for (const page of staticPages) {
+        xml += `  <url>
+    <loc>${baseUrl}${page.url}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${page.changefreq}</changefreq>
+    <priority>${page.priority}</priority>
+  </url>
+`;
+      }
+
+      // Add state-based search pages to sitemap
+      for (const page of searchPages) {
         xml += `  <url>
     <loc>${baseUrl}${page.url}</loc>
     <lastmod>${today}</lastmod>
@@ -3186,15 +3215,6 @@ Sitemap: ${baseUrl}/sitemap.xml
   </url>
 `;
       }
-
-      // Disease library
-      xml += `  <url>
-    <loc>${baseUrl}/health/diseases</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-`;
 
       // Individual diseases
       const diseases = await storage.getAllDiseases();
