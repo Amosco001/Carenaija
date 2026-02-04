@@ -448,7 +448,7 @@ export default function SearchPage() {
         title={seoTitle}
         description={seoDescription}
         keywords={`hospitals ${selectedState !== "All" ? selectedState : "Nigeria"}, hospital reviews, Nigerian healthcare, ${searchQuery || "medical facilities"}`}
-        canonicalUrl={`https://carenaija.replit.app/search${searchQuery ? `?q=${encodeURIComponent(searchQuery)}` : ""}`}
+        canonicalUrl={`https://www.carenaija.com/search${searchQuery ? `?q=${encodeURIComponent(searchQuery)}` : ""}`}
       />
       {/* Search Header */}
       <div className="bg-white border-b sticky top-0 z-30 shadow-sm">

@@ -4,17 +4,34 @@
 User-agent: *
 Allow: /
 Disallow: /admin/
+Disallow: /admin/*
+Disallow: /dashboard
+Disallow: /profile
 Disallow: /api/
+Disallow: /write-review/
+Disallow: /claim-profile/
 
 User-agent: Googlebot
 Allow: /
 Disallow: /admin/
+Disallow: /admin/*
+Disallow: /dashboard
+Disallow: /profile
 Disallow: /api/
+Disallow: /write-review/
+Disallow: /claim-profile/
+Crawl-delay: 1
 
 User-agent: Bingbot
 Allow: /
 Disallow: /admin/
+Disallow: /admin/*
+Disallow: /dashboard
+Disallow: /profile
 Disallow: /api/
+Disallow: /write-review/
+Disallow: /claim-profile/
+Crawl-delay: 1
 
 # Sitemap location
 Sitemap: https://www.carenaija.com/sitemap.xml

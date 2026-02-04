@@ -8,6 +8,7 @@ interface SEOHeadProps {
   ogType?: string;
   ogImage?: string;
   noIndex?: boolean;
+  structuredData?: object | object[];
 }
 
 const BASE_TITLE = "CareNaija";
@@ -22,6 +23,7 @@ export function SEOHead({
   ogType = "website",
   ogImage = "/attached_assets/hero-hospital.png",
   noIndex = false,
+  structuredData,
 }: SEOHeadProps) {
   const fullTitle = title ? `${title} | ${BASE_TITLE}` : `${BASE_TITLE} | Hospital Reviews Nigeria`;
 
@@ -68,7 +70,26 @@ export function SEOHead({
     }
 
     updateMeta("og:url", canonicalUrl || window.location.href, true);
-  }, [fullTitle, description, keywords, canonicalUrl, ogType, ogImage, noIndex]);
+
+    const existingScripts = document.querySelectorAll('script[data-seo-jsonld]');
+    existingScripts.forEach(script => script.remove());
+
+    if (structuredData) {
+      const dataArray = Array.isArray(structuredData) ? structuredData : [structuredData];
+      dataArray.forEach((data, index) => {
+        const script = document.createElement("script");
+        script.type = "application/ld+json";
+        script.setAttribute("data-seo-jsonld", `${index}`);
+        script.textContent = JSON.stringify(data);
+        document.head.appendChild(script);
+      });
+    }
+
+    return () => {
+      const scripts = document.querySelectorAll('script[data-seo-jsonld]');
+      scripts.forEach(script => script.remove());
+    };
+  }, [fullTitle, description, keywords, canonicalUrl, ogType, ogImage, noIndex, structuredData]);
 
   return null;
 }

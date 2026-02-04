@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { BlogArticle, BlogCategory, BlogTag } from "@shared/schema";
+import { SEOHead } from "@/components/seo-head";
 
 function formatDate(date: string | Date | null): string {
   if (!date) return "";
@@ -154,6 +155,12 @@ export default function BlogPage() {
 
   return (
     <div className="flex-1 bg-background">
+      <SEOHead 
+        title="Health Blog - Expert Healthcare Insights & Hospital Guides"
+        description="Read expert health tips, hospital spotlights, and healthcare insights for Nigerians. Stay informed with CareNaija's health blog covering hospitals, treatments, and wellness."
+        keywords="Nigeria health blog, healthcare tips, hospital guides Nigeria, health advice, medical news Nigeria"
+        canonicalUrl="https://www.carenaija.com/blog"
+      />
         {/* Hero Section */}
         <section className="bg-gradient-to-b from-primary/5 to-background py-16">
           <div className="container mx-auto px-4">

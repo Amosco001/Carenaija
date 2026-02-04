@@ -176,7 +176,7 @@ export default function HospitalDetails() {
     hospitalImages[(hospitalId + 2) % hospitalImages.length],
   ];
 
-  const canonicalUrl = `https://carenaija.replit.app/hospital/${hospital.id}`;
+  const canonicalUrl = `https://www.carenaija.com/hospital/${hospital.id}`;
   
   const schemaData = {
     "@context": "https://schema.org",
@@ -206,7 +206,7 @@ export default function HospitalDetails() {
     "medicalSpecialty": hospital.services,
     "numberOfBeds": hospital.bedCapacity || undefined,
     "isAcceptingNewPatients": true,
-    ...((hospital.totalReviews > 0 || patientReviews.length > 0) && {
+    ...(((hospital.totalReviews || 0) > 0 || patientReviews.length > 0) && {
       "aggregateRating": {
         "@type": "AggregateRating",
         "ratingValue": (hospital.averageRating || ratingBreakdown?.overall || 0).toFixed(1),
@@ -223,9 +223,9 @@ export default function HospitalDetails() {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     "itemListElement": [
-      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://carenaija.replit.app/" },
-      { "@type": "ListItem", "position": 2, "name": "Hospitals", "item": "https://carenaija.replit.app/search" },
-      { "@type": "ListItem", "position": 3, "name": hospital.state, "item": `https://carenaija.replit.app/search?location=${encodeURIComponent(hospital.state)}` },
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.carenaija.com/" },
+      { "@type": "ListItem", "position": 2, "name": "Hospitals", "item": "https://www.carenaija.com/search" },
+      { "@type": "ListItem", "position": 3, "name": hospital.state, "item": `https://www.carenaija.com/search?location=${encodeURIComponent(hospital.state)}` },
       { "@type": "ListItem", "position": 4, "name": hospital.name, "item": canonicalUrl }
     ]
   };

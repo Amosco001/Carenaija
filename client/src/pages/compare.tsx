@@ -37,6 +37,7 @@ import {
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import type { Hospital } from "@shared/schema";
+import { SEOHead } from "@/components/seo-head";
 
 const CHART_COLORS = ["#16a34a", "#3b82f6", "#f59e0b"];
 
@@ -107,9 +108,19 @@ export default function ComparePage() {
     }
   };
 
+  const seoHead = (
+    <SEOHead 
+      title="Compare Hospitals Side by Side"
+      description="Compare Nigerian hospitals side by side. View ratings, reviews, facilities, and services to make the best healthcare decision for you and your family."
+      keywords="compare hospitals Nigeria, hospital comparison Lagos, side by side hospital review"
+      canonicalUrl="https://www.carenaija.com/compare"
+    />
+  );
+
   if (compareList.length === 0) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
+        {seoHead}
         <Card className="max-w-md mx-auto">
           <CardContent className="pt-8 pb-8">
             <Scale className="h-16 w-16 text-gray-300 mx-auto mb-4" />
@@ -131,6 +142,7 @@ export default function ComparePage() {
   if (compareList.length < 2) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
+        {seoHead}
         <Card className="max-w-md mx-auto">
           <CardContent className="pt-8 pb-8">
             <Scale className="h-16 w-16 text-amber-400 mx-auto mb-4" />
@@ -164,6 +176,7 @@ export default function ComparePage() {
 
   return (
     <div className="container mx-auto px-4 py-8 pb-24">
+      {seoHead}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
           <Link href="/search">

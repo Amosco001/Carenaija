@@ -11,6 +11,7 @@ import {
   Users, ChevronRight, Sparkles, Target
 } from "lucide-react";
 import { profileLevels } from "@shared/schema";
+import { SEOHead } from "@/components/seo-head";
 
 type LeaderboardEntry = {
   userId: string;
@@ -189,6 +190,12 @@ export default function Leaderboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 py-8" data-testid="page-leaderboard">
+      <SEOHead 
+        title="Community Leaderboard - Top Reviewers & Contributors"
+        description="See CareNaija's most active community members. Explore our leaderboard featuring top hospital reviewers, badges, and contributor levels in Nigeria."
+        keywords="CareNaija leaderboard, top reviewers Nigeria, hospital review contributors, community badges"
+        canonicalUrl="https://www.carenaija.com/leaderboard"
+      />
       <div className="container mx-auto px-4 max-w-5xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">

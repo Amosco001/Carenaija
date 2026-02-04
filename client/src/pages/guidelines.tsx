@@ -1,9 +1,16 @@
 import { Link } from "wouter";
 import { ChevronRight } from "lucide-react";
+import { SEOHead } from "@/components/seo-head";
 
 export default function Guidelines() {
   return (
     <div className="flex-1 bg-background">
+      <SEOHead 
+        title="Community Guidelines - Review Writing Standards"
+        description="Learn how to write helpful hospital reviews on CareNaija. Our community guidelines ensure honest, respectful, and useful healthcare reviews."
+        keywords="hospital review guidelines Nigeria, how to write reviews, CareNaija community"
+        canonicalUrl="https://www.carenaija.com/guidelines"
+      />
       <div className="border-b bg-muted/30">
         <div className="container mx-auto px-4 py-4">
           <nav className="flex items-center gap-2 text-sm text-muted-foreground" data-testid="breadcrumb-guidelines">

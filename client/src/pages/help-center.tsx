@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { SEOHead } from "@/components/seo-head";
 
 interface FAQItem {
   id: string;
@@ -239,6 +240,12 @@ export default function HelpCenter() {
 
   return (
     <div className="flex-1 bg-background">
+      <SEOHead 
+        title="Help Center - FAQs & Support"
+        description="Find answers to frequently asked questions about using CareNaija. Learn how to search hospitals, write reviews, claim hospital profiles, and more."
+        keywords="CareNaija help, FAQ Nigeria hospitals, hospital review help, support center"
+        canonicalUrl="https://www.carenaija.com/help"
+      />
       <div className="border-b bg-muted/30">
         <div className="container mx-auto px-4 py-4">
           <nav className="flex items-center gap-2 text-sm text-muted-foreground" data-testid="breadcrumb-help-center">

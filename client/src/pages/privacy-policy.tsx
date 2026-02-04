@@ -1,9 +1,16 @@
 import { Link } from "wouter";
 import { ChevronRight } from "lucide-react";
+import { SEOHead } from "@/components/seo-head";
 
 export default function PrivacyPolicy() {
   return (
     <div className="flex-1 bg-background">
+      <SEOHead 
+        title="Privacy Policy - How We Protect Your Data"
+        description="Learn how CareNaija collects, uses, and protects your personal information. Read our comprehensive privacy policy for users in Nigeria."
+        keywords="CareNaija privacy policy, data protection Nigeria, hospital review privacy"
+        canonicalUrl="https://www.carenaija.com/privacy-policy"
+      />
       <div className="border-b bg-muted/30">
         <div className="container mx-auto px-4 py-4">
           <nav className="flex items-center gap-2 text-sm text-muted-foreground" data-testid="breadcrumb-privacy">

@@ -1,9 +1,16 @@
 import { Link } from "wouter";
 import { Mail, MessageSquare, HelpCircle, ChevronRight } from "lucide-react";
+import { SEOHead } from "@/components/seo-head";
 
 export default function Support() {
   return (
     <div className="flex-1 bg-background">
+      <SEOHead 
+        title="Contact Support - Get Help with CareNaija"
+        description="Need help with CareNaija? Contact our support team for assistance with hospital reviews, account issues, or general inquiries."
+        keywords="CareNaija support, help desk Nigeria, hospital review help"
+        canonicalUrl="https://www.carenaija.com/support"
+      />
       <div className="border-b bg-muted/30">
         <div className="container mx-auto px-4 py-4">
           <nav className="flex items-center gap-2 text-sm text-muted-foreground" data-testid="breadcrumb-support">

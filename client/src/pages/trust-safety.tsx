@@ -1,9 +1,16 @@
 import { Link } from "wouter";
 import { Shield, Eye, Lock, AlertTriangle, ChevronRight } from "lucide-react";
+import { SEOHead } from "@/components/seo-head";
 
 export default function TrustSafety() {
   return (
     <div className="flex-1 bg-background">
+      <SEOHead 
+        title="Trust & Safety - How We Protect Our Community"
+        description="Learn how CareNaija ensures trustworthy hospital reviews through verification, moderation, and community guidelines. Your safety is our priority."
+        keywords="CareNaija trust safety, hospital review verification, Nigeria healthcare platform safety"
+        canonicalUrl="https://www.carenaija.com/trust-safety"
+      />
       <div className="border-b bg-muted/30">
         <div className="container mx-auto px-4 py-4">
           <nav className="flex items-center gap-2 text-sm text-muted-foreground" data-testid="breadcrumb-trust-safety">

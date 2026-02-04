@@ -1,9 +1,16 @@
 import { Link } from "wouter";
 import { ChevronRight } from "lucide-react";
+import { SEOHead } from "@/components/seo-head";
 
 export default function TermsOfService() {
   return (
     <div className="flex-1 bg-background">
+      <SEOHead 
+        title="Terms of Service - User Agreement"
+        description="Read CareNaija's terms of service governing the use of our hospital review platform. Understand your rights and responsibilities as a user."
+        keywords="CareNaija terms of service, user agreement Nigeria, hospital review terms"
+        canonicalUrl="https://www.carenaija.com/terms-of-service"
+      />
       <div className="border-b bg-muted/30">
         <div className="container mx-auto px-4 py-4">
           <nav className="flex items-center gap-2 text-sm text-muted-foreground" data-testid="breadcrumb-terms">

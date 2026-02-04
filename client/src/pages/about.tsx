@@ -16,12 +16,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useTrustStats } from "@/hooks/useHospitals";
+import { SEOHead } from "@/components/seo-head";
 
 export default function About() {
   const { data: trustStats } = useTrustStats();
 
   return (
     <div className="min-h-screen bg-white">
+      <SEOHead 
+        title="About CareNaija - Nigeria's Trusted Hospital Review Platform"
+        description="Learn about CareNaija's mission to help Nigerians find quality healthcare. We provide verified hospital reviews, ratings, and transparency in Nigerian healthcare."
+        keywords="about CareNaija, Nigeria hospital reviews, healthcare transparency Nigeria, hospital ratings platform"
+        canonicalUrl="https://www.carenaija.com/about"
+      />
       <div className="bg-gradient-to-br from-emerald-800 via-emerald-700 to-green-600 text-white py-16">
         <div className="container mx-auto px-4 max-w-4xl text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-6" data-testid="text-about-title">
