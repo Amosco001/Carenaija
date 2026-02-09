@@ -453,6 +453,7 @@ export default function SearchPage() {
       {/* Search Header */}
       <div className="bg-white border-b sticky top-0 z-30 shadow-sm">
         <div className="container mx-auto px-4 py-4">
+          <h1 className="sr-only">{searchQuery ? `${searchQuery} - Hospital Reviews Nigeria` : selectedState !== "All" ? `Best Hospitals in ${selectedState} Nigeria` : "Search Hospitals & Read Reviews Across Nigeria"}</h1>
           <div className="flex flex-col gap-4">
             <div className="flex flex-col md:flex-row gap-3">
               {/* Search Input with Autocomplete */}

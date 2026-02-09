@@ -146,11 +146,11 @@ export default function Home() {
             </div>
             
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight" data-testid="text-hero-title">
-              Find Quality Healthcare <br/>
-              <span className="text-emerald-200">Across Nigeria</span>
+              Hospital Reviews Nigeria <br/>
+              <span className="text-emerald-200">Find the Best Hospitals Near You</span>
             </h1>
             <p className="text-lg md:text-xl text-emerald-100 mb-10 max-w-2xl mx-auto">
-              Compare hospital ratings, read patient reviews, and make informed decisions about your healthcare.
+              Read verified patient reviews and compare hospital ratings in Lagos, Abuja, Port Harcourt, and across all 36 Nigerian states.
             </p>
 
             <form onSubmit={handleSearch} className="bg-white p-2 md:p-3 rounded-2xl shadow-2xl flex flex-col md:flex-row gap-2" data-testid="form-hero-search">
@@ -240,8 +240,8 @@ export default function Home() {
         <div className="container px-4 mx-auto">
           <div className="flex justify-between items-end mb-8">
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2" data-testid="text-featured-title">Featured Hospitals</h2>
-              <p className="text-slate-600">Top-rated healthcare facilities across Nigeria</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2" data-testid="text-featured-title">Top Hospitals in Nigeria</h2>
+              <p className="text-slate-600">Highest-rated hospitals in Lagos, Abuja, and across Nigeria based on patient reviews</p>
             </div>
             <div className="hidden md:flex gap-2">
               <Button variant="outline" size="icon" onClick={scrollPrev} disabled={!canScrollPrev} className="rounded-full" data-testid="button-carousel-prev">
@@ -295,8 +295,8 @@ export default function Home() {
       <section className="py-16 bg-white">
         <div className="container px-4 mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4" data-testid="text-specialties-title">Browse by Specialty</h2>
-            <p className="text-slate-600">Find hospitals known for specific treatments and care</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4" data-testid="text-specialties-title">Find Hospitals by Specialty</h2>
+            <p className="text-slate-600">Search for the best maternity, cardiology, orthopaedic, and specialist hospitals in Nigeria</p>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -316,13 +316,49 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Recent Reviews Section */}
+      {/* Browse by City Section */}
       <section className="py-16 bg-slate-50">
+        <div className="container px-4 mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4" data-testid="text-city-browse-title">Best Hospitals by City</h2>
+            <p className="text-slate-600" data-testid="text-city-browse-description">Find top-rated hospitals in major Nigerian cities</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { name: "Lagos", slug: "lagos", count: "50+" },
+              { name: "Abuja", slug: "abuja", count: "30+" },
+              { name: "Port Harcourt", slug: "port-harcourt", count: "20+" },
+              { name: "Ibadan", slug: "ibadan", count: "15+" },
+              { name: "Kano", slug: "kano", count: "15+" },
+              { name: "Enugu", slug: "enugu", count: "10+" },
+              { name: "Benin City", slug: "benin-city", count: "10+" },
+              { name: "Calabar", slug: "calabar", count: "8+" },
+            ].map(city => (
+              <Link key={city.slug} href={`/hospitals/${city.slug}`} data-testid={`link-city-${city.slug}`}>
+                <Card className="hover:shadow-md transition-all duration-300 cursor-pointer border-slate-200 hover:border-emerald-300 group bg-white h-full">
+                  <CardContent className="flex items-center gap-3 p-4">
+                    <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-200 transition-colors">
+                      <MapPin className="h-5 w-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <span className="font-semibold text-slate-700 group-hover:text-emerald-700 block">{city.name}</span>
+                      <span className="text-xs text-slate-500">{city.count} hospitals</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Recent Reviews Section */}
+      <section className="py-16 bg-white">
         <div className="container px-4 mx-auto">
           <div className="flex justify-between items-end mb-10">
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2" data-testid="text-reviews-title">Recent Reviews</h2>
-              <p className="text-slate-600">What patients are saying about their experiences</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2" data-testid="text-reviews-title">Latest Hospital Reviews</h2>
+              <p className="text-slate-600">What patients in Lagos, Abuja, and across Nigeria are saying about their hospital experiences</p>
             </div>
             <Link href="/search" className="hidden md:block">
               <Button variant="ghost" className="text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50">
@@ -420,8 +456,8 @@ export default function Home() {
       <section className="py-20 bg-white">
         <div className="container px-4 mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4">Why Choose CareNaija?</h2>
-            <p className="text-slate-600 max-w-2xl mx-auto">We're committed to helping Nigerians find quality healthcare with confidence</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4">Why Nigerians Trust CareNaija for Hospital Reviews</h2>
+            <p className="text-slate-600 max-w-2xl mx-auto">Nigeria's most trusted platform for finding and comparing private and public hospitals</p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
@@ -429,27 +465,27 @@ export default function Home() {
               <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto text-emerald-600 mb-4">
                 <Star className="h-8 w-8" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Honest Patient Reviews</h3>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Verified Patient Reviews & Ratings</h3>
               <p className="text-slate-600 leading-relaxed">
-                Real experiences from real patients. From wait times to staff attitude, get the full picture before your visit.
+                Real experiences from real patients across Lagos, Abuja, and all Nigerian states. From wait times to staff attitude, get the full picture before your visit.
               </p>
             </div>
             <div className="text-center p-6 rounded-xl hover:bg-slate-50 transition-colors">
               <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto text-emerald-600 mb-4">
                 <ShieldCheck className="h-8 w-8" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Verified Information</h3>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Verified Hospital Information</h3>
               <p className="text-slate-600 leading-relaxed">
-                We verify hospital details and services to ensure you have accurate, up-to-date information.
+                We verify hospital details, services, and specialties so you have accurate, up-to-date information for hospitals in Nigeria.
               </p>
             </div>
             <div className="text-center p-6 rounded-xl hover:bg-slate-50 transition-colors">
               <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto text-emerald-600 mb-4">
                 <Briefcase className="h-8 w-8" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Employee Insights</h3>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Hospital Staff & Employee Reviews</h3>
               <p className="text-slate-600 leading-relaxed">
-                Healthcare workers share workplace experiences, helping you understand hospital culture and standards.
+                Healthcare workers share workplace experiences and salary insights, helping you understand hospital culture and standards across Nigeria.
               </p>
             </div>
           </div>
@@ -461,8 +497,8 @@ export default function Home() {
         <section className="py-16 bg-slate-50">
           <div className="container px-4 mx-auto">
             <div className="text-center mb-12">
-              <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4">What Our Users Say</h2>
-              <p className="text-slate-600 max-w-2xl mx-auto">Real feedback from Nigerians who use CareNaija to find quality healthcare</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4">What Nigerians Say About CareNaija</h2>
+              <p className="text-slate-600 max-w-2xl mx-auto">Real feedback from patients who use CareNaija to find top hospitals in Lagos, Abuja, and beyond</p>
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -525,10 +561,10 @@ export default function Home() {
       <section className="py-20 bg-gradient-to-br from-emerald-700 via-emerald-600 to-green-600 text-white">
         <div className="container px-4 mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Help Improve Nigerian Healthcare
+            Share Your Hospital Experience in Nigeria
           </h2>
           <p className="text-xl text-emerald-100 mb-8 max-w-2xl mx-auto">
-            Your review could help someone make a life-saving decision. Share your experience and contribute to better healthcare for all Nigerians.
+            Your hospital review could help another Nigerian make a life-saving decision. Share your experience at any hospital in Lagos, Abuja, Port Harcourt, Ibadan, or anywhere in Nigeria.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link href="/search">

@@ -185,8 +185,8 @@ export default function ComparePage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Compare Hospitals</h1>
-            <p className="text-muted-foreground">Comparing {compareList.length} hospitals</p>
+            <h1 className="text-2xl font-bold text-gray-900">Hospital Comparison Nigeria</h1>
+            <p className="text-muted-foreground">Side-by-side comparison of {compareList.length} hospitals — ratings, reviews, and services</p>
           </div>
         </div>
         <div className="flex items-center gap-2">

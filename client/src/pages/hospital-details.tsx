@@ -230,14 +230,67 @@ export default function HospitalDetails() {
     ]
   };
 
-  const seoDescription = `${hospital.name} in ${hospital.state}, Nigeria. ${hospital.services.slice(0, 3).join(", ")} services. Read ${patientReviews.length} patient reviews and ratings.`;
+  const seoDescription = `${hospital.name} in ${hospital.lga}, ${hospital.state}, Nigeria. ${hospital.services.slice(0, 3).join(", ")} services. Read ${patientReviews.length} patient reviews, ratings, operating hours, and contact information.`;
+
+  const hospitalFaqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": `Where is ${hospital.name} located?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `${hospital.name} is located at ${hospital.address} in ${hospital.lga}, ${hospital.state}, Nigeria.${hospital.phone ? ` You can contact them at ${hospital.phone}.` : ""}`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `What services does ${hospital.name} offer?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": hospital.services?.length > 0
+            ? `${hospital.name} offers ${hospital.services.join(", ")}.`
+            : `Contact ${hospital.name} directly for details about their services and specialties.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `What are the operating hours of ${hospital.name}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": hospital.operatingHours
+            ? `${hospital.name} operates ${hospital.operatingHours}.`
+            : `${hospital.name} operates 24 hours a day, 7 days a week.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `Is ${hospital.name} a private or public hospital?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `${hospital.name} is a ${hospital.ownership?.toLowerCase()} hospital in ${hospital.lga}, ${hospital.state}.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `How do patients rate ${hospital.name}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": (hospital.totalReviews || 0) > 0
+            ? `${hospital.name} has received ${hospital.totalReviews} patient reviews with an average rating of ${(hospital.averageRating || 0).toFixed(1)} out of 5 stars on CareNaija.`
+            : `${hospital.name} has not yet received patient reviews on CareNaija.`
+        }
+      }
+    ]
+  };
 
   return (
     <>
       <SEOHead 
         title={`${hospital.name} - Reviews & Ratings in ${hospital.state}`}
         description={seoDescription}
-        keywords={`${hospital.name}, hospital ${hospital.state}, ${hospital.services.slice(0, 3).join(", ")}, hospital reviews Nigeria, ${hospital.lga} hospitals`}
+        keywords={`${hospital.name} reviews, ${hospital.name} ratings, hospital ${hospital.state}, ${hospital.services.slice(0, 3).join(", ")}, hospital reviews Nigeria, ${hospital.lga} hospitals`}
         canonicalUrl={canonicalUrl}
         ogType="place"
         ogImage={galleryImages[0]}
@@ -249,6 +302,10 @@ export default function HospitalDetails() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(hospitalFaqSchema) }}
       />
       
       <article className="bg-slate-50 min-h-screen pb-16" itemScope itemType="https://schema.org/Hospital" data-testid="page-hospital-details">
@@ -348,9 +405,15 @@ export default function HospitalDetails() {
                       </span>
                     </div>
                     <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2" itemProp="name" data-testid="text-hospital-name">
-                      {hospital.name}
+                      {hospital.name} Reviews & Ratings
                     </h1>
-                    <p className="text-slate-600" itemProp="address">{hospital.address}</p>
+                    <p className="text-slate-600" itemProp="address">{hospital.address}, {hospital.state} Nigeria</p>
+                    {hospital.updatedAt && (
+                      <p className="text-xs text-slate-400 mt-2 flex items-center gap-1" data-testid="text-last-updated">
+                        <Calendar className="w-3 h-3" />
+                        Last updated: {new Date(hospital.updatedAt).toLocaleDateString("en-NG", { year: "numeric", month: "long", day: "numeric" })}
+                      </p>
+                    )}
                   </div>
                   
                   {/* Share Button */}
@@ -480,7 +543,7 @@ export default function HospitalDetails() {
 
               {/* Specialties & Services */}
               <section className="bg-white rounded-xl border p-6">
-                <h2 className="text-xl font-bold text-slate-900 mb-4">Specialties & Services</h2>
+                <h2 className="text-xl font-bold text-slate-900 mb-4">Specialties & Services at {hospital.name}</h2>
                 <div className="flex flex-wrap gap-2">
                   {hospital.services?.map((service: string) => (
                     <Badge key={service} variant="secondary" className="px-3 py-1.5 text-sm bg-emerald-50 text-emerald-700 hover:bg-emerald-100">
@@ -506,6 +569,95 @@ export default function HospitalDetails() {
                       </div>
                     );
                   })}
+                </div>
+              </section>
+
+              {/* About This Hospital */}
+              <section className="bg-white rounded-xl border p-6">
+                <h2 className="text-xl font-bold text-slate-900 mb-4">About {hospital.name}</h2>
+                <div className="prose prose-slate max-w-none text-slate-600 leading-relaxed space-y-3">
+                  <p>
+                    {hospital.name} is a {hospital.ownership?.toLowerCase()} healthcare facility located at {hospital.address} in {hospital.lga}, {hospital.state}, Nigeria.
+                    {hospital.services?.length > 0 && ` The hospital offers a range of medical services including ${hospital.services.slice(0, 5).join(", ")}${hospital.services.length > 5 ? ` and ${hospital.services.length - 5} more specialties` : ""}.`}
+                  </p>
+                  <p>
+                    {hospital.bedCapacity ? `With a capacity of ${hospital.bedCapacity} beds, ${hospital.name}` : hospital.name} serves patients in {hospital.lga} and surrounding areas of {hospital.state}.
+                    {hospital.operatingHours ? ` The facility operates ${hospital.operatingHours}.` : " The facility operates 24 hours a day, 7 days a week."}
+                    {hospital.verified && " This hospital has been verified by CareNaija to ensure accurate and up-to-date information."}
+                  </p>
+                  <p>
+                    {(hospital.totalReviews || 0) > 0
+                      ? `Based on ${hospital.totalReviews} patient reviews, ${hospital.name} has an average rating of ${(hospital.averageRating || 0).toFixed(1)} out of 5 stars. Patients in ${hospital.state} have shared their experiences with care quality, staff attitude, and facilities at this hospital.`
+                      : `${hospital.name} is listed on CareNaija to help patients in ${hospital.state} find quality healthcare. Be the first to share your experience by writing a review.`
+                    }
+                  </p>
+                </div>
+              </section>
+
+              {/* Hospital FAQs */}
+              <section className="bg-white rounded-xl border p-6">
+                <h2 className="text-xl font-bold text-slate-900 mb-4">Frequently Asked Questions about {hospital.name}</h2>
+                <div className="space-y-4">
+                  <details className="group border-b pb-4">
+                    <summary className="flex items-center justify-between cursor-pointer font-medium text-slate-900 hover:text-emerald-700">
+                      Where is {hospital.name} located?
+                      <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
+                    </summary>
+                    <p className="mt-2 text-sm text-slate-600">
+                      {hospital.name} is located at {hospital.address} in {hospital.lga}, {hospital.state}, Nigeria.
+                      {hospital.phone && ` You can contact them at ${hospital.phone}.`}
+                    </p>
+                  </details>
+
+                  <details className="group border-b pb-4">
+                    <summary className="flex items-center justify-between cursor-pointer font-medium text-slate-900 hover:text-emerald-700">
+                      What services does {hospital.name} offer?
+                      <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
+                    </summary>
+                    <p className="mt-2 text-sm text-slate-600">
+                      {hospital.services?.length > 0
+                        ? `${hospital.name} offers ${hospital.services.join(", ")}. Contact the hospital directly for a complete list of services and specialties.`
+                        : `Contact ${hospital.name} directly for details about their services and specialties.`
+                      }
+                    </p>
+                  </details>
+
+                  <details className="group border-b pb-4">
+                    <summary className="flex items-center justify-between cursor-pointer font-medium text-slate-900 hover:text-emerald-700">
+                      What are the operating hours of {hospital.name}?
+                      <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
+                    </summary>
+                    <p className="mt-2 text-sm text-slate-600">
+                      {hospital.operatingHours
+                        ? `${hospital.name} operates ${hospital.operatingHours}.`
+                        : `${hospital.name} operates 24 hours a day, 7 days a week. Contact the hospital to confirm current operating hours.`
+                      }
+                    </p>
+                  </details>
+
+                  <details className="group border-b pb-4">
+                    <summary className="flex items-center justify-between cursor-pointer font-medium text-slate-900 hover:text-emerald-700">
+                      Is {hospital.name} a private or public hospital?
+                      <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
+                    </summary>
+                    <p className="mt-2 text-sm text-slate-600">
+                      {hospital.name} is a {hospital.ownership?.toLowerCase()} hospital in {hospital.lga}, {hospital.state}.
+                      {hospital.ownership === "Government" ? " As a public hospital, it typically accepts NHIS and government health insurance schemes." : " As a private hospital, it may accept various HMO plans and private insurance."}
+                    </p>
+                  </details>
+
+                  <details className="group pb-4">
+                    <summary className="flex items-center justify-between cursor-pointer font-medium text-slate-900 hover:text-emerald-700">
+                      How do patients rate {hospital.name}?
+                      <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
+                    </summary>
+                    <p className="mt-2 text-sm text-slate-600">
+                      {(hospital.totalReviews || 0) > 0
+                        ? `${hospital.name} has received ${hospital.totalReviews} patient reviews with an average rating of ${(hospital.averageRating || 0).toFixed(1)} out of 5 stars on CareNaija. Read detailed reviews from patients who have visited this hospital.`
+                        : `${hospital.name} has not yet received patient reviews on CareNaija. Be the first to share your experience and help other patients in ${hospital.state}.`
+                      }
+                    </p>
+                  </details>
                 </div>
               </section>
 
@@ -623,7 +775,7 @@ export default function HospitalDetails() {
               {/* Related Hospitals */}
               {relatedHospitals.length > 0 && (
                 <section>
-                  <h2 className="text-xl font-bold text-slate-900 mb-4">Similar Hospitals in {hospital.state}</h2>
+                  <h2 className="text-xl font-bold text-slate-900 mb-4">Other Top Hospitals in {hospital.state}, Nigeria</h2>
                   <div className="grid sm:grid-cols-2 gap-4">
                     {relatedHospitals.map((h, i) => (
                       <Link key={h.id} href={`/hospital/${h.id}`}>
