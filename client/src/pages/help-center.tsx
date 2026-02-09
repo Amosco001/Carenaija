@@ -245,6 +245,18 @@ export default function HelpCenter() {
         description="Find answers to frequently asked questions about using CareNaija. Learn how to search hospitals, write reviews, claim hospital profiles, and more."
         keywords="CareNaija help, FAQ Nigeria hospitals, hospital review help, support center"
         canonicalUrl="https://www.carenaija.com/help"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": faqData.map(faq => ({
+            "@type": "Question",
+            "name": faq.question,
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": faq.answer
+            }
+          }))
+        }}
       />
       <div className="border-b bg-muted/30">
         <div className="container mx-auto px-4 py-4">

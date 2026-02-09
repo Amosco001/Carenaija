@@ -141,6 +141,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.get("/api/hospitals", async (req, res) => {
     try {
+      res.setHeader("Cache-Control", "public, max-age=300, s-maxage=600");
       const { search, page, limit } = req.query;
       
       if (search && typeof search === "string") {
@@ -174,6 +175,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(404).json({ message: "Hospital not found" });
       }
 
+      res.setHeader("Cache-Control", "public, max-age=300, s-maxage=600");
       res.json(hospital);
     } catch (error) {
       console.error("Error fetching hospital:", error);
@@ -1978,6 +1980,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // Get trust stats for homepage
   app.get("/api/trust-stats", async (req, res) => {
     try {
+      res.setHeader("Cache-Control", "public, max-age=600, s-maxage=1200");
       const stats = await storage.getTrustStats();
       res.json(stats);
     } catch (error) {
@@ -1989,6 +1992,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // Get active testimonials for homepage
   app.get("/api/testimonials", async (req, res) => {
     try {
+      res.setHeader("Cache-Control", "public, max-age=3600, s-maxage=7200");
       const testimonialsList = await storage.getActiveTestimonials();
       res.json(testimonialsList);
     } catch (error) {

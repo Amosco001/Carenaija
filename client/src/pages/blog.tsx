@@ -156,7 +156,7 @@ export default function BlogPage() {
   return (
     <div className="flex-1 bg-background">
       <SEOHead 
-        title="Health Blog - Expert Healthcare Insights & Hospital Guides"
+        title="Health Blog - Healthcare Tips Nigeria"
         description="Read expert health tips, hospital spotlights, and healthcare insights for Nigerians. Stay informed with CareNaija's health blog covering hospitals, treatments, and wellness."
         keywords="Nigeria health blog, healthcare tips, hospital guides Nigeria, health advice, medical news Nigeria"
         canonicalUrl="https://www.carenaija.com/blog"

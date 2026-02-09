@@ -301,9 +301,10 @@ export default function HealthHub() {
   return (
     <>
       <SEOHead
-        title="Health Education Hub"
+        title="Health Hub - Wellness Tips & Guides"
         description="Explore trusted health information, disease prevention guides, and wellness tips tailored for Nigerians. Learn about common diseases, symptoms, and when to see a doctor."
-        canonicalUrl="/health"
+        keywords="health tips Nigeria, disease prevention, wellness guide, Nigerian healthcare education"
+        canonicalUrl="https://www.carenaija.com/health"
         ogType="website"
       />
 

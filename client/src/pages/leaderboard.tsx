@@ -191,7 +191,7 @@ export default function Leaderboard() {
   return (
     <div className="min-h-screen bg-slate-50 py-8" data-testid="page-leaderboard">
       <SEOHead 
-        title="Community Leaderboard - Top Reviewers & Contributors"
+        title="Community Leaderboard - Top Reviewers"
         description="See CareNaija's most active community members. Explore our leaderboard featuring top hospital reviewers, badges, and contributor levels in Nigeria."
         keywords="CareNaija leaderboard, top reviewers Nigeria, hospital review contributors, community badges"
         canonicalUrl="https://www.carenaija.com/leaderboard"
@@ -227,9 +227,9 @@ export default function Leaderboard() {
                       Featured Reviewer of the Month
                     </Badge>
                   </div>
-                  <h3 className="font-semibold text-lg mt-1">
+                  <h2 className="font-semibold text-lg mt-1">
                     {featuredReviewer.user?.firstName} {featuredReviewer.user?.lastName}
-                  </h3>
+                  </h2>
                   <p className="text-sm text-slate-600 mt-1">{featuredReviewer.reason}</p>
                 </div>
               </div>
@@ -322,13 +322,13 @@ export default function Leaderboard() {
                   <div className="space-y-8">
                     {Object.entries(badgesByCategory).map(([category, categoryBadges]) => (
                       <div key={category}>
-                        <h3 className="text-lg font-semibold capitalize mb-4 flex items-center gap-2">
+                        <h2 className="text-lg font-semibold capitalize mb-4 flex items-center gap-2">
                           {category === 'reviews' && <Star className="w-5 h-5 text-amber-500" />}
                           {category === 'community' && <Users className="w-5 h-5 text-blue-500" />}
                           {category === 'points' && <Flame className="w-5 h-5 text-orange-500" />}
                           {category === 'special' && <Crown className="w-5 h-5 text-purple-500" />}
                           {category} Badges
-                        </h3>
+                        </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {categoryBadges.map(badge => (
                             <BadgeCard key={badge.id} badge={badge} />
@@ -367,7 +367,7 @@ export default function Leaderboard() {
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <h3 className={`font-semibold text-lg ${config.color}`}>{level.name}</h3>
+                              <h2 className={`font-semibold text-lg ${config.color}`}>{level.name}</h2>
                               <Badge variant="outline" className="text-xs">
                                 {level.minPoints.toLocaleString()}+ points
                               </Badge>

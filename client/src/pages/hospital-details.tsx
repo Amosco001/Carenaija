@@ -309,7 +309,7 @@ export default function HospitalDetails() {
                 <div className="hidden lg:block relative rounded-xl overflow-hidden aspect-[4/3] bg-slate-100">
                   <img
                     src={galleryImages[selectedImage]}
-                    alt={hospital.name}
+                    alt={`${hospital.name} - ${hospital.ownership} healthcare facility in ${hospital.lga}, ${hospital.state} Nigeria`}
                     className="w-full h-full object-cover"
                     itemProp="image"
                   />
@@ -326,7 +326,7 @@ export default function HospitalDetails() {
                         className={`w-16 h-12 rounded-lg overflow-hidden border-2 transition-all touch-target ${selectedImage === i ? "border-emerald-500 ring-2 ring-emerald-500/50" : "border-white/50 opacity-80 hover:opacity-100"}`}
                         data-testid={`button-gallery-${i}`}
                       >
-                        <img src={img} alt="" className="w-full h-full object-cover" />
+                        <img src={img} alt={`${hospital.name} gallery photo ${i + 1}`} className="w-full h-full object-cover" />
                       </button>
                     ))}
                     <button className="w-16 h-12 rounded-lg bg-black/50 text-white flex items-center justify-center text-xs font-medium">

@@ -86,17 +86,52 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-white" data-testid="page-home">
       <SEOHead 
-        title="Hospital Reviews Nigeria - Find Best Hospitals in Lagos & Nigeria"
+        title="Find Best Hospitals & Reviews Nigeria"
         description="Find the best hospitals in Nigeria with verified patient reviews. Compare ratings for hospitals in Lagos, Abuja and across Nigeria. Read honest reviews about care quality."
         keywords="hospital reviews Nigeria, best hospitals in Lagos, Nigerian hospital ratings, Lagos hospitals, Abuja hospitals, healthcare Nigeria"
         canonicalUrl="https://www.carenaija.com/"
+        structuredData={[
+          {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "@id": "https://www.carenaija.com/#organization",
+            "name": "CareNaija",
+            "url": "https://www.carenaija.com",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://www.carenaija.com/favicon.png"
+            },
+            "description": "Nigeria's trusted hospital review platform. Find verified patient reviews and ratings for hospitals across Lagos, Abuja, and all 36 states.",
+            "foundingDate": "2025",
+            "areaServed": {
+              "@type": "Country",
+              "name": "Nigeria"
+            },
+            "sameAs": []
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "@id": "https://www.carenaija.com/#website",
+            "name": "CareNaija",
+            "url": "https://www.carenaija.com",
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": {
+                "@type": "EntryPoint",
+                "urlTemplate": "https://www.carenaija.com/search?q={search_term_string}"
+              },
+              "query-input": "required name=search_term_string"
+            }
+          }
+        ]}
       />
       {/* Hero Section - Nigerian Green Theme */}
       <section className="relative min-h-[600px] flex items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-800 via-emerald-700 to-green-600">
         <div className="absolute inset-0 z-0">
           <img 
             src={generatedHeroImage} 
-            alt="Hospital Background" 
+            alt="Nigerian hospital exterior with modern healthcare facilities in Lagos" 
             className="w-full h-full object-cover opacity-20"
             loading="eager"
           />

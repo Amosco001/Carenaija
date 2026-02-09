@@ -124,7 +124,7 @@ export default function ComparePage() {
         <Card className="max-w-md mx-auto">
           <CardContent className="pt-8 pb-8">
             <Scale className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-gray-900 mb-2">No Hospitals to Compare</h2>
+            <h1 className="text-xl font-bold text-gray-900 mb-2">No Hospitals to Compare</h1>
             <p className="text-muted-foreground mb-6">
               Add hospitals to your comparison list by clicking "Add to Compare" on hospital cards.
             </p>
@@ -146,7 +146,7 @@ export default function ComparePage() {
         <Card className="max-w-md mx-auto">
           <CardContent className="pt-8 pb-8">
             <Scale className="h-16 w-16 text-amber-400 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Add More Hospitals</h2>
+            <h1 className="text-xl font-bold text-gray-900 mb-2">Add More Hospitals</h1>
             <p className="text-muted-foreground mb-6">
               You need at least 2 hospitals to compare. Currently selected: {compareList.length}
             </p>

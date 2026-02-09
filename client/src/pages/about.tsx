@@ -24,7 +24,7 @@ export default function About() {
   return (
     <div className="min-h-screen bg-white">
       <SEOHead 
-        title="About CareNaija - Nigeria's Trusted Hospital Review Platform"
+        title="About Us - Trusted Hospital Reviews"
         description="Learn about CareNaija's mission to help Nigerians find quality healthcare. We provide verified hospital reviews, ratings, and transparency in Nigerian healthcare."
         keywords="about CareNaija, Nigeria hospital reviews, healthcare transparency Nigeria, hospital ratings platform"
         canonicalUrl="https://www.carenaija.com/about"

@@ -53,7 +53,7 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
             <div className="h-48 overflow-hidden relative">
               <img 
                 src={imageUrl} 
-                alt={hospital.name}
+                alt={`${hospital.name} - ${hospital.ownership} hospital in ${hospital.lga}, ${hospital.state} Nigeria`}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 loading="lazy"
               />
@@ -123,7 +123,7 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
             <div className="sm:w-48 h-40 sm:h-auto relative overflow-hidden flex-shrink-0">
               <img
                 src={imageUrl}
-                alt={hospital.name}
+                alt={`${hospital.name} - ${hospital.ownership} hospital in ${hospital.lga}, ${hospital.state} Nigeria`}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 loading="lazy"
               />
