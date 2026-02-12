@@ -18,6 +18,12 @@ export function useHospital(id: number) {
   });
 }
 
+export function useTrendingHospitals() {
+  return useQuery<(Hospital & { recentReviewCount: number; latestReviewDate: string | null })[]>({
+    queryKey: ["/api/hospitals/trending"],
+  });
+}
+
 export function usePatientReviews(hospitalId?: number) {
   const url = hospitalId 
     ? `/api/hospitals/${hospitalId}/patient-reviews`

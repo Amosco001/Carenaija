@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Star, ShieldCheck, Scale, Check } from "lucide-react";
+import { MapPin, Star, ShieldCheck, Scale, Check, Sparkles } from "lucide-react";
 import { useComparison } from "@/lib/comparison-context";
 import { toast } from "sonner";
 import type { Hospital } from "@shared/schema";
@@ -17,6 +17,10 @@ interface HospitalCardProps {
 export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalCardProps) {
   const { addToCompare, removeFromCompare, isInCompare, canAddMore } = useComparison();
   const inCompare = isInCompare(hospital.id);
+  
+  const isRecentlyUpdated = hospital.updatedAt 
+    ? (Date.now() - new Date(hospital.updatedAt).getTime()) < 7 * 24 * 60 * 60 * 1000 
+    : false;
 
   const handleCompareClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -59,11 +63,18 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
                 loading="lazy"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-              {hospital.verified && (
-                <div className="absolute top-3 left-3 bg-emerald-500 text-white px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" /> Verified
-                </div>
-              )}
+              <div className="absolute top-3 left-3 flex gap-1.5">
+                {hospital.verified && (
+                  <div className="bg-emerald-500 text-white px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3" /> Verified
+                  </div>
+                )}
+                {isRecentlyUpdated && (
+                  <div className="bg-orange-500 text-white px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1" data-testid={`badge-new-reviews-${hospital.id}`}>
+                    <Sparkles className="w-3 h-3" /> New Reviews
+                  </div>
+                )}
+              </div>
               <div className="absolute top-3 right-3 bg-white/95 backdrop-blur px-2 py-1 rounded-md shadow-sm">
                 <span className="text-xs font-semibold text-emerald-700">{hospital.ownership}</span>
               </div>
@@ -128,11 +139,18 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 loading="lazy"
               />
-              {hospital.verified && (
-                <div className="absolute top-2 left-2 bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" /> Verified
-                </div>
-              )}
+              <div className="absolute top-2 left-2 flex gap-1">
+                {hospital.verified && (
+                  <div className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3" /> Verified
+                  </div>
+                )}
+                {isRecentlyUpdated && (
+                  <div className="bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1" data-testid={`badge-new-reviews-list-${hospital.id}`}>
+                    <Sparkles className="w-3 h-3" /> New
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex-1 p-4 sm:p-5">

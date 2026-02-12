@@ -61,6 +61,17 @@ const SPECIALTIES_OPTIONS = [
   "General Medicine",
 ];
 
+const INSURANCE_OPTIONS = [
+  "NHIS",
+  "HMO Nigeria",
+  "AXA Mansard",
+  "Leadway Health",
+  "Hygeia HMO",
+  "Reliance HMO",
+  "Mediplan",
+  "Total Health Trust",
+];
+
 const RADIUS_OPTIONS = [
   { value: 1, label: "1 km" },
   { value: 5, label: "5 km" },
@@ -98,6 +109,7 @@ export default function SearchPage() {
   const [selectedOwnership, setSelectedOwnership] = useState<string[]>([]);
   const [selectedState, setSelectedState] = useState<string>("All");
   const [selectedFacilities, setSelectedFacilities] = useState<string[]>([]);
+  const [selectedInsurance, setSelectedInsurance] = useState<string[]>([]);
   const [minRating, setMinRating] = useState<number>(0);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [sortBy, setSortBy] = useState("rating");
@@ -152,7 +164,7 @@ export default function SearchPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, locationQuery, selectedOwnership, selectedState, selectedFacilities, minRating, verifiedOnly, sortBy]);
+  }, [searchQuery, locationQuery, selectedOwnership, selectedState, selectedFacilities, selectedInsurance, minRating, verifiedOnly, sortBy]);
 
   const handleNearMe = () => {
     requestLocation();
@@ -206,6 +218,12 @@ export default function SearchPage() {
           (hospital.facilities && hospital.facilities.some(fac => fac.toLowerCase().includes(f.toLowerCase())))
         );
 
+      const matchesInsurance = selectedInsurance.length === 0 ||
+        selectedInsurance.some(ins => 
+          hospital.services.some(s => s.toLowerCase().includes(ins.toLowerCase())) ||
+          hospital.name.toLowerCase().includes(ins.toLowerCase())
+        );
+
       let matchesRadius = true;
       if (selectedRadius > 0 && userLocation && hospital.latitude && hospital.longitude) {
         const distance = getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, hospital.latitude, hospital.longitude);
@@ -213,7 +231,7 @@ export default function SearchPage() {
       }
 
       return matchesSearch && matchesLocation && matchesOwnership && matchesState && 
-             matchesRating && matchesVerified && matchesFacilities && matchesRadius;
+             matchesRating && matchesVerified && matchesFacilities && matchesInsurance && matchesRadius;
     });
 
     return filtered.sort((a, b) => {
@@ -234,7 +252,7 @@ export default function SearchPage() {
           return a.name.localeCompare(b.name);
       }
     });
-  }, [hospitals, searchQuery, locationQuery, selectedOwnership, selectedState, selectedFacilities, minRating, verifiedOnly, sortBy, userLocation, selectedRadius]);
+  }, [hospitals, searchQuery, locationQuery, selectedOwnership, selectedState, selectedFacilities, selectedInsurance, minRating, verifiedOnly, sortBy, userLocation, selectedRadius]);
 
   const totalPages = Math.ceil(filteredHospitals.length / RESULTS_PER_PAGE);
   const paginatedHospitals = filteredHospitals.slice(
@@ -246,6 +264,7 @@ export default function SearchPage() {
     selectedOwnership.length > 0,
     selectedState !== "All",
     selectedFacilities.length > 0,
+    selectedInsurance.length > 0,
     minRating > 0,
     verifiedOnly,
     selectedRadius > 0,
@@ -257,6 +276,7 @@ export default function SearchPage() {
     setSelectedOwnership([]);
     setSelectedState("All");
     setSelectedFacilities([]);
+    setSelectedInsurance([]);
     setMinRating(0);
     setVerifiedOnly(false);
     setSelectedRadius(0);
@@ -372,6 +392,31 @@ export default function SearchPage() {
               />
               <Label htmlFor={`facility-${facility}`} className="text-sm cursor-pointer">
                 {facility}
+              </Label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <Separator />
+
+      <div>
+        <h3 className="font-semibold text-sm text-slate-900 mb-3">Insurance / HMO</h3>
+        <div className="space-y-2 max-h-[200px] overflow-y-auto">
+          {INSURANCE_OPTIONS.map(insurance => (
+            <div key={insurance} className="flex items-center space-x-2">
+              <Checkbox
+                id={`insurance-${insurance}`}
+                checked={selectedInsurance.includes(insurance)}
+                onCheckedChange={() => {
+                  setSelectedInsurance(prev =>
+                    prev.includes(insurance) ? prev.filter(i => i !== insurance) : [...prev, insurance]
+                  );
+                }}
+                data-testid={`checkbox-insurance-${insurance.toLowerCase().replace(/\s+/g, '-')}`}
+              />
+              <Label htmlFor={`insurance-${insurance}`} className="text-sm cursor-pointer">
+                {insurance}
               </Label>
             </div>
           ))}

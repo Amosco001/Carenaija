@@ -179,6 +179,46 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  app.get("/api/hospitals/trending", async (req, res) => {
+    try {
+      res.setHeader("Cache-Control", "public, max-age=300, s-maxage=600");
+      const allHospitals = await storage.getAllHospitals();
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      
+      const hospitalsWithActivity = await Promise.all(
+        allHospitals.map(async (hospital) => {
+          const reviews = await storage.getPatientReviewsByHospitalId(hospital.id);
+          const recentReviews = reviews.filter((r: any) => 
+            r.createdAt && new Date(r.createdAt) >= thirtyDaysAgo
+          );
+          return {
+            ...hospital,
+            recentReviewCount: recentReviews.length,
+            latestReviewDate: reviews.length > 0 
+              ? new Date(Math.max(...reviews.map((r: any) => new Date(r.createdAt || 0).getTime())))
+              : null,
+          };
+        })
+      );
+      
+      const trending = hospitalsWithActivity
+        .filter(h => h.recentReviewCount > 0 || (h.totalReviews && h.totalReviews > 0))
+        .sort((a, b) => {
+          if (b.recentReviewCount !== a.recentReviewCount) {
+            return b.recentReviewCount - a.recentReviewCount;
+          }
+          return (b.totalReviews || 0) - (a.totalReviews || 0);
+        })
+        .slice(0, 6);
+      
+      res.json(trending);
+    } catch (error) {
+      console.error("Error fetching trending hospitals:", error);
+      res.status(500).json({ message: "Failed to fetch trending hospitals" });
+    }
+  });
+
   app.get("/api/hospitals/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);

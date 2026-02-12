@@ -140,13 +140,34 @@
 }
 
 .touch-target {
-  min-height: 44px;
-  min-width: 44px;
+  min-height: 48px;
+  min-width: 48px;
 }
 
 .touch-target-small {
-  min-height: 32px;
-  min-width: 32px;
+  min-height: 40px;
+  min-width: 40px;
+}
+
+@media (max-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+  
+  button, a, [role="button"], select, input, textarea {
+    min-height: 48px;
+    font-size: max(16px, 1em);
+  }
+  
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+  
+  .badge-touch {
+    min-height: 36px;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
 }
 
 .safe-area-bottom {
@@ -199,5 +220,32 @@
 @media (min-width: 1536px) {
   .grid-responsive {
     grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+img {
+  content-visibility: auto;
+}
+
+section {
+  contain-intrinsic-size: auto 500px;
+}
+
+.skeleton-pulse {
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%);
+  background-size: 200% 100%;
+}
+
+@keyframes pulse {
+  0%, 100% { background-position: 200% 0; }
+  50% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

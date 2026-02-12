@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, MapPin, Star, Stethoscope, Briefcase, Heart, Baby, Bone, Brain, Eye, ShieldCheck, ChevronRight, ChevronLeft, Loader2, Users, Building2, MessageSquare, Quote, CheckCircle, Award, Lock, Clock } from "lucide-react";
+import { Search, MapPin, Star, Stethoscope, Briefcase, Heart, Baby, Bone, Brain, Eye, ShieldCheck, ChevronRight, ChevronLeft, Loader2, Users, Building2, MessageSquare, Quote, CheckCircle, Award, Lock, Clock, TrendingUp, Flame } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState, useEffect, useCallback } from "react";
-import { useHospitals, useAllPatientReviews, useTrustStats, useTestimonials } from "@/hooks/useHospitals";
+import { useHospitals, useAllPatientReviews, useTrustStats, useTestimonials, useTrendingHospitals } from "@/hooks/useHospitals";
 import { getHospitalUrl } from "@shared/schema";
 import { Link } from "wouter";
 import generatedHeroImage from "@assets/generated_images/modern_nigerian_hospital_exterior_with_friendly_medical_staff_interaction.png";
@@ -28,6 +28,7 @@ export default function Home() {
   const { data: reviews = [], isLoading: reviewsLoading } = useAllPatientReviews();
   const { data: trustStats } = useTrustStats();
   const { data: testimonials = [] } = useTestimonials();
+  const { data: trendingHospitals = [] } = useTrendingHospitals();
 
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: "start" });
   const [canScrollPrev, setCanScrollPrev] = useState(false);
@@ -292,6 +293,63 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Trending Hospitals */}
+      {trendingHospitals.length > 0 && (
+        <section className="py-16 bg-white">
+          <div className="container px-4 mx-auto">
+            <div className="flex justify-between items-end mb-8">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Flame className="h-6 w-6 text-orange-500" />
+                  <h2 className="text-2xl md:text-3xl font-bold text-slate-900" data-testid="text-trending-title">Trending Hospitals in Nigeria</h2>
+                </div>
+                <p className="text-slate-600">Hospitals with the most recent review activity from patients across Nigeria</p>
+              </div>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {trendingHospitals.slice(0, 6).map((hospital, index) => (
+                <Link key={hospital.id} href={getHospitalUrl(hospital)} data-testid={`card-trending-hospital-${hospital.id}`}>
+                  <Card className="hover:shadow-md transition-all duration-300 cursor-pointer border-slate-200 hover:border-orange-300 group bg-white h-full">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-100 to-amber-50 flex items-center justify-center flex-shrink-0">
+                          <TrendingUp className="h-6 w-6 text-orange-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-slate-800 truncate group-hover:text-orange-700 text-sm">{hospital.name}</h3>
+                            {hospital.recentReviewCount > 0 && (
+                              <Badge className="bg-orange-100 text-orange-700 text-xs flex-shrink-0 border-0">
+                                {hospital.recentReviewCount} new
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
+                            <MapPin className="w-3 h-3" />
+                            <span>{hospital.state}</span>
+                            {hospital.averageRating && hospital.averageRating > 0 && (
+                              <>
+                                <span>·</span>
+                                <div className="flex items-center gap-0.5">
+                                  <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                                  <span>{hospital.averageRating.toFixed(1)}</span>
+                                </div>
+                              </>
+                            )}
+                            <span>·</span>
+                            <span>{hospital.totalReviews || 0} reviews</span>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Popular Specialties Grid */}
       <section className="py-16 bg-white">
         <div className="container px-4 mx-auto">
@@ -302,7 +360,7 @@ export default function Home() {
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {specialties.map((spec) => (
-              <Link key={spec.name} href={`/search?q=${encodeURIComponent(spec.name)}`} data-testid={`card-specialty-${spec.name.toLowerCase()}`}>
+              <Link key={spec.name} href={`/specialties/${spec.name.toLowerCase().replace(/\s+/g, '-')}`} data-testid={`card-specialty-${spec.name.toLowerCase()}`}>
                 <Card className={`${spec.hoverBg} hover:shadow-md transition-all duration-300 cursor-pointer border-slate-200 hover:border-emerald-300 group bg-white h-full`}>
                   <CardContent className="flex flex-col items-center justify-center p-6 h-full">
                     <div className={`w-14 h-14 rounded-full ${spec.bg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>

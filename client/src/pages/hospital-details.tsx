@@ -384,7 +384,7 @@ export default function HospitalDetails() {
                         {hospital.lga}, {hospital.state}
                       </span>
                     </div>
-                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2" itemProp="name" data-testid="text-hospital-name">
+                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-1" itemProp="name" data-testid="text-hospital-name">
                       {hospital.name} Reviews & Ratings
                     </h1>
                     <p className="text-slate-600" itemProp="address">{hospital.address}, {hospital.state} Nigeria</p>
