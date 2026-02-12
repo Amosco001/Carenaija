@@ -14,3 +14,17 @@ export function useHospital(id: string) {
     enabled: !!id,
   });
 }
+
+export function useHospitalBySlug(slug: string) {
+  return useQuery<Hospital>({
+    queryKey: ["hospital-slug", slug],
+    queryFn: async () => {
+      const response = await fetch(`/api/hospitals/by-slug/${slug}`);
+      if (!response.ok) {
+        throw new Error("Hospital not found");
+      }
+      return response.json();
+    },
+    enabled: !!slug,
+  });
+}

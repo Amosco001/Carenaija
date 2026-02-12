@@ -6,6 +6,7 @@ import { MapPin, Star, ShieldCheck, Scale, Check } from "lucide-react";
 import { useComparison } from "@/lib/comparison-context";
 import { toast } from "sonner";
 import type { Hospital } from "@shared/schema";
+import { getHospitalUrl } from "@shared/schema";
 
 interface HospitalCardProps {
   hospital: Hospital;
@@ -48,7 +49,7 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
   if (variant === "carousel") {
     return (
       <div className="relative group">
-        <Link href={`/hospital/${hospital.id}`} data-testid={`card-hospital-${hospital.id}`}>
+        <Link href={getHospitalUrl(hospital)} data-testid={`card-hospital-${hospital.id}`}>
           <Card className="overflow-hidden border-slate-200 hover:border-emerald-300 hover:shadow-lg transition-all duration-300 h-full">
             <div className="h-48 overflow-hidden relative">
               <img 
@@ -114,7 +115,7 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
 
   return (
     <div className="relative">
-      <Link href={`/hospital/${hospital.id}`}>
+      <Link href={getHospitalUrl(hospital)}>
         <div
           className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group hover:border-emerald-300 cursor-pointer"
           data-testid={`card-hospital-${hospital.id}`}

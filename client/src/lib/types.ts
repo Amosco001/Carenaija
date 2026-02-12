@@ -1,6 +1,7 @@
 export type Hospital = {
   id: number;
   name: string;
+  slug: string | null;
   address: string;
   city: string | null;
   lga: string;

@@ -7,6 +7,7 @@ import { MapPin, Navigation, Phone, Star, Loader2, AlertCircle, ExternalLink } f
 import { formatDistance, getGoogleMapsDirectionsUrl } from "@/hooks/useGeolocation";
 import { Link } from "wouter";
 import type { Hospital } from "@/lib/types";
+import { getHospitalUrl } from "@shared/schema";
 
 interface MapViewProps {
   hospitals: Hospital[];
@@ -223,7 +224,7 @@ export function MapView({
             </div>
 
             <div className="flex gap-2">
-              <Link href={`/hospital/${selectedHospital.id}`} className="flex-1">
+              <Link href={getHospitalUrl(selectedHospital)} className="flex-1">
                 <Button size="sm" className="w-full" data-testid="map-view-details">
                   View Details
                 </Button>

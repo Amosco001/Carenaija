@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { getHospital } from "@/lib/mockData";
+import { getHospitalUrl } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,14 +48,14 @@ export default function ClaimProfile() {
       description: "We will verify your documents and contact you within 24-48 hours.",
     });
     
-    setLocation(`/hospital/${id}`);
+    setLocation(getHospitalUrl(hospital));
   };
 
   return (
     <div className="min-h-screen bg-slate-50 py-12">
       <div className="container mx-auto px-4 max-w-3xl">
         <div className="mb-8">
-           <Link href={`/hospital/${hospital.id}`}>
+           <Link href={getHospitalUrl(hospital)}>
             <a className="text-sm text-slate-500 hover:text-primary mb-2 block">&larr; Back to {hospital.name}</a>
           </Link>
           <div className="flex items-center gap-3">

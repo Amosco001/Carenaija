@@ -10,6 +10,7 @@ import {
   insertClaimRequestSchema,
   insertReviewFlagSchema,
   insertEmailPreferencesSchema,
+  generateHospitalSlug,
 } from "@shared/schema";
 import { notificationService } from "./services/notification";
 import crypto from "crypto";
@@ -163,6 +164,21 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  app.get("/api/hospitals/by-slug/:slug", async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const hospital = await storage.getHospitalBySlug(slug);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+      res.setHeader("Cache-Control", "public, max-age=300, s-maxage=600");
+      res.json(hospital);
+    } catch (error) {
+      console.error("Error fetching hospital by slug:", error);
+      res.status(500).json({ message: "Failed to fetch hospital" });
+    }
+  });
+
   app.get("/api/hospitals/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -186,6 +202,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.post("/api/hospitals", isAuthenticated, async (req: any, res) => {
     try {
       const validatedData = insertHospitalSchema.parse(req.body);
+      if (!validatedData.slug) {
+        validatedData.slug = generateHospitalSlug(validatedData.name);
+      }
       const hospital = await storage.createHospital(validatedData);
       res.status(201).json(hospital);
     } catch (error) {
@@ -3102,12 +3121,19 @@ Sitemap: ${baseUrl}/sitemap.xml
         "Katsina", "Jigawa", "Yobe", "Ebonyi"
       ];
 
+      const specialties = [
+        "cardiology", "maternity", "orthopedics", "neurology",
+        "eye-care", "pediatrics", "dental", "general-medicine"
+      ];
+
       const staticPages = [
         { url: "/", priority: "1.0", changefreq: "daily" },
         { url: "/search", priority: "0.6", changefreq: "daily" },
-        { url: "/blog", priority: "0.8", changefreq: "daily" },
+        { url: "/guides", priority: "0.8", changefreq: "daily" },
         { url: "/health", priority: "0.8", changefreq: "daily" },
         { url: "/health/diseases", priority: "0.8", changefreq: "weekly" },
+        { url: "/specialties", priority: "0.8", changefreq: "weekly" },
+        ...specialties.map(s => ({ url: `/specialties/${s}`, priority: "0.7", changefreq: "weekly" as const })),
         { url: "/about", priority: "0.7", changefreq: "monthly" },
         { url: "/help", priority: "0.7", changefreq: "weekly" },
         { url: "/leaderboard", priority: "0.6", changefreq: "daily" },
@@ -3155,8 +3181,12 @@ Sitemap: ${baseUrl}/sitemap.xml
         const lastmod = hospital.updatedAt 
           ? new Date(hospital.updatedAt).toISOString().split("T")[0]
           : today;
+        const stateSlug = hospital.state.toLowerCase().replace(/\s+/g, '-');
+        const hospitalPath = hospital.slug 
+          ? `/hospitals/${stateSlug}/${hospital.slug}`
+          : `/hospital/${hospital.id}`;
         xml += `  <url>
-    <loc>${baseUrl}/hospital/${hospital.id}</loc>
+    <loc>${baseUrl}${hospitalPath}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -3172,7 +3202,7 @@ Sitemap: ${baseUrl}/sitemap.xml
           ? new Date(article.publishedAt).toISOString().split("T")[0]
           : today;
         xml += `  <url>
-    <loc>${baseUrl}/blog/${article.slug}</loc>
+    <loc>${baseUrl}/guides/${article.slug}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -3183,7 +3213,7 @@ Sitemap: ${baseUrl}/sitemap.xml
       const categories = await storage.getAllBlogCategories();
       for (const category of categories) {
         xml += `  <url>
-    <loc>${baseUrl}/blog/category/${category.slug}</loc>
+    <loc>${baseUrl}/guides/category/${category.slug}</loc>
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>

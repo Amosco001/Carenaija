@@ -14,6 +14,7 @@ import {
   Calendar, ChevronRight, MapPin, Loader2, LogOut
 } from "lucide-react";
 import { format } from "date-fns";
+import { getHospitalUrl } from "@shared/schema";
 
 export default function Dashboard() {
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
@@ -169,7 +170,7 @@ export default function Dashboard() {
                         <CardContent className="pt-4">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <Link href={`/hospital/${review.hospitalId}`}>
+                              <Link href={review.hospital ? getHospitalUrl(review.hospital) : `/hospital/${review.hospitalId}`}>
                                 <span className="font-semibold text-emerald-700 hover:underline flex items-center gap-1">
                                   <Building2 className="w-4 h-4" />
                                   {review.hospital?.name}
@@ -186,7 +187,7 @@ export default function Dashboard() {
                           </div>
                           {review.title && <h4 className="font-medium mt-2">{review.title}</h4>}
                           <p className="text-sm text-slate-600 mt-1 line-clamp-2">{review.reviewText}</p>
-                          <Link href={`/hospital/${review.hospitalId}`}>
+                          <Link href={review.hospital ? getHospitalUrl(review.hospital) : `/hospital/${review.hospitalId}`}>
                             <span className="text-sm text-emerald-600 hover:underline mt-2 inline-flex items-center gap-1">
                               View Hospital <ChevronRight className="w-3 h-3" />
                             </span>
@@ -199,7 +200,7 @@ export default function Dashboard() {
                         <CardContent className="pt-4">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <Link href={`/hospital/${review.hospitalId}`}>
+                              <Link href={review.hospital ? getHospitalUrl(review.hospital) : `/hospital/${review.hospitalId}`}>
                                 <span className="font-semibold text-emerald-700 hover:underline flex items-center gap-1">
                                   <Building2 className="w-4 h-4" />
                                   {review.hospital?.name}
@@ -258,7 +259,7 @@ export default function Dashboard() {
                               <Building2 className="w-8 h-8 text-emerald-600" />
                             </div>
                             <div className="flex-1">
-                              <Link href={`/hospital/${bookmark.hospital.id}`}>
+                              <Link href={getHospitalUrl(bookmark.hospital)}>
                                 <span className="font-semibold text-slate-900 hover:text-emerald-600">
                                   {bookmark.hospital.name}
                                 </span>
@@ -274,7 +275,7 @@ export default function Dashboard() {
                                 </span>
                               </div>
                             </div>
-                            <Link href={`/hospital/${bookmark.hospital.id}`}>
+                            <Link href={getHospitalUrl(bookmark.hospital)}>
                               <Button variant="outline" size="sm">View</Button>
                             </Link>
                           </div>

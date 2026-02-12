@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { getHospitalUrl } from "@shared/schema";
 
 interface SEOHeadProps {
   title?: string;
@@ -96,6 +97,7 @@ export function SEOHead({
 
 export function generateHospitalSchema(hospital: {
   id: number;
+  slug?: string | null;
   name: string;
   address: string;
   state: string;
@@ -119,7 +121,7 @@ export function generateHospitalSchema(hospital: {
       "addressRegion": hospital.state,
       "addressCountry": "NG"
     },
-    "url": `https://www.carenaija.com/hospital/${hospital.id}`,
+    "url": `https://www.carenaija.com${getHospitalUrl(hospital)}`,
     ...(hospital.phone && { "telephone": hospital.phone }),
     ...(hospital.email && { "email": hospital.email }),
     ...(hospital.website && { "sameAs": hospital.website }),

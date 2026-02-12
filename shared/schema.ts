@@ -82,6 +82,7 @@ export type Specialty = typeof specialties.$inferSelect;
 export const hospitals = pgTable("hospitals", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  slug: text("slug"),
   address: text("address").notNull(),
   city: text("city"),
   lga: text("lga").notNull(),
@@ -104,11 +105,33 @@ export const hospitals = pgTable("hospitals", {
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   index("IDX_hospitals_name").on(table.name),
+  index("IDX_hospitals_slug").on(table.slug),
   index("IDX_hospitals_state").on(table.state),
   index("IDX_hospitals_city").on(table.city),
   index("IDX_hospitals_verified").on(table.verified),
   index("IDX_hospitals_average_rating").on(table.averageRating),
 ]);
+
+export function generateHospitalSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+export function getStateSlug(state: string): string {
+  return state.toLowerCase().replace(/\s+/g, '-');
+}
+
+export function getHospitalUrl(hospital: { slug?: string | null; state: string; id: number }): string {
+  const stateSlug = getStateSlug(hospital.state);
+  if (hospital.slug) {
+    return `/hospitals/${stateSlug}/${hospital.slug}`;
+  }
+  return `/hospitals/${stateSlug}/${hospital.id}`;
+}
 
 export const insertHospitalSchema = createInsertSchema(hospitals).omit({
   id: true,

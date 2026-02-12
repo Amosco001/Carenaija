@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useParams, Link } from "wouter";
 import { useHospitals } from "@/hooks/useHospitals";
+import { getHospitalUrl } from "@shared/schema";
 import type { Hospital } from "@/lib/types";
 import { HospitalCard } from "@/components/hospital-card";
 import { SEOHead } from "@/components/seo-head";
@@ -169,7 +170,7 @@ export default function CityHospitalsPage() {
             "addressRegion": h.state,
             "addressCountry": "NG"
           },
-          "url": `https://www.carenaija.com/hospital/${h.id}`,
+          "url": `https://www.carenaija.com${getHospitalUrl(h)}`,
           ...((h.averageRating ?? 0) > 0 && (h.totalReviews ?? 0) > 0 ? {
             "aggregateRating": {
               "@type": "AggregateRating",

@@ -217,8 +217,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <h3 className="font-semibold text-white mb-4">Community</h3>
               <ul className="space-y-2 text-sm">
                 <li><Link href="/about" className="hover:text-white transition-colors">About Us</Link></li>
-                <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
+                <li><Link href="/guides" className="hover:text-white transition-colors">Health Guides</Link></li>
                 <li><Link href="/health" className="hover:text-white transition-colors">Health Hub</Link></li>
+                <li><Link href="/specialties" className="hover:text-white transition-colors">Medical Specialties</Link></li>
                 <li><Link href="/leaderboard" className="hover:text-white transition-colors">Leaderboard</Link></li>
                 <li><Link href="/guidelines" className="hover:text-white transition-colors">Guidelines</Link></li>
                 <li><Link href="/trust-safety" className="hover:text-white transition-colors">Trust & Safety</Link></li>

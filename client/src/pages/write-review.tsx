@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useAuth } from "@/lib/auth";
 import { useHospital } from "@/hooks/useHospital";
+import { getHospitalUrl } from "@shared/schema";
 import { useHospitals, useCreatePatientReview, useCreateEmployeeReview } from "@/hooks/useHospitals";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -157,7 +158,7 @@ export default function WriteReview() {
               Thank you for sharing your experience. Your review helps others make informed healthcare decisions.
             </p>
             <div className="space-y-3">
-              <Link href={`/hospital/${selectedHospitalId}`}>
+              <Link href={selectedHospital ? getHospitalUrl(selectedHospital) : `/hospital/${selectedHospitalId}`}>
                 <Button className="w-full bg-emerald-600 hover:bg-emerald-700" data-testid="button-view-review">
                   View Your Review
                 </Button>
@@ -866,7 +867,7 @@ export default function WriteReview() {
   return (
     <div className="min-h-screen bg-slate-50 py-8" data-testid="page-write-review">
       <div className="container mx-auto px-4 max-w-2xl">
-        <Link href={selectedHospital ? `/hospital/${selectedHospitalId}` : "/search"}>
+        <Link href={selectedHospital ? getHospitalUrl(selectedHospital) : "/search"}>
           <span className="text-sm text-slate-500 hover:text-emerald-600 flex items-center gap-1 mb-4">
             <ChevronLeft className="w-4 h-4" />
             {selectedHospital ? `Back to ${selectedHospital.name}` : "Back to search"}

@@ -42,6 +42,7 @@ const HealthDiseasesPage = lazy(() => import("@/pages/health-diseases"));
 const HealthDiseasePage = lazy(() => import("@/pages/health-disease"));
 const AuthPage = lazy(() => import("@/pages/auth-pages"));
 const CityHospitalsPage = lazy(() => import("@/pages/city-hospitals"));
+const SpecialtyPage = lazy(() => import("@/pages/specialty"));
 
 function PageLoader() {
   return (
@@ -59,6 +60,8 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/login" component={AuthPage} />
           <Route path="/search" component={SearchPage} />
+          <Route path="/hospitals/:state/:slug" component={HospitalDetails} />
+          <Route path="/hospitals/:state/:slug/reviews" component={HospitalDetails} />
           <Route path="/hospital/:id" component={HospitalDetails} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/profile" component={Profile} />
@@ -68,6 +71,9 @@ function Router() {
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/admin/analytics" component={AnalyticsDashboard} />
           <Route path="/compare" component={ComparePage} />
+          <Route path="/specialties/:slug" component={SpecialtyPage} />
+          <Route path="/guides" component={BlogPage} />
+          <Route path="/guides/:slug" component={BlogArticlePage} />
           <Route path="/blog" component={BlogPage} />
           <Route path="/blog/:slug" component={BlogArticlePage} />
           <Route path="/health" component={HealthHub} />

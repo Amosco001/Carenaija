@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { getHospitalUrl } from "@shared/schema";
 
 interface SEOProps {
   title: string;
@@ -104,6 +105,7 @@ export function SEO({
 
 export function generateHospitalStructuredData(hospital: {
   id: number;
+  slug?: string | null;
   name: string;
   address: string;
   city?: string | null;
@@ -121,7 +123,7 @@ export function generateHospitalStructuredData(hospital: {
   const structuredData: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": ["MedicalOrganization", "LocalBusiness"],
-    "@id": `${BASE_URL}/hospital/${hospital.id}`,
+    "@id": `${BASE_URL}${getHospitalUrl(hospital)}`,
     name: hospital.name,
     address: {
       "@type": "PostalAddress",
@@ -130,7 +132,7 @@ export function generateHospitalStructuredData(hospital: {
       addressRegion: hospital.state,
       addressCountry: "NG",
     },
-    url: `${BASE_URL}/hospital/${hospital.id}`,
+    url: `${BASE_URL}${getHospitalUrl(hospital)}`,
   };
 
   if (hospital.phone) {

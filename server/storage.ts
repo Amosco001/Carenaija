@@ -164,6 +164,7 @@ export interface IStorage {
   getAllHospitals(): Promise<Hospital[]>;
   getHospitalsPaginated(params: PaginationParams): Promise<PaginatedResult<Hospital>>;
   getHospitalById(id: number): Promise<Hospital | undefined>;
+  getHospitalBySlug(slug: string): Promise<Hospital | undefined>;
   searchHospitals(query: string): Promise<Hospital[]>;
   createHospital(hospital: InsertHospital): Promise<Hospital>;
   updateHospital(id: number, hospital: Partial<InsertHospital>): Promise<Hospital | undefined>;
@@ -357,6 +358,17 @@ export class DatabaseStorage implements IStorage {
   };
 
   getHospitalById = memoizee(this._getHospitalByIdUncached, {
+    promise: true,
+    maxAge: CACHE_TTL,
+    preFetch: true,
+  });
+
+  private _getHospitalBySlugUncached = async (slug: string): Promise<Hospital | undefined> => {
+    const [hospital] = await db.select().from(hospitals).where(eq(hospitals.slug, slug));
+    return hospital;
+  };
+
+  getHospitalBySlug = memoizee(this._getHospitalBySlugUncached, {
     promise: true,
     maxAge: CACHE_TTL,
     preFetch: true,

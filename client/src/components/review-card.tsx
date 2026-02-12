@@ -16,6 +16,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { useVoteReviewHelpful, useRemoveHelpfulVote } from "@/hooks/useHospitals";
 import { cn } from "@/lib/utils";
+import { getHospitalUrl } from "@shared/schema";
 
 interface ReviewCardProps {
   review: {
@@ -46,6 +47,8 @@ interface ReviewCardProps {
   showHospitalName?: boolean;
   hospitalName?: string;
   hospitalId?: number;
+  hospitalSlug?: string | null;
+  hospitalState?: string;
   onReportClick?: () => void;
 }
 
@@ -58,6 +61,8 @@ export function ReviewCard({
   showHospitalName = false,
   hospitalName,
   hospitalId,
+  hospitalSlug,
+  hospitalState,
   onReportClick,
 }: ReviewCardProps) {
   const { user } = useAuth();
@@ -184,7 +189,7 @@ export function ReviewCard({
 
         {showHospitalName && hospitalName && hospitalId && (
           <a 
-            href={`/hospital/${hospitalId}`} 
+            href={hospitalState ? getHospitalUrl({ id: hospitalId, slug: hospitalSlug, state: hospitalState }) : `/hospital/${hospitalId}`} 
             className="inline-flex items-center text-sm text-emerald-700 hover:text-emerald-800 font-medium mb-4"
           >
             <Building2 className="w-3 h-3 mr-1" />

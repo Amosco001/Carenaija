@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, Link } from "wouter";
-import { useHospital } from "@/hooks/useHospital";
+import { useHospital, useHospitalBySlug } from "@/hooks/useHospital";
 import { useHospitals, usePatientReviews } from "@/hooks/useHospitals";
+import { getHospitalUrl } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { SEOHead } from "@/components/seo-head";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -60,9 +61,15 @@ const FACILITY_ICONS: Record<string, any> = {
 };
 
 export default function HospitalDetails() {
-  const { id } = useParams();
-  const hospitalId = parseInt(id || "0");
-  const { data: hospital, isLoading, error } = useHospital(id || "");
+  const params = useParams();
+  const slug = params.slug || params.id || "";
+  const isSlug = isNaN(parseInt(slug));
+  const { data: hospitalBySlug, isLoading: slugLoading, error: slugError } = useHospitalBySlug(isSlug ? slug : "");
+  const { data: hospitalById, isLoading: idLoading, error: idError } = useHospital(!isSlug ? slug : "");
+  const hospital = isSlug ? hospitalBySlug : hospitalById;
+  const isLoading = isSlug ? slugLoading : idLoading;
+  const error = isSlug ? slugError : idError;
+  const hospitalId = hospital?.id || 0;
   const { data: allHospitals = [] } = useHospitals();
   const { data: patientReviews = [], isLoading: reviewsLoading } = usePatientReviews(hospitalId);
   
@@ -177,7 +184,7 @@ export default function HospitalDetails() {
     hospitalImages[(hospitalId + 2) % hospitalImages.length],
   ];
 
-  const canonicalUrl = `https://www.carenaija.com/hospital/${hospital.id}`;
+  const canonicalUrl = `https://www.carenaija.com${getHospitalUrl(hospital)}`;
   
   const schemaData = {
     "@context": "https://schema.org",
@@ -763,7 +770,7 @@ export default function HospitalDetails() {
                     {relatedHospitals.map((h, i) => {
                       const sharedServices = h.services?.filter((s: string) => hospital.services?.includes(s)) || [];
                       return (
-                        <Link key={h.id} href={`/hospital/${h.id}`}>
+                        <Link key={h.id} href={getHospitalUrl(h)}>
                           <Card className="hover:shadow-md transition-shadow cursor-pointer group" data-testid={`card-related-${h.id}`}>
                             <CardContent className="p-0">
                               <div className="flex gap-3">

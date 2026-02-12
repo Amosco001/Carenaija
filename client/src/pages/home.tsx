@@ -4,6 +4,7 @@ import { Search, MapPin, Star, Stethoscope, Briefcase, Heart, Baby, Bone, Brain,
 import { useLocation } from "wouter";
 import { useState, useEffect, useCallback } from "react";
 import { useHospitals, useAllPatientReviews, useTrustStats, useTestimonials } from "@/hooks/useHospitals";
+import { getHospitalUrl } from "@shared/schema";
 import { Link } from "wouter";
 import generatedHeroImage from "@assets/generated_images/modern_nigerian_hospital_exterior_with_friendly_medical_staff_interaction.png";
 import luthHospitalImage from "@assets/generated_images/luth_hospital_lagos_nigeria.png";
@@ -422,7 +423,7 @@ export default function Home() {
 
                       <div className="flex items-center justify-between">
                         {hospital && (
-                          <Link href={`/hospital/${hospital.id}`} className="inline-flex items-center text-sm text-emerald-700 hover:text-emerald-800 font-medium">
+                          <Link href={getHospitalUrl(hospital)} className="inline-flex items-center text-sm text-emerald-700 hover:text-emerald-800 font-medium">
                             <MapPin className="w-3 h-3 mr-1" />
                             {hospital.name}
                           </Link>

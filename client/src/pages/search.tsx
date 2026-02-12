@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { useHospitals } from "@/hooks/useHospitals";
+import { getHospitalUrl } from "@shared/schema";
 import type { Hospital } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -134,7 +135,7 @@ export default function SearchPage() {
     const hospitalMatches = hospitals
       .filter(h => h.name.toLowerCase().includes(query))
       .slice(0, 5)
-      .map(h => ({ type: "hospital" as const, value: h.name, id: h.id }));
+      .map(h => ({ type: "hospital" as const, value: h.name, id: h.id, slug: h.slug, state: h.state }));
     
     const stateMatches = allStates
       .filter(s => s !== "All" && s.toLowerCase().includes(query))
@@ -488,7 +489,7 @@ export default function SearchPage() {
                         className="w-full px-4 py-3 text-left hover:bg-slate-50 flex items-center gap-3 border-b border-slate-100 last:border-0"
                         onMouseDown={() => {
                           if (s.type === "hospital") {
-                            setLocation(`/hospital/${s.id}`);
+                            setLocation(getHospitalUrl({ id: s.id!, slug: s.slug, state: s.state! }));
                           } else {
                             setSearchQuery(s.value);
                           }
