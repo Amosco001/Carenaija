@@ -32,6 +32,7 @@ import orthoHospitalImage from "@assets/generated_images/orthopaedic_hospital_ig
 import { SkeletonCard } from "@/components/skeleton-card";
 import { useGeolocation, formatDistance, getGoogleMapsDirectionsUrl } from "@/hooks/useGeolocation";
 import { MapView, StaticMapFallback } from "@/components/map-view";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 const hospitalImages = [luthHospitalImage, neuropsychHospitalImage, orthoHospitalImage];
 
@@ -450,6 +451,11 @@ export default function SearchPage() {
         keywords={`hospitals ${selectedState !== "All" ? selectedState : "Nigeria"}, hospital reviews, Nigerian healthcare, ${searchQuery || "medical facilities"}`}
         canonicalUrl={`https://www.carenaija.com/search${searchQuery ? `?q=${encodeURIComponent(searchQuery)}` : ""}`}
       />
+      <Breadcrumb items={[
+        { label: "Find Hospitals in Nigeria" },
+        ...(selectedState !== "All" ? [{ label: `Hospitals in ${selectedState}`, href: `/hospitals/${selectedState.toLowerCase().replace(/\s+/g, '-')}` }] : []),
+        ...(searchQuery ? [{ label: searchQuery }] : []),
+      ]} />
       {/* Search Header */}
       <div className="bg-white border-b sticky top-0 z-30 shadow-sm">
         <div className="container mx-auto px-4 py-4">

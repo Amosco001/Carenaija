@@ -301,17 +301,22 @@ export default function Home() {
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {specialties.map((spec) => (
-              <Link key={spec.name} href={`/search?q=${spec.name}`} data-testid={`card-specialty-${spec.name.toLowerCase()}`}>
+              <Link key={spec.name} href={`/search?q=${encodeURIComponent(spec.name)}`} data-testid={`card-specialty-${spec.name.toLowerCase()}`}>
                 <Card className={`${spec.hoverBg} hover:shadow-md transition-all duration-300 cursor-pointer border-slate-200 hover:border-emerald-300 group bg-white h-full`}>
                   <CardContent className="flex flex-col items-center justify-center p-6 h-full">
                     <div className={`w-14 h-14 rounded-full ${spec.bg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                       <spec.icon className={`h-7 w-7 ${spec.color}`} />
                     </div>
-                    <span className="font-semibold text-slate-700 group-hover:text-emerald-700">{spec.name}</span>
+                    <span className="font-semibold text-slate-700 group-hover:text-emerald-700">Best {spec.name} Hospitals</span>
                   </CardContent>
                 </Card>
               </Link>
             ))}
+          </div>
+          <div className="text-center mt-6">
+            <Link href="/search" className="text-emerald-600 hover:underline font-medium text-sm" data-testid="link-all-specialties">
+              Browse all hospital specialties across Nigeria →
+            </Link>
           </div>
         </div>
       </section>
@@ -341,8 +346,8 @@ export default function Home() {
                       <MapPin className="h-5 w-5 text-emerald-600" />
                     </div>
                     <div>
-                      <span className="font-semibold text-slate-700 group-hover:text-emerald-700 block">{city.name}</span>
-                      <span className="text-xs text-slate-500">{city.count} hospitals</span>
+                      <span className="font-semibold text-slate-700 group-hover:text-emerald-700 block">Top Hospitals in {city.name}</span>
+                      <span className="text-xs text-slate-500">{city.count} hospitals reviewed</span>
                     </div>
                   </CardContent>
                 </Card>

@@ -206,9 +206,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div>
               <h3 className="font-semibold text-white mb-4">Platform</h3>
               <ul className="space-y-2 text-sm">
-                <li><Link href="/search" className="hover:text-white transition-colors">Find a Hospital</Link></li>
-                <li><a href="/api/login" className="hover:text-white transition-colors">Write a Review</a></li>
-                <li><a href="/api/login" className="hover:text-white transition-colors">For Employers</a></li>
+                <li><Link href="/search" className="hover:text-white transition-colors">Find & Compare Hospitals in Nigeria</Link></li>
+                <li><Link href="/hospitals/lagos" className="hover:text-white transition-colors">Best Hospitals in Lagos</Link></li>
+                <li><Link href="/hospitals/abuja" className="hover:text-white transition-colors">Best Hospitals in Abuja</Link></li>
+                <li><a href="/api/login" className="hover:text-white transition-colors">Write a Hospital Review</a></li>
               </ul>
             </div>
 

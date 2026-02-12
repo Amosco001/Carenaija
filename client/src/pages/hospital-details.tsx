@@ -31,6 +31,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import NotFound from "@/pages/not-found";
+import { Breadcrumb } from "@/components/breadcrumb";
 import luthHospitalImage from "@assets/generated_images/luth_hospital_lagos_nigeria.png";
 import neuropsychHospitalImage from "@assets/generated_images/neuropsychiatric_hospital_yaba.png";
 import orthoHospitalImage from "@assets/generated_images/orthopaedic_hospital_igbobi.png";
@@ -309,39 +310,11 @@ export default function HospitalDetails() {
       />
       
       <article className="bg-slate-50 min-h-screen pb-16" itemScope itemType="https://schema.org/Hospital" data-testid="page-hospital-details">
-        {/* Breadcrumb */}
-        <nav className="bg-white border-b" aria-label="Breadcrumb">
-          <div className="container mx-auto px-4 py-3">
-            <ol className="flex items-center gap-2 text-sm" itemScope itemType="https://schema.org/BreadcrumbList">
-              <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
-                <Link href="/" className="text-slate-500 hover:text-emerald-600 flex items-center gap-1">
-                  <Home className="w-4 h-4" />
-                  <span itemProp="name">Home</span>
-                </Link>
-                <meta itemProp="position" content="1" />
-              </li>
-              <ChevronRight className="w-4 h-4 text-slate-400" />
-              <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
-                <Link href="/search" className="text-slate-500 hover:text-emerald-600">
-                  <span itemProp="name">Hospitals</span>
-                </Link>
-                <meta itemProp="position" content="2" />
-              </li>
-              <ChevronRight className="w-4 h-4 text-slate-400" />
-              <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
-                <Link href={`/search?location=${hospital.state}`} className="text-slate-500 hover:text-emerald-600">
-                  <span itemProp="name">{hospital.state}</span>
-                </Link>
-                <meta itemProp="position" content="3" />
-              </li>
-              <ChevronRight className="w-4 h-4 text-slate-400" />
-              <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem" className="text-slate-900 font-medium truncate max-w-[200px]">
-                <span itemProp="name">{hospital.name}</span>
-                <meta itemProp="position" content="4" />
-              </li>
-            </ol>
-          </div>
-        </nav>
+        <Breadcrumb items={[
+          { label: "Find Hospitals in Nigeria", href: "/search" },
+          { label: `Hospitals in ${hospital.state}`, href: `/hospitals/${hospital.state.toLowerCase().replace(/\s+/g, '-')}` },
+          { label: hospital.name },
+        ]} />
 
         {/* Hero Section */}
         <header className="bg-white border-b">
@@ -546,14 +519,21 @@ export default function HospitalDetails() {
                 <h2 className="text-xl font-bold text-slate-900 mb-4">Specialties & Services at {hospital.name}</h2>
                 <div className="flex flex-wrap gap-2">
                   {hospital.services?.map((service: string) => (
-                    <Badge key={service} variant="secondary" className="px-3 py-1.5 text-sm bg-emerald-50 text-emerald-700 hover:bg-emerald-100">
-                      {service}
-                    </Badge>
+                    <Link key={service} href={`/search?q=${encodeURIComponent(service)}&location=${encodeURIComponent(hospital.state)}`}>
+                      <Badge variant="secondary" className="px-3 py-1.5 text-sm bg-emerald-50 text-emerald-700 hover:bg-emerald-100 cursor-pointer" data-testid={`link-specialty-${service.toLowerCase().replace(/\s+/g, '-')}`}>
+                        {service}
+                      </Badge>
+                    </Link>
                   ))}
                   {(!hospital.services || hospital.services.length === 0) && (
                     <p className="text-slate-500 italic">No services listed yet.</p>
                   )}
                 </div>
+                {hospital.services?.length > 0 && (
+                  <p className="text-sm text-slate-500 mt-3">
+                    Click a specialty to find other <Link href={`/search?q=${encodeURIComponent(hospital.services[0])}`} className="text-emerald-600 hover:underline">{hospital.services[0]} hospitals in Nigeria</Link>
+                  </p>
+                )}
               </section>
 
               {/* Facilities & Amenities */}
@@ -774,31 +754,50 @@ export default function HospitalDetails() {
 
               {/* Related Hospitals */}
               {relatedHospitals.length > 0 && (
-                <section>
-                  <h2 className="text-xl font-bold text-slate-900 mb-4">Other Top Hospitals in {hospital.state}, Nigeria</h2>
+                <section className="bg-white rounded-xl border p-6">
+                  <h2 className="text-xl font-bold text-slate-900 mb-2">Similar Hospitals Near {hospital.lga}, {hospital.state}</h2>
+                  <p className="text-sm text-slate-500 mb-4">
+                    Compare {hospital.name} with other {hospital.ownership?.toLowerCase()} hospitals offering similar services in {hospital.state}, Nigeria
+                  </p>
                   <div className="grid sm:grid-cols-2 gap-4">
-                    {relatedHospitals.map((h, i) => (
-                      <Link key={h.id} href={`/hospital/${h.id}`}>
-                        <Card className="hover:shadow-md transition-shadow cursor-pointer group" data-testid={`card-related-${h.id}`}>
-                          <CardContent className="p-0">
-                            <div className="flex gap-3">
-                              <div className="w-24 h-24 overflow-hidden rounded-l-lg flex-shrink-0">
-                                <img src={hospitalImages[i % hospitalImages.length]} alt={h.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                              </div>
-                              <div className="py-3 pr-3 flex-1">
-                                <h3 className="font-semibold text-slate-900 line-clamp-1 group-hover:text-emerald-700">{h.name}</h3>
-                                <p className="text-xs text-slate-500 mt-1">{h.lga}, {h.state}</p>
-                                <div className="flex items-center gap-1 mt-2">
-                                  <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                                  <span className="text-sm font-medium">{(h.averageRating || 0).toFixed(1)}</span>
-                                  <span className="text-xs text-slate-500">({h.totalReviews || 0})</span>
+                    {relatedHospitals.map((h, i) => {
+                      const sharedServices = h.services?.filter((s: string) => hospital.services?.includes(s)) || [];
+                      return (
+                        <Link key={h.id} href={`/hospital/${h.id}`}>
+                          <Card className="hover:shadow-md transition-shadow cursor-pointer group" data-testid={`card-related-${h.id}`}>
+                            <CardContent className="p-0">
+                              <div className="flex gap-3">
+                                <div className="w-24 h-24 overflow-hidden rounded-l-lg flex-shrink-0">
+                                  <img src={hospitalImages[i % hospitalImages.length]} alt={`${h.name} - ${h.ownership} hospital in ${h.lga}, ${h.state}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                </div>
+                                <div className="py-3 pr-3 flex-1">
+                                  <h3 className="font-semibold text-slate-900 line-clamp-1 group-hover:text-emerald-700">{h.name}</h3>
+                                  <p className="text-xs text-slate-500 mt-1">{h.lga}, {h.state}</p>
+                                  <div className="flex items-center gap-1 mt-1.5">
+                                    <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                                    <span className="text-sm font-medium">{(h.averageRating || 0).toFixed(1)}</span>
+                                    <span className="text-xs text-slate-500">({h.totalReviews || 0} reviews)</span>
+                                  </div>
+                                  {sharedServices.length > 0 && (
+                                    <p className="text-xs text-emerald-600 mt-1 line-clamp-1">
+                                      Also offers: {sharedServices.slice(0, 2).join(", ")}
+                                    </p>
+                                  )}
                                 </div>
                               </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </Link>
-                    ))}
+                            </CardContent>
+                          </Card>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <Link href={`/hospitals/${hospital.state.toLowerCase().replace(/\s+/g, '-')}`} className="text-sm text-emerald-600 hover:underline font-medium" data-testid="link-all-state-hospitals">
+                      View all hospitals in {hospital.state} →
+                    </Link>
+                    <Link href={`/search?location=${encodeURIComponent(hospital.state)}&q=${encodeURIComponent(hospital.ownership || '')}`} className="text-sm text-emerald-600 hover:underline font-medium" data-testid="link-ownership-hospitals">
+                      Browse {hospital.ownership?.toLowerCase()} hospitals in {hospital.state} →
+                    </Link>
                   </div>
                 </section>
               )}
@@ -888,8 +887,8 @@ export default function HospitalDetails() {
               </Card>
 
               {/* Back Link */}
-              <Link href="/search" className="flex items-center gap-2 text-sm text-slate-500 hover:text-emerald-600">
-                <ChevronLeft className="w-4 h-4" /> Back to search results
+              <Link href={`/hospitals/${hospital.state.toLowerCase().replace(/\s+/g, '-')}`} className="flex items-center gap-2 text-sm text-slate-500 hover:text-emerald-600" data-testid="link-back-state">
+                <ChevronLeft className="w-4 h-4" /> Browse more hospitals in {hospital.state}
               </Link>
             </aside>
           </div>

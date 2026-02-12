@@ -16,8 +16,9 @@ import {
 } from "@/components/ui/select";
 import {
   MapPin, ChevronRight, Building2, Star, Search,
-  Stethoscope, Shield, Clock, Home, ArrowRight, Loader2
+  Stethoscope, Shield, Clock, Home, ArrowRight, Loader2, Heart, Baby, Bone, Brain, Eye
 } from "lucide-react";
+import { Breadcrumb } from "@/components/breadcrumb";
 import luthHospitalImage from "@assets/generated_images/luth_hospital_lagos_nigeria.png";
 import neuropsychHospitalImage from "@assets/generated_images/neuropsychiatric_hospital_yaba.png";
 import orthoHospitalImage from "@assets/generated_images/orthopaedic_hospital_igbobi.png";
@@ -191,27 +192,10 @@ export default function CityHospitalsPage() {
         structuredData={[breadcrumbSchema, collectionPageSchema]}
       />
 
-      {/* Breadcrumb */}
-      <nav className="bg-white border-b" aria-label="Breadcrumb">
-        <div className="container mx-auto px-4 py-3">
-          <ol className="flex items-center gap-2 text-sm">
-            <li>
-              <Link href="/" className="text-slate-500 hover:text-emerald-600 flex items-center gap-1">
-                <Home className="w-4 h-4" />
-                Home
-              </Link>
-            </li>
-            <ChevronRight className="w-4 h-4 text-slate-400" />
-            <li>
-              <Link href="/search" className="text-slate-500 hover:text-emerald-600">
-                Hospitals
-              </Link>
-            </li>
-            <ChevronRight className="w-4 h-4 text-slate-400" />
-            <li className="text-slate-900 font-medium">{cityName}</li>
-          </ol>
-        </div>
-      </nav>
+      <Breadcrumb items={[
+        { label: "Find Hospitals in Nigeria", href: "/search" },
+        { label: `Hospitals in ${cityName}` },
+      ]} />
 
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-emerald-700 via-emerald-600 to-green-600 text-white py-12">
@@ -352,12 +336,11 @@ export default function CityHospitalsPage() {
                 <h3 className="font-bold text-slate-900 mb-3">Hospitals in Other Cities</h3>
                 <div className="space-y-2">
                   {MAJOR_CITIES.filter(c => c !== citySlug).map(otherCity => {
-                    const info = NIGERIAN_CITIES[otherCity];
                     const displayName = otherCity === "port-harcourt" ? "Port Harcourt" : otherCity === "benin-city" ? "Benin City" : otherCity.charAt(0).toUpperCase() + otherCity.slice(1);
                     return (
                       <Link key={otherCity} href={`/hospitals/${otherCity}`}>
                         <div className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-slate-50 cursor-pointer group" data-testid={`link-city-${otherCity}`}>
-                          <span className="text-sm font-medium text-slate-700 group-hover:text-emerald-700">{displayName}</span>
+                          <span className="text-sm font-medium text-slate-700 group-hover:text-emerald-700">Top hospitals in {displayName}</span>
                           <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600" />
                         </div>
                       </Link>
@@ -367,16 +350,43 @@ export default function CityHospitalsPage() {
               </CardContent>
             </Card>
 
+            {/* Find by Specialty */}
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-bold text-slate-900 mb-3">Find Specialist Hospitals in {cityName}</h3>
+                <div className="space-y-2 text-sm">
+                  <Link href={`/search?q=maternity&location=${encodeURIComponent(stateName)}`} className="flex items-center gap-2 text-emerald-600 hover:underline" data-testid="link-specialty-maternity">
+                    <Baby className="w-4 h-4" /> Best Maternity Hospitals in {cityName}
+                  </Link>
+                  <Link href={`/search?q=cardiology&location=${encodeURIComponent(stateName)}`} className="flex items-center gap-2 text-emerald-600 hover:underline" data-testid="link-specialty-cardiology">
+                    <Heart className="w-4 h-4" /> Cardiology Hospitals in {cityName}
+                  </Link>
+                  <Link href={`/search?q=orthopedics&location=${encodeURIComponent(stateName)}`} className="flex items-center gap-2 text-emerald-600 hover:underline" data-testid="link-specialty-orthopedics">
+                    <Bone className="w-4 h-4" /> Orthopedic Hospitals in {cityName}
+                  </Link>
+                  <Link href={`/search?q=pediatrics&location=${encodeURIComponent(stateName)}`} className="flex items-center gap-2 text-emerald-600 hover:underline" data-testid="link-specialty-pediatrics">
+                    <Stethoscope className="w-4 h-4" /> Pediatric Hospitals in {cityName}
+                  </Link>
+                  <Link href={`/search?q=eye care&location=${encodeURIComponent(stateName)}`} className="flex items-center gap-2 text-emerald-600 hover:underline" data-testid="link-specialty-eye">
+                    <Eye className="w-4 h-4" /> Eye Care Hospitals in {cityName}
+                  </Link>
+                  <Link href={`/search?q=neurology&location=${encodeURIComponent(stateName)}`} className="flex items-center gap-2 text-emerald-600 hover:underline" data-testid="link-specialty-neurology">
+                    <Brain className="w-4 h-4" /> Neurology Hospitals in {cityName}
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Quick Links */}
             <Card>
               <CardContent className="p-6">
                 <h3 className="font-bold text-slate-900 mb-3">Quick Links</h3>
                 <div className="space-y-2 text-sm">
-                  <Link href={`/search?q=maternity ${cityName}`} className="flex items-center gap-2 text-emerald-600 hover:underline" data-testid="link-maternity">
-                    <Stethoscope className="w-4 h-4" /> Best Maternity Hospitals in {cityName}
-                  </Link>
-                  <Link href={`/search?q=emergency ${cityName}`} className="flex items-center gap-2 text-emerald-600 hover:underline" data-testid="link-emergency">
+                  <Link href={`/search?q=emergency&location=${encodeURIComponent(stateName)}`} className="flex items-center gap-2 text-emerald-600 hover:underline" data-testid="link-emergency">
                     <Clock className="w-4 h-4" /> Emergency Hospitals in {cityName}
+                  </Link>
+                  <Link href={`/search?q=government&location=${encodeURIComponent(stateName)}`} className="flex items-center gap-2 text-emerald-600 hover:underline" data-testid="link-government">
+                    <Shield className="w-4 h-4" /> Government Hospitals in {cityName}
                   </Link>
                   <Link href="/compare" className="flex items-center gap-2 text-emerald-600 hover:underline" data-testid="link-compare">
                     <Search className="w-4 h-4" /> Compare Hospitals in {cityName}

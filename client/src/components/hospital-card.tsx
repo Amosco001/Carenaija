@@ -182,7 +182,7 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
                   )}
                 </div>
                 <span className="text-sm font-semibold text-emerald-600 group-hover:underline">
-                  View Details →
+                  Read Reviews & Details →
                 </span>
               </div>
             </div>
