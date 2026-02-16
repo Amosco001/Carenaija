@@ -22,7 +22,7 @@ Preferred communication style: Simple, everyday language.
 - **Runtime**: Node.js with Express
 - **Language**: TypeScript (ESM modules)
 - **API Pattern**: RESTful JSON API under `/api/*` routes
-- **Authentication**: Replit Auth via OpenID Connect with Passport.js
+- **Authentication**: Custom email/password auth with bcrypt and express-session
 - **Session Management**: Express sessions stored in PostgreSQL via connect-pg-simple
 
 ### Data Storage
@@ -32,7 +32,7 @@ Preferred communication style: Simple, everyday language.
 - **Migrations**: Drizzle Kit with `db:push` command
 
 ### Key Data Models
-- **Users**: Replit Auth-managed users with profile information
+- **Users**: Email/password authenticated users with profile information
 - **Hospitals**: Nigerian hospitals with location, services, ownership details
 - **Patient Reviews**: Ratings for care quality, cleanliness, staff attitude
 - **Employee Reviews**: Workplace ratings, salary info, pros/cons
@@ -64,8 +64,10 @@ Preferred communication style: Simple, everyday language.
 - **Drizzle ORM**: Database queries and schema management
 
 ### Authentication
-- **Replit Auth**: OpenID Connect integration for user authentication
-- **Required secrets**: `SESSION_SECRET`, `REPL_ID`, `ISSUER_URL`
+- **Custom Auth**: Email/password authentication with bcrypt hashing (12 rounds)
+- **Sessions**: PostgreSQL-backed sessions via connect-pg-simple
+- **Required secrets**: `SESSION_SECRET`
+- **Auth Endpoints**: POST `/api/auth/register`, POST `/api/auth/login`, POST `/api/auth/logout`, GET `/api/auth/user`
 
 ### UI Components
 - **shadcn/ui**: Component library built on Radix UI primitives

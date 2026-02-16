@@ -216,7 +216,7 @@ export default function AnalyticsDashboard() {
             <p className="text-muted-foreground mb-4">
               You need to be logged in as an administrator to view the analytics dashboard.
             </p>
-            <Button onClick={() => window.location.href = "/api/login"} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={() => window.location.href = "/login"} className="bg-green-600 hover:bg-green-700">
               Log In
             </Button>
           </CardContent>

@@ -89,12 +89,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </DropdownMenu>
             ) : (
               <div className="flex items-center gap-2">
-                <a href="/api/login">
+                <Link href="/login">
                   <Button variant="ghost" size="sm">Log in</Button>
-                </a>
-                <a href="/api/login">
+                </Link>
+                <Link href="/login">
                   <Button size="sm">Sign up</Button>
-                </a>
+                </Link>
               </div>
             )}
           </div>
@@ -165,16 +165,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </>
               ) : (
                 <div className="flex flex-col gap-2 px-4 py-3">
-                  <a href="/api/login" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
                     <Button variant="outline" className="w-full h-12 text-base" data-testid="mobile-nav-login">
                       Log in
                     </Button>
-                  </a>
-                  <a href="/api/login" onClick={() => setIsMobileMenuOpen(false)}>
+                  </Link>
+                  <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
                     <Button className="w-full h-12 text-base" data-testid="mobile-nav-signup">
                       Sign up
                     </Button>
-                  </a>
+                  </Link>
                 </div>
               )}
             </nav>
@@ -209,7 +209,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <li><Link href="/search" className="hover:text-white transition-colors">Find & Compare Hospitals in Nigeria</Link></li>
                 <li><Link href="/hospitals/lagos" className="hover:text-white transition-colors">Best Hospitals in Lagos</Link></li>
                 <li><Link href="/hospitals/abuja" className="hover:text-white transition-colors">Best Hospitals in Abuja</Link></li>
-                <li><a href="/api/login" className="hover:text-white transition-colors">Write a Hospital Review</a></li>
+                <li><Link href="/login" className="hover:text-white transition-colors">Write a Hospital Review</Link></li>
               </ul>
             </div>
 

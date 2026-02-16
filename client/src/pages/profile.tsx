@@ -60,7 +60,7 @@ export default function Profile() {
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      window.location.href = "/api/login";
+      window.location.href = "/login";
     }
   }, [authLoading, isAuthenticated]);
 
@@ -230,13 +230,13 @@ export default function Profile() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-slate-600 mb-4">
-              Your account is managed through Replit authentication. To change your password or manage your account, please visit your Replit account settings.
+              You can manage your account settings here. To sign out of your account, click the button below.
             </p>
-            <a href="/api/logout">
+            <button onClick={() => { fetch("/api/auth/logout", { method: "POST", credentials: "include" }).then(() => { window.location.href = "/"; }); }}>
               <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50">
                 Sign Out
               </Button>
-            </a>
+            </button>
           </CardContent>
         </Card>
       </div>

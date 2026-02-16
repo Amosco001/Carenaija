@@ -17,8 +17,9 @@ type AuthContextType = {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (returnTo?: string) => void;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  register: (data: { email: string; password: string; firstName: string; lastName: string }) => Promise<{ success: boolean; message?: string }>;
+  logout: () => Promise<void>;
   refetchUser: () => Promise<void>;
   getReturnUrl: () => string | null;
   clearReturnUrl: () => void;
@@ -60,16 +61,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refetchUser();
   }, [refetchUser]);
 
-  const login = (returnTo?: string) => {
-    const currentUrl = returnTo || (window.location.pathname + window.location.search + window.location.hash);
-    if (currentUrl && currentUrl !== '/login' && currentUrl !== '/' && !currentUrl.startsWith('http')) {
-      sessionStorage.setItem('returnTo', currentUrl);
+  const login = async (email: string, password: string): Promise<{ success: boolean; message?: string }> => {
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { success: false, message: data.message || "Login failed" };
+      }
+
+      setUser(data);
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: "Something went wrong. Please try again." };
     }
-    window.location.href = "/api/login";
   };
 
-  const logout = () => {
-    window.location.href = "/api/logout";
+  const register = async (registerData: { email: string; password: string; firstName: string; lastName: string }): Promise<{ success: boolean; message?: string }> => {
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(registerData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { success: false, message: data.message || "Registration failed" };
+      }
+
+      setUser(data);
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: "Something went wrong. Please try again." };
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+    setUser(null);
+    window.location.href = "/";
   };
 
   const getReturnUrl = () => {
@@ -87,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         isAuthenticated: !!user,
         login,
+        register,
         logout,
         refetchUser,
         getReturnUrl,

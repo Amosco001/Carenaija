@@ -17,7 +17,6 @@ import { z } from "zod";
 import { relations } from "drizzle-orm";
 
 // Session storage table.
-// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
 export const sessions = pgTable(
   "sessions",
   {
@@ -33,10 +32,10 @@ export const userRoleEnum = ["user", "editor", "moderator", "super_admin"] as co
 export type UserRole = typeof userRoleEnum[number];
 
 // User storage table.
-// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique(),
+  passwordHash: varchar("password_hash"),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),

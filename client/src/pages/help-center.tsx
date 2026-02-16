@@ -55,7 +55,7 @@ const faqData: FAQItem[] = [
   {
     id: "using-2",
     question: "How do I create an account?",
-    answer: "Click 'Sign up' in the top right corner of the page. We use secure authentication through Replit, which means you can sign up with your existing account. Your information is protected and never shared.",
+    answer: "Click 'Sign up' in the top right corner of the page. Enter your name, email address, and create a password. Your information is protected and never shared.",
     category: "using"
   },
   {
@@ -163,7 +163,7 @@ const faqData: FAQItem[] = [
   {
     id: "account-4",
     question: "How do I change my profile information?",
-    answer: "Go to your dashboard and click on your profile section. You can update your display name and other preferences. Some information may be managed through your Replit account.",
+    answer: "Go to your dashboard and click on your profile section. You can update your display name and other preferences from your account settings.",
     category: "account"
   },
   {

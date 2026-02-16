@@ -21,7 +21,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      window.location.href = "/api/login";
+      window.location.href = "/login";
     }
   }, [authLoading, isAuthenticated]);
 
@@ -105,12 +105,12 @@ export default function Dashboard() {
                       Edit Profile
                     </Button>
                   </Link>
-                  <a href="/api/logout">
+                  <button onClick={() => { fetch("/api/auth/logout", { method: "POST", credentials: "include" }).then(() => { window.location.href = "/"; }); }}>
                     <Button variant="outline" className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50">
                       <LogOut className="w-4 h-4" />
                       Sign Out
                     </Button>
-                  </a>
+                  </button>
                 </div>
               </CardContent>
             </Card>
