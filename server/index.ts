@@ -4,6 +4,7 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { autoSeedDatabase } from "./auto-seed";
+import { startScheduler } from "./scheduler";
 import { 
   securityMiddleware, 
   secureHeaders, 
@@ -111,6 +112,7 @@ app.use((req, res, next) => {
     },
     () => {
       log(`serving on port ${port}`);
+      startScheduler();
     },
   );
 })();

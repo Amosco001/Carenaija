@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+const DiscoveredHospitalsTab = lazy(() => import("./admin-discovered-hospitals"));
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { 
@@ -36,7 +38,8 @@ import {
   FolderOpen,
   Send,
   Heart,
-  ExternalLink
+  ExternalLink,
+  Globe
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -2152,6 +2155,10 @@ export default function AdminDashboard() {
               <Heart className="w-4 h-4" />
               Health
             </TabsTrigger>
+            <TabsTrigger value="discovery" className="flex items-center gap-2" data-testid="tab-discovery">
+              <Globe className="w-4 h-4" />
+              Discovery
+            </TabsTrigger>
             <TabsTrigger value="content" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               Content
@@ -2188,6 +2195,12 @@ export default function AdminDashboard() {
 
           <TabsContent value="health">
             <HealthArticlesTab />
+          </TabsContent>
+
+          <TabsContent value="discovery">
+            <Suspense fallback={<div className="flex justify-center py-12"><RefreshCcw className="w-6 h-6 animate-spin" /></div>}>
+              <DiscoveredHospitalsTab />
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="content">

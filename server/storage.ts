@@ -74,6 +74,8 @@ import {
   type InsertPendingHospital,
   type ScrapingJob,
   type ScrapingLog,
+  scrapingSources,
+  type ScrapingSource,
   type EmailPreferences,
   type InsertEmailPreferences,
   type FollowedHospital,
@@ -236,6 +238,7 @@ export interface IStorage {
   // Scraping jobs methods
   getScrapingJobs(limit?: number): Promise<ScrapingJob[]>;
   getScrapingLogs(jobId: number): Promise<ScrapingLog[]>;
+  getScrapingSources(): Promise<ScrapingSource[]>;
   
   // Unverified submissions (news/social media discoveries) methods
   getUnverifiedSubmissions(status?: string): Promise<UnverifiedSubmission[]>;
@@ -881,6 +884,13 @@ export class DatabaseStorage implements IStorage {
       .where(eq(scrapingLogs.jobId, jobId))
       .orderBy(desc(scrapingLogs.createdAt))
       .limit(500);
+  }
+
+  async getScrapingSources(): Promise<ScrapingSource[]> {
+    return await db
+      .select()
+      .from(scrapingSources)
+      .orderBy(scrapingSources.name);
   }
 
   // Unverified Submissions Methods

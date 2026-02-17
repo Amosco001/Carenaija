@@ -1092,7 +1092,61 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  // Robots.txt for SEO
+  // Trigger a scraper run
+  app.post("/api/admin/scraping/run", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { source, cities, radius } = req.body;
+      
+      const validSources = ["google_places", "ng_health_directory", "hmo_directory", "all"];
+      if (!source || !validSources.includes(source)) {
+        return res.status(400).json({ message: "Invalid source. Use: google_places, ng_health_directory, hmo_directory, or all" });
+      }
+
+      if (source === "google_places" && !process.env.GOOGLE_PLACES_API_KEY) {
+        return res.status(400).json({ message: "Google Places API key not configured" });
+      }
+
+      const { isScraperBusy, runScraper } = await import("./scheduler");
+      
+      if (isScraperBusy()) {
+        return res.status(409).json({ message: "A scraper job is already running. Please wait for it to complete." });
+      }
+
+      const args: string[] = [];
+      let command: string;
+      
+      if (source === "all") {
+        command = "daily";
+      } else {
+        command = "run";
+        args.push("--source", source);
+        if (cities && Array.isArray(cities) && cities.length > 0) {
+          args.push("--cities", ...cities);
+        }
+        if (radius) {
+          args.push("--radius", String(radius));
+        }
+      }
+
+      runScraper(command, args);
+      res.json({ message: `Scraper job started for ${source}`, status: "running" });
+    } catch (error) {
+      console.error("Error triggering scraper:", error);
+      res.status(500).json({ message: "Failed to start scraper" });
+    }
+  });
+
+  // Get scraping sources config
+  app.get("/api/admin/scraping/sources", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const sources = await storage.getScrapingSources();
+      res.json(sources);
+    } catch (error) {
+      console.error("Error fetching scraping sources:", error);
+      res.status(500).json({ message: "Failed to fetch scraping sources" });
+    }
+  });
+
   // Analytics API Routes
   app.get("/api/admin/analytics/summary", isAuthenticated, isAdmin, async (req, res) => {
     try {
