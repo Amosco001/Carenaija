@@ -27,22 +27,28 @@ export function runScraper(
 
   log(`Starting scraper: ${command} ${args.join(" ")}`, "scheduler");
 
-  execFile(
-    "python3",
-    fullArgs,
-    { cwd: scraperDir, env: { ...process.env }, timeout: 600000 },
-    (error, stdout, stderr) => {
-      isScraperRunning = false;
-      if (error) {
-        log(`Scraper error: ${error.message}`, "scheduler");
-        if (stderr) log(`stderr: ${stderr}`, "scheduler");
-        if (onComplete) onComplete(error, stderr || "");
-      } else {
-        log(`Scraper completed: ${stdout.slice(0, 500)}`, "scheduler");
-        if (onComplete) onComplete(null, stdout);
+  try {
+    execFile(
+      "python3",
+      fullArgs,
+      { cwd: scraperDir, env: { ...process.env }, timeout: 600000 },
+      (error, stdout, stderr) => {
+        isScraperRunning = false;
+        if (error) {
+          log(`Scraper error: ${error.message}`, "scheduler");
+          if (stderr) log(`stderr: ${stderr}`, "scheduler");
+          if (onComplete) onComplete(error, stderr || "");
+        } else {
+          log(`Scraper completed: ${stdout.slice(0, 500)}`, "scheduler");
+          if (onComplete) onComplete(null, stdout);
+        }
       }
-    }
-  );
+    );
+  } catch (err: any) {
+    isScraperRunning = false;
+    log(`Failed to spawn scraper process: ${err.message}`, "scheduler");
+    if (onComplete) onComplete(err, "");
+  }
 }
 
 export function startScheduler() {
