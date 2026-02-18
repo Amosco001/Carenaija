@@ -377,6 +377,72 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // Hospital Comments/Recommendations
+  app.get("/api/hospitals/:id/comments", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid hospital ID" });
+      }
+      const comments = await storage.getCommentsByHospitalId(id);
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching hospital comments:", error);
+      res.status(500).json({ message: "Failed to fetch comments" });
+    }
+  });
+
+  app.post("/api/hospitals/:id/comments", isAuthenticated, securityMiddleware.formRateLimiter, async (req: any, res) => {
+    try {
+      const hospitalId = parseInt(req.params.id);
+      if (isNaN(hospitalId)) {
+        return res.status(400).json({ message: "Invalid hospital ID" });
+      }
+      const userId = req.userId;
+      const user = await storage.getUser(userId);
+      const { commentText, recommends, isAnonymous } = req.body;
+
+      if (!commentText || commentText.trim().length < 10) {
+        return res.status(400).json({ message: "Comment must be at least 10 characters" });
+      }
+
+      const displayName = isAnonymous
+        ? "Anonymous"
+        : (user?.firstName && user?.lastName
+          ? `${user.firstName} ${user.lastName}`
+          : user?.email?.split("@")[0] || "User");
+
+      const comment = await storage.createHospitalComment({
+        hospitalId,
+        userId,
+        displayName,
+        isAnonymous: !!isAnonymous,
+        commentText: commentText.trim(),
+        recommends: recommends ?? null,
+        moderationStatus: "approved",
+      });
+
+      res.status(201).json(comment);
+    } catch (error) {
+      console.error("Error creating hospital comment:", error);
+      res.status(400).json({ message: "Failed to create comment" });
+    }
+  });
+
+  app.delete("/api/hospitals/:id/comments/:commentId", isAuthenticated, async (req: any, res) => {
+    try {
+      const commentId = parseInt(req.params.commentId);
+      if (isNaN(commentId)) {
+        return res.status(400).json({ message: "Invalid comment ID" });
+      }
+      await storage.deleteHospitalComment(commentId, req.userId);
+      res.json({ message: "Comment deleted" });
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      res.status(500).json({ message: "Failed to delete comment" });
+    }
+  });
+
   app.post("/api/hospital-suggestions", isAuthenticated, securityMiddleware.formRateLimiter, async (req: any, res) => {
     try {
       const userId = req.userId;

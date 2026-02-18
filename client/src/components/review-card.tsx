@@ -23,6 +23,7 @@ interface ReviewCardProps {
     id: number;
     reviewerName: string;
     reviewerRole?: string;
+    isAnonymous?: boolean;
     title?: string | null;
     rating: number;
     reviewText: string;
@@ -120,12 +121,12 @@ export function ReviewCard({
         <div className="flex items-start gap-3 mb-4">
           <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
             <span className="text-emerald-700 font-semibold text-sm">
-              {review.reviewerName?.charAt(0).toUpperCase() || "A"}
+              {review.isAnonymous ? "A" : (review.reviewerName?.charAt(0).toUpperCase() || "A")}
             </span>
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="font-semibold text-slate-900">{review.reviewerName || "Anonymous"}</p>
+              <p className="font-semibold text-slate-900">{review.isAnonymous ? "Anonymous" : (review.reviewerName || "Anonymous")}</p>
               {review.verifiedVisit && (
                 <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 gap-1 text-xs" data-testid="badge-verified-visit">
                   <CheckCircle2 className="w-3 h-3" />

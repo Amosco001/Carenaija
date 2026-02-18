@@ -241,3 +241,61 @@ export function useHospitalResponses(hospitalId: number) {
     enabled: !!hospitalId,
   });
 }
+
+export function useHospitalComments(hospitalId: number) {
+  return useQuery<Array<{
+    id: number;
+    hospitalId: number;
+    userId: string;
+    displayName: string;
+    isAnonymous: boolean;
+    commentText: string;
+    recommends: boolean | null;
+    helpfulCount: number;
+    createdAt: string;
+  }>>({
+    queryKey: [`/api/hospitals/${hospitalId}/comments`],
+    enabled: !!hospitalId,
+  });
+}
+
+export function useCreateHospitalComment(hospitalId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { commentText: string; recommends?: boolean; isAnonymous: boolean }) => {
+      const res = await fetch(`/api/hospitals/${hospitalId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to create comment");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/hospitals/${hospitalId}/comments`] });
+    },
+  });
+}
+
+export function useDeleteHospitalComment(hospitalId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (commentId: number) => {
+      const res = await fetch(`/api/hospitals/${hospitalId}/comments/${commentId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete comment");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/hospitals/${hospitalId}/comments`] });
+    },
+  });
+}

@@ -139,6 +139,9 @@ import {
   type InsertHealthTip,
   type NewsletterSubscriber,
   type InsertNewsletterSubscriber,
+  hospitalComments,
+  type HospitalComment,
+  type InsertHospitalComment,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, ilike, or, desc, count, gte, inArray } from "drizzle-orm";
@@ -298,6 +301,11 @@ export interface IStorage {
   createEmailTemplate(data: InsertAdminEmailTemplate): Promise<AdminEmailTemplate>;
   updateEmailTemplate(id: number, data: Partial<InsertAdminEmailTemplate>, updatedBy: string): Promise<AdminEmailTemplate>;
   deleteEmailTemplate(id: number): Promise<void>;
+
+  // Hospital comments methods
+  getCommentsByHospitalId(hospitalId: number): Promise<HospitalComment[]>;
+  createHospitalComment(comment: InsertHospitalComment): Promise<HospitalComment>;
+  deleteHospitalComment(id: number, userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2735,6 +2743,26 @@ export class DatabaseStorage implements IStorage {
         await this.createDisease(disease);
       }
     }
+  }
+
+  async getCommentsByHospitalId(hospitalId: number): Promise<HospitalComment[]> {
+    return db.select().from(hospitalComments)
+      .where(and(
+        eq(hospitalComments.hospitalId, hospitalId),
+        eq(hospitalComments.moderationStatus, "approved")
+      ))
+      .orderBy(desc(hospitalComments.createdAt));
+  }
+
+  async createHospitalComment(comment: InsertHospitalComment): Promise<HospitalComment> {
+    const [created] = await db.insert(hospitalComments).values(comment).returning();
+    return created;
+  }
+
+  async deleteHospitalComment(id: number, userId: string): Promise<void> {
+    await db.delete(hospitalComments).where(
+      and(eq(hospitalComments.id, id), eq(hospitalComments.userId, userId))
+    );
   }
 }
 

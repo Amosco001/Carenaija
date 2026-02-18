@@ -182,6 +182,7 @@ export const patientReviews = pgTable("patient_reviews", {
   userId: varchar("user_id").notNull().references(() => users.id),
   reviewerName: text("reviewer_name").notNull(),
   reviewerRole: text("reviewer_role").notNull(),
+  isAnonymous: boolean("is_anonymous").notNull().default(false),
   title: text("title"),
   rating: integer("rating").notNull(),
   waitTime: text("wait_time"),
@@ -230,6 +231,7 @@ export const employeeReviews = pgTable("employee_reviews", {
   hospitalId: integer("hospital_id").notNull().references(() => hospitals.id, { onDelete: "cascade" }),
   userId: varchar("user_id").notNull().references(() => users.id),
   reviewerName: text("reviewer_name").notNull(),
+  isAnonymous: boolean("is_anonymous").notNull().default(false),
   title: text("title"),
   position: text("position").notNull(),
   employmentStatus: text("employment_status").notNull(),
@@ -324,6 +326,7 @@ export const hospitalsRelations = relations(hospitals, ({ many, one }) => ({
   claimRequests: many(claimRequests),
   images: many(hospitalImages),
   hospitalSpecialties: many(hospitalSpecialties),
+  hospitalComments: many(hospitalComments),
   claimedByUser: one(users, {
     fields: [hospitals.claimedBy],
     references: [users.id],
@@ -426,6 +429,45 @@ export const bookmarksRelations = relations(bookmarks, ({ one }) => ({
   }),
 }));
 
+// Hospital Comments/Recommendations table
+export const hospitalComments = pgTable("hospital_comments", {
+  id: serial("id").primaryKey(),
+  hospitalId: integer("hospital_id").notNull().references(() => hospitals.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  displayName: text("display_name").notNull(),
+  isAnonymous: boolean("is_anonymous").notNull().default(false),
+  commentText: text("comment_text").notNull(),
+  recommends: boolean("recommends"),
+  helpfulCount: integer("helpful_count").notNull().default(0),
+  moderationStatus: text("moderation_status").notNull().default("approved"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_hospital_comments_hospital").on(table.hospitalId),
+  index("IDX_hospital_comments_user").on(table.userId),
+  index("IDX_hospital_comments_created").on(table.createdAt),
+  index("IDX_hospital_comments_moderation").on(table.moderationStatus),
+]);
+
+export const insertHospitalCommentSchema = createInsertSchema(hospitalComments).omit({
+  id: true,
+  createdAt: true,
+  helpfulCount: true,
+});
+
+export type InsertHospitalComment = z.infer<typeof insertHospitalCommentSchema>;
+export type HospitalComment = typeof hospitalComments.$inferSelect;
+
+export const hospitalCommentsRelations = relations(hospitalComments, ({ one }) => ({
+  hospital: one(hospitals, {
+    fields: [hospitalComments.hospitalId],
+    references: [hospitals.id],
+  }),
+  user: one(users, {
+    fields: [hospitalComments.userId],
+    references: [users.id],
+  }),
+}));
+
 export const usersRelations = relations(users, ({ many }) => ({
   patientReviews: many(patientReviews),
   employeeReviews: many(employeeReviews),
@@ -435,6 +477,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   uploadedImages: many(hospitalImages),
   bookmarks: many(bookmarks),
   reviewFlags: many(reviewFlags),
+  hospitalComments: many(hospitalComments),
 }));
 
 // Review Flags table - for reporting reviews

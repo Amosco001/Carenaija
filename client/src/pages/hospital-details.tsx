@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, Link } from "wouter";
 import { useHospital, useHospitalBySlug } from "@/hooks/useHospital";
-import { useHospitals, usePatientReviews } from "@/hooks/useHospitals";
+import { useHospitals, usePatientReviews, useHospitalComments, useCreateHospitalComment, useDeleteHospitalComment } from "@/hooks/useHospitals";
 import { getHospitalUrl } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { SEOHead } from "@/components/seo-head";
@@ -39,6 +39,10 @@ import orthoHospitalImage from "@assets/generated_images/orthopaedic_hospital_ig
 import { SwipeGallery } from "@/components/swipe-gallery";
 import { ClickToCall, ClickToCallIcon } from "@/components/click-to-call";
 import { ReportReviewModal } from "@/components/report-review-modal";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { useAuth } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
 
 const hospitalImages = [luthHospitalImage, neuropsychHospitalImage, orthoHospitalImage];
 
@@ -72,11 +76,19 @@ export default function HospitalDetails() {
   const hospitalId = hospital?.id || 0;
   const { data: allHospitals = [] } = useHospitals();
   const { data: patientReviews = [], isLoading: reviewsLoading } = usePatientReviews(hospitalId);
+  const { data: comments = [], isLoading: commentsLoading } = useHospitalComments(hospitalId);
+  const createComment = useCreateHospitalComment(hospitalId);
+  const deleteComment = useDeleteHospitalComment(hospitalId);
+  const { user } = useAuth();
+  const { toast } = useToast();
   
   const [reviewSort, setReviewSort] = useState("recent");
   const [selectedImage, setSelectedImage] = useState(0);
   const [copied, setCopied] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [commentText, setCommentText] = useState("");
+  const [commentAnonymous, setCommentAnonymous] = useState(false);
+  const [commentRecommends, setCommentRecommends] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (hospital) {
@@ -706,12 +718,12 @@ export default function HospitalDetails() {
                           <div className="flex items-start gap-3">
                             <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
                               <span className="text-emerald-700 font-semibold">
-                                {review.reviewerName?.charAt(0).toUpperCase() || "A"}
+                                {review.isAnonymous ? "A" : (review.reviewerName?.charAt(0).toUpperCase() || "A")}
                               </span>
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between gap-2">
-                                <span className="font-semibold text-slate-900">{review.reviewerName || "Anonymous"}</span>
+                                <span className="font-semibold text-slate-900">{review.isAnonymous ? "Anonymous" : (review.reviewerName || "Anonymous")}</span>
                                 <span className="text-xs text-slate-500">{review.createdAt ? new Date(review.createdAt).toLocaleDateString() : ""}</span>
                               </div>
                               <div className="flex items-center gap-2 mt-1">
@@ -757,6 +769,146 @@ export default function HospitalDetails() {
                     </div>
                   </TabsContent>
                 </Tabs>
+              </section>
+
+              {/* Quick Comments / Recommendations */}
+              <section className="bg-white rounded-xl border p-6" data-testid="section-comments">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold text-slate-900">Quick Recommendations</h2>
+                  <span className="text-sm text-slate-500">{comments.length} comment{comments.length !== 1 ? "s" : ""}</span>
+                </div>
+                <p className="text-sm text-slate-500 mb-6">Share a quick recommendation or comment about this hospital. No ratings needed.</p>
+
+                {user ? (
+                  <div className="border rounded-lg p-4 mb-6 bg-slate-50" data-testid="comment-form">
+                    <Textarea
+                      placeholder="Share a quick thought about this hospital... (min 10 characters)"
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      className="mb-3 bg-white"
+                      rows={3}
+                      data-testid="input-comment-text"
+                    />
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-slate-600">Recommend?</span>
+                          <div className="flex gap-1">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant={commentRecommends === true ? "default" : "outline"}
+                              className={commentRecommends === true ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                              onClick={() => setCommentRecommends(commentRecommends === true ? null : true)}
+                              data-testid="button-recommend-yes"
+                            >
+                              <ThumbsUp className="w-3.5 h-3.5 mr-1" /> Yes
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant={commentRecommends === false ? "default" : "outline"}
+                              className={commentRecommends === false ? "bg-red-600 hover:bg-red-700" : ""}
+                              onClick={() => setCommentRecommends(commentRecommends === false ? null : false)}
+                              data-testid="button-recommend-no"
+                            >
+                              <ThumbsUp className="w-3.5 h-3.5 mr-1 rotate-180" /> No
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={commentAnonymous}
+                            onCheckedChange={setCommentAnonymous}
+                            data-testid="switch-comment-anonymous"
+                          />
+                          <span className="text-sm text-slate-600">Anonymous</span>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        disabled={commentText.length < 10 || createComment.isPending}
+                        onClick={async () => {
+                          try {
+                            await createComment.mutateAsync({
+                              commentText,
+                              recommends: commentRecommends ?? undefined,
+                              isAnonymous: commentAnonymous,
+                            });
+                            setCommentText("");
+                            setCommentRecommends(null);
+                            setCommentAnonymous(false);
+                            toast({ title: "Comment posted!" });
+                          } catch (error: any) {
+                            toast({ title: "Error", description: error.message, variant: "destructive" });
+                          }
+                        }}
+                        data-testid="button-post-comment"
+                      >
+                        {createComment.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                        Post Comment
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="border rounded-lg p-4 mb-6 bg-slate-50 text-center">
+                    <p className="text-sm text-slate-500 mb-2">Sign in to leave a comment</p>
+                    <Link href="/login">
+                      <Button size="sm" variant="outline" data-testid="button-login-to-comment">Sign In</Button>
+                    </Link>
+                  </div>
+                )}
+
+                {commentsLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+                  </div>
+                ) : comments.length === 0 ? (
+                  <div className="text-center py-8 text-slate-400">
+                    <Users className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No comments yet. Be the first to share your thoughts!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {comments.map(comment => (
+                      <div key={comment.id} className="border-b border-slate-100 pb-4 last:border-0" data-testid={`comment-${comment.id}`}>
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                            <span className="text-blue-700 font-semibold text-xs">
+                              {comment.isAnonymous ? "A" : comment.displayName.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-sm text-slate-900">
+                                {comment.isAnonymous ? "Anonymous" : comment.displayName}
+                              </span>
+                              {comment.recommends !== null && (
+                                <Badge variant="secondary" className={comment.recommends ? "bg-emerald-50 text-emerald-700 text-xs" : "bg-red-50 text-red-700 text-xs"}>
+                                  <ThumbsUp className={`w-3 h-3 mr-1 ${comment.recommends ? "" : "rotate-180"}`} />
+                                  {comment.recommends ? "Recommends" : "Doesn't recommend"}
+                                </Badge>
+                              )}
+                              <span className="text-xs text-slate-400">
+                                {comment.createdAt ? new Date(comment.createdAt).toLocaleDateString() : ""}
+                              </span>
+                            </div>
+                            <p className="text-sm text-slate-700 mt-1">{comment.commentText}</p>
+                            {user && comment.userId === user.id && (
+                              <button
+                                onClick={() => deleteComment.mutate(comment.id)}
+                                className="text-xs text-red-500 hover:underline mt-1"
+                                data-testid={`button-delete-comment-${comment.id}`}
+                              >
+                                Delete
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </section>
 
               {/* Related Hospitals */}

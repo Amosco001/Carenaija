@@ -68,6 +68,7 @@ const patientReviewSchema = z.object({
   reviewerRole: z.enum(["Patient", "Family Member", "Visitor"], {
     required_error: "Please select your role",
   }),
+  isAnonymous: z.boolean().default(false),
   title: z.string().min(5, "Title must be at least 5 characters").max(100, "Title cannot exceed 100 characters"),
   reviewText: z.string().min(50, "Review must be at least 50 characters").max(1000, "Review cannot exceed 1000 characters"),
   rating: z.number().min(1, "Overall rating is required").max(5),
@@ -84,6 +85,7 @@ const patientReviewSchema = z.object({
 const employeeReviewSchema = z.object({
   hospitalId: z.number().min(1, "Please select a hospital"),
   reviewerName: z.string().min(2, "Name is required"),
+  isAnonymous: z.boolean().default(false),
   position: z.string().min(2, "Job title is required"),
   employmentStatus: z.enum(["Current", "Former"]),
   title: z.string().min(5, "Title must be at least 5 characters").max(100),
@@ -180,8 +182,9 @@ export default function WriteReview() {
       resolver: zodResolver(patientReviewSchema),
       defaultValues: {
         hospitalId: selectedHospitalId,
-        reviewerName: user?.email?.split("@")[0] || "",
+        reviewerName: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email?.split("@")[0] || "",
         reviewerRole: "Patient",
+        isAnonymous: false,
         rating: 0,
         cleanliness: 0,
         staffAttitude: 0,
@@ -313,12 +316,42 @@ export default function WriteReview() {
               </div>
 
               <div className="space-y-3">
-                <Label className="text-base font-semibold">Your Name</Label>
-                <Input
-                  placeholder="Enter your name"
-                  {...form.register("reviewerName")}
-                  data-testid="input-name"
-                />
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-semibold">Your Name</Label>
+                  <div className="flex items-center gap-2">
+                    <Controller
+                      control={form.control}
+                      name="isAnonymous"
+                      render={({ field }) => (
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={(checked) => {
+                            field.onChange(checked);
+                            if (checked) {
+                              form.setValue("reviewerName", "Anonymous");
+                            } else {
+                              form.setValue("reviewerName", user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email?.split("@")[0] || "");
+                            }
+                          }}
+                          data-testid="switch-anonymous"
+                        />
+                      )}
+                    />
+                    <Label className="text-sm text-slate-600 cursor-pointer">Post anonymously</Label>
+                  </div>
+                </div>
+                {!watchedValues.isAnonymous ? (
+                  <Input
+                    placeholder="Enter your name"
+                    {...form.register("reviewerName")}
+                    data-testid="input-name"
+                  />
+                ) : (
+                  <div className="flex items-center gap-2 p-3 bg-slate-100 rounded-lg text-slate-500 text-sm">
+                    <Users className="w-4 h-4" />
+                    Your review will be posted as "Anonymous"
+                  </div>
+                )}
                 {form.formState.errors.reviewerName && (
                   <p className="text-xs text-red-500">{form.formState.errors.reviewerName.message}</p>
                 )}
@@ -734,7 +767,8 @@ export default function WriteReview() {
       resolver: zodResolver(employeeReviewSchema),
       defaultValues: {
         hospitalId: selectedHospitalId,
-        reviewerName: "Anonymous",
+        reviewerName: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email?.split("@")[0] || "",
+        isAnonymous: true,
         employmentStatus: "Current",
         rating: 0,
         workLifeBalance: 0,
@@ -771,8 +805,43 @@ export default function WriteReview() {
 
     return (
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
-          <strong>Note:</strong> Employee reviews are posted anonymously. Your name will not be displayed.
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="text-base font-semibold">Your Name</Label>
+            <div className="flex items-center gap-2">
+              <Controller
+                control={form.control}
+                name="isAnonymous"
+                render={({ field }) => (
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={(checked) => {
+                      field.onChange(checked);
+                      if (checked) {
+                        form.setValue("reviewerName", "Anonymous");
+                      } else {
+                        form.setValue("reviewerName", user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email?.split("@")[0] || "");
+                      }
+                    }}
+                    data-testid="switch-anonymous-employee"
+                  />
+                )}
+              />
+              <Label className="text-sm text-slate-600 cursor-pointer">Post anonymously</Label>
+            </div>
+          </div>
+          {!watchedValues.isAnonymous ? (
+            <Input
+              placeholder="Enter your name"
+              {...form.register("reviewerName")}
+              data-testid="input-name-employee"
+            />
+          ) : (
+            <div className="flex items-center gap-2 p-3 bg-slate-100 rounded-lg text-slate-500 text-sm">
+              <Users className="w-4 h-4" />
+              Your review will be posted as "Anonymous"
+            </div>
+          )}
         </div>
 
         <div className="grid gap-4">
