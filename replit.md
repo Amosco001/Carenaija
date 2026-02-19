@@ -33,7 +33,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Key Data Models
 - **Users**: Email/password authenticated users with profile information
-- **Hospitals**: Nigerian hospitals with location, services, ownership details
+- **Hospitals**: Nigerian hospitals with location, services, ownership details, accepted HMOs/insurance
 - **Patient Reviews**: Ratings for care quality, cleanliness, staff attitude
 - **Employee Reviews**: Workplace ratings, salary info, pros/cons
 - **Hospital Suggestions**: User-submitted hospital additions
