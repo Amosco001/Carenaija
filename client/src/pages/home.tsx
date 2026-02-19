@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, MapPin, Star, Stethoscope, Briefcase, Heart, Baby, Bone, Brain, Eye, ShieldCheck, ChevronRight, ChevronLeft, Loader2, Users, Building2, MessageSquare, Quote, CheckCircle, Award, Lock, Clock, TrendingUp, Flame } from "lucide-react";
+import { Search, MapPin, Star, Stethoscope, Briefcase, Heart, Baby, Bone, Brain, Eye, ShieldCheck, ChevronRight, ChevronLeft, ChevronDown, Loader2, Users, Building2, MessageSquare, Quote, CheckCircle, Award, Lock, Clock, TrendingUp, Flame } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState, useEffect, useCallback } from "react";
 import { useHospitals, useAllPatientReviews, useTrustStats, useTestimonials, useTrendingHospitals } from "@/hooks/useHospitals";
@@ -88,9 +88,9 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-white" data-testid="page-home">
       <SEOHead 
-        title="Find Best Hospitals & Reviews Nigeria"
-        description="Find the best hospitals in Nigeria with verified patient reviews. Compare ratings for hospitals in Lagos, Abuja and across Nigeria. Read honest reviews about care quality."
-        keywords="hospital reviews Nigeria, best hospitals in Lagos, Nigerian hospital ratings, Lagos hospitals, Abuja hospitals, healthcare Nigeria"
+        title="Find Best Hospitals & Reviews Nigeria - Lagos, Abuja, All 36 States"
+        description="Nigeria's #1 hospital review platform. Find the best hospitals near you with verified patient reviews, HMO/NHIS accepted, ratings, and doctor recommendations. Compare hospitals in Lagos, Abuja, Port Harcourt, Ibadan, Kano, and all 36 Nigerian states."
+        keywords="best hospitals in Nigeria, hospital reviews Nigeria, best hospitals in Lagos, hospitals that accept NHIS, hospitals that accept HMO in Lagos, best hospitals in Abuja, Nigerian hospital ratings, Lagos hospitals, Abuja hospitals, healthcare Nigeria, Hygeia HMO hospitals, AXA Mansard hospitals, Leadway Health hospitals, Reliance HMO hospitals, best private hospitals in Nigeria, best government hospitals in Nigeria, hospital near me Nigeria, top rated hospitals Nigeria, maternity hospitals Lagos, pediatric hospitals Nigeria, emergency hospitals near me, cheapest hospitals in Lagos, hospitals in Lekki, hospitals in Ikeja, hospitals in Victoria Island, teaching hospitals in Nigeria, federal medical centre, specialist hospitals Nigeria"
         canonicalUrl="https://www.carenaija.com/"
         structuredData={[
           {
@@ -103,12 +103,20 @@ export default function Home() {
               "@type": "ImageObject",
               "url": "https://www.carenaija.com/favicon.png"
             },
-            "description": "Nigeria's trusted hospital review platform. Find verified patient reviews and ratings for hospitals across Lagos, Abuja, and all 36 states.",
+            "description": "Nigeria's #1 trusted hospital review platform. Find verified patient reviews, HMO acceptance info, and ratings for hospitals across Lagos, Abuja, and all 36 Nigerian states.",
             "foundingDate": "2025",
             "areaServed": {
               "@type": "Country",
               "name": "Nigeria"
             },
+            "knowsAbout": [
+              "Hospital Reviews Nigeria",
+              "Healthcare Nigeria",
+              "NHIS Hospitals",
+              "HMO Hospitals Nigeria",
+              "Patient Reviews",
+              "Medical Facilities Nigeria"
+            ],
             "sameAs": []
           },
           {
@@ -117,6 +125,8 @@ export default function Home() {
             "@id": "https://www.carenaija.com/#website",
             "name": "CareNaija",
             "url": "https://www.carenaija.com",
+            "description": "Find and compare the best hospitals in Nigeria. Read verified patient reviews, check HMO/NHIS acceptance, and make informed healthcare decisions.",
+            "inLanguage": "en-NG",
             "potentialAction": {
               "@type": "SearchAction",
               "target": {
@@ -125,6 +135,60 @@ export default function Home() {
               },
               "query-input": "required name=search_term_string"
             }
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "How do I find the best hospital near me in Nigeria?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Use CareNaija's hospital search to find top-rated hospitals near you. You can filter by location, HMO/NHIS acceptance, specialty, ownership (private or government), and patient ratings. Enable location services to see hospitals closest to you with distance information."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Which hospitals in Nigeria accept NHIS?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Most government hospitals and many private hospitals in Nigeria accept NHIS (National Health Insurance Scheme). On CareNaija, you can filter hospitals by HMO/insurance accepted, including NHIS, Hygeia HMO, AXA Mansard, Leadway Health, Reliance HMO, and Total Health Trust."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What are the best hospitals in Lagos?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Lagos has many top-rated hospitals including Lagos University Teaching Hospital (LUTH), Lagos State University Teaching Hospital (LASUTH), Reddington Hospital, Lagoon Hospitals, Eko Hospital, and St. Nicholas Hospital. Check CareNaija for verified patient reviews and ratings for all Lagos hospitals."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "How do I find hospitals that accept my HMO in Nigeria?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "On CareNaija, use the Insurance/HMO filter on the search page to find hospitals that accept your specific HMO plan. We list accepted HMOs for each hospital including NHIS, Hygeia HMO, AXA Mansard, Leadway Health, Reliance HMO, Mediplan, Total Health Trust, Avon HMO, and Clearline HMO."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Can I read patient reviews for Nigerian hospitals?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes, CareNaija features verified patient reviews for hospitals across all 36 Nigerian states. Patients rate hospitals on care quality, cleanliness, staff attitude, and facilities. You can also read employee reviews for workplace insights."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What are the best hospitals in Abuja?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Top-rated hospitals in Abuja include National Hospital Abuja, University of Abuja Teaching Hospital (UATH), Cedarcrest Hospitals, Nisa Premier Hospital, and Garki Hospital. Visit CareNaija to compare ratings and read verified patient reviews for all Abuja hospitals."
+                }
+              }
+            ]
           }
         ]}
       />
@@ -617,6 +681,36 @@ export default function Home() {
               <Award className="w-5 h-5 text-emerald-600" />
               <span className="text-sm font-medium">Nigerian Healthcare Directory</span>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section for SEO */}
+      <section className="py-16 bg-slate-50">
+        <div className="container px-4 mx-auto max-w-4xl">
+          <h2 className="text-2xl md:text-3xl font-bold text-center text-slate-800 mb-2">
+            Frequently Asked Questions
+          </h2>
+          <p className="text-center text-slate-500 mb-10">Everything you need to know about finding hospitals in Nigeria</p>
+          <div className="space-y-4" data-testid="faq-section">
+            {[
+              { q: "How do I find the best hospital near me in Nigeria?", a: "Use CareNaija's hospital search to find top-rated hospitals near you. Filter by location, HMO/NHIS acceptance, specialty, ownership type (private or government), and patient ratings. Enable location services to see hospitals closest to you with distance information." },
+              { q: "Which hospitals in Nigeria accept NHIS?", a: "Most government hospitals and many private hospitals in Nigeria accept NHIS (National Health Insurance Scheme). On CareNaija, you can filter hospitals by HMO/insurance accepted, including NHIS, Hygeia HMO, AXA Mansard, Leadway Health, Reliance HMO, and Total Health Trust." },
+              { q: "What are the best hospitals in Lagos?", a: "Lagos has many top-rated hospitals including Lagos University Teaching Hospital (LUTH), Lagos State University Teaching Hospital (LASUTH), Reddington Hospital, Lagoon Hospitals, Eko Hospital, and St. Nicholas Hospital. Check CareNaija for verified patient reviews and ratings." },
+              { q: "How do I find hospitals that accept my HMO?", a: "Use the Insurance/HMO filter on the search page to find hospitals that accept your specific HMO plan. We list accepted HMOs including NHIS, Hygeia HMO, AXA Mansard, Leadway Health, Reliance HMO, Mediplan, Total Health Trust, Avon HMO, and Clearline HMO." },
+              { q: "Can I read patient reviews for Nigerian hospitals?", a: "Yes! CareNaija features verified patient reviews for hospitals across all 36 Nigerian states. Patients rate hospitals on care quality, cleanliness, staff attitude, and facilities. You can also read employee reviews for workplace insights." },
+              { q: "What are the best hospitals in Abuja?", a: "Top-rated hospitals in Abuja include National Hospital Abuja, University of Abuja Teaching Hospital (UATH), Cedarcrest Hospitals, Nisa Premier Hospital, and Garki Hospital. Visit CareNaija to compare ratings and read verified reviews." },
+            ].map((item, i) => (
+              <details key={i} className="bg-white rounded-lg border border-slate-200 group" data-testid={`faq-item-${i}`}>
+                <summary className="flex items-center justify-between p-5 cursor-pointer font-semibold text-slate-800 hover:text-emerald-700 transition-colors">
+                  <span>{item.q}</span>
+                  <ChevronDown className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform flex-shrink-0 ml-4" />
+                </summary>
+                <div className="px-5 pb-5 text-slate-600 leading-relaxed border-t border-slate-100 pt-4">
+                  {item.a}
+                </div>
+              </details>
+            ))}
           </div>
         </div>
       </section>

@@ -293,6 +293,16 @@ export default function HospitalDetails() {
             ? `${hospital.name} has received ${hospital.totalReviews} patient reviews with an average rating of ${(hospital.averageRating || 0).toFixed(1)} out of 5 stars on CareNaija.`
             : `${hospital.name} has not yet received patient reviews on CareNaija.`
         }
+      },
+      {
+        "@type": "Question",
+        "name": `Does ${hospital.name} accept NHIS or HMO?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": hospital.acceptedHmos && hospital.acceptedHmos.length > 0
+            ? `${hospital.name} accepts the following health insurance and HMO plans: ${hospital.acceptedHmos.join(", ")}. Contact the hospital directly to confirm your specific plan coverage.`
+            : `Contact ${hospital.name} directly to confirm which HMO and health insurance plans they accept.`
+        }
       }
     ]
   };

@@ -496,8 +496,38 @@ export default function SearchPage() {
       <SEOHead 
         title={seoTitle}
         description={seoDescription}
-        keywords={`hospitals ${selectedState !== "All" ? selectedState : "Nigeria"}, hospital reviews, Nigerian healthcare, ${searchQuery || "medical facilities"}`}
+        keywords={`hospitals ${selectedState !== "All" ? selectedState : "Nigeria"}, hospital reviews, Nigerian healthcare, ${searchQuery || "medical facilities"}, best hospitals ${selectedState !== "All" ? `in ${selectedState}` : "near me Nigeria"}, hospitals that accept NHIS, HMO hospitals ${selectedState !== "All" ? selectedState : "Nigeria"}, private hospitals ${selectedState !== "All" ? selectedState : "Nigeria"}, government hospitals ${selectedState !== "All" ? selectedState : "Nigeria"}, specialist hospitals`}
         canonicalUrl={`https://www.carenaija.com/search${searchQuery ? `?q=${encodeURIComponent(searchQuery)}` : ""}`}
+        structuredData={hospitals && hospitals.length > 0 ? [{
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          "name": `Hospitals ${selectedState !== "All" ? `in ${selectedState}` : "in Nigeria"}`,
+          "description": seoDescription,
+          "numberOfItems": hospitals.length,
+          "itemListElement": hospitals.slice(0, 10).map((h: any, i: number) => ({
+            "@type": "ListItem",
+            "position": i + 1,
+            "item": {
+              "@type": "MedicalOrganization",
+              "name": h.name,
+              "address": {
+                "@type": "PostalAddress",
+                "addressLocality": h.lga,
+                "addressRegion": h.state,
+                "addressCountry": "NG"
+              },
+              ...(h.averageRating ? {
+                "aggregateRating": {
+                  "@type": "AggregateRating",
+                  "ratingValue": h.averageRating,
+                  "bestRating": 5,
+                  "ratingCount": h.totalReviews || 1
+                }
+              } : {}),
+              "url": `https://www.carenaija.com/hospitals/${h.state?.toLowerCase().replace(/\s+/g, '-')}/${h.slug || h.id}`
+            }
+          }))
+        }] : undefined}
       />
       <Breadcrumb items={[
         { label: "Find Hospitals in Nigeria" },

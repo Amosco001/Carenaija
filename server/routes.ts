@@ -2738,14 +2738,50 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.type("text/plain");
     res.send(`User-agent: *
 Allow: /
+Allow: /search
+Allow: /hospitals/
+Allow: /specialties/
+Allow: /guides/
+Allow: /health/
+Allow: /about
+Allow: /help
+Allow: /leaderboard
+Allow: /compare
 Disallow: /api/
+Disallow: /admin/
+Disallow: /admin/*
 Disallow: /dashboard
 Disallow: /profile
+Disallow: /write-review/
+Disallow: /claim-profile/
+Disallow: /login
+
+User-agent: Googlebot
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /write-review/
+Disallow: /claim-profile/
+Disallow: /login
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /write-review/
+Disallow: /claim-profile/
+Disallow: /login
+Crawl-delay: 2
 
 Sitemap: ${baseUrl}/sitemap.xml
 
-# CareNaija - Hospital Reviews Nigeria
-# Find the best hospitals in Lagos, Abuja, and across Nigeria
+# CareNaija - Nigeria's #1 Hospital Review Platform
+# Find the best hospitals in Lagos, Abuja, and across all 36 Nigerian states
 `);
   });
 
@@ -3320,10 +3356,9 @@ Sitemap: ${baseUrl}/sitemap.xml
         { url: "/terms-of-service", priority: "0.3", changefreq: "yearly" },
       ];
 
-      // Add state-based search pages
-      const searchPages = nigerianStates.map(state => ({
-        url: `/search?state=${encodeURIComponent(state)}`,
-        priority: "0.6",
+      const statePages = nigerianStates.map(state => ({
+        url: `/hospitals/${state.toLowerCase().replace(/\s+/g, '-')}`,
+        priority: "0.9",
         changefreq: "daily"
       }));
 
@@ -3341,8 +3376,7 @@ Sitemap: ${baseUrl}/sitemap.xml
 `;
       }
 
-      // Add state-based search pages to sitemap
-      for (const page of searchPages) {
+      for (const page of statePages) {
         xml += `  <url>
     <loc>${baseUrl}${page.url}</loc>
     <lastmod>${today}</lastmod>
