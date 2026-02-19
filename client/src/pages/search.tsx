@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { useHospitals } from "@/hooks/useHospitals";
+import { useHospitals, useHmoProviders } from "@/hooks/useHospitals";
 import { getHospitalUrl } from "@shared/schema";
 import type { Hospital } from "@/lib/types";
 import { Input } from "@/components/ui/input";
@@ -61,14 +61,15 @@ const SPECIALTIES_OPTIONS = [
   "General Medicine",
 ];
 
-const INSURANCE_OPTIONS = [
+const FALLBACK_INSURANCE_OPTIONS = [
   "NHIS",
-  "HMO Nigeria",
   "AXA Mansard",
-  "Leadway Health",
+  "Avon HMO",
+  "Clearline HMO",
   "Hygeia HMO",
-  "Reliance HMO",
+  "Leadway Health",
   "Mediplan",
+  "Reliance HMO",
   "Total Health Trust",
 ];
 
@@ -130,6 +131,8 @@ export default function SearchPage() {
   } = useGeolocation();
 
   const { data: hospitals = [], isLoading } = useHospitals();
+  const { data: hmoProviders } = useHmoProviders();
+  const insuranceOptions = hmoProviders && hmoProviders.length > 0 ? hmoProviders : FALLBACK_INSURANCE_OPTIONS;
 
   const allStates = useMemo(() => 
     ["All", ...Array.from(new Set(hospitals.map(h => h.state))).sort()],
@@ -220,8 +223,7 @@ export default function SearchPage() {
 
       const matchesInsurance = selectedInsurance.length === 0 ||
         selectedInsurance.some(ins => 
-          hospital.services.some(s => s.toLowerCase().includes(ins.toLowerCase())) ||
-          hospital.name.toLowerCase().includes(ins.toLowerCase())
+          hospital.acceptedHmos && hospital.acceptedHmos.some(hmo => hmo.toLowerCase() === ins.toLowerCase())
         );
 
       let matchesRadius = true;
@@ -403,7 +405,7 @@ export default function SearchPage() {
       <div>
         <h3 className="font-semibold text-sm text-slate-900 mb-3">Insurance / HMO</h3>
         <div className="space-y-2 max-h-[200px] overflow-y-auto">
-          {INSURANCE_OPTIONS.map(insurance => (
+          {insuranceOptions.map(insurance => (
             <div key={insurance} className="flex items-center space-x-2">
               <Checkbox
                 id={`insurance-${insurance}`}

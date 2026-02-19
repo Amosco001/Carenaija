@@ -12,6 +12,7 @@ export type Hospital = {
   operatingHours: string | null;
   services: string[];
   facilities: string[];
+  acceptedHmos: string[];
   email: string | null;
   website: string | null;
   latitude: number | null;

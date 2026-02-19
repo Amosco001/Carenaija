@@ -94,6 +94,7 @@ export const hospitals = pgTable("hospitals", {
   operatingHours: text("operating_hours"),
   services: text("services").array().notNull().default(sql`'{}'`),
   facilities: text("facilities").array().notNull().default(sql`'{}'`),
+  acceptedHmos: text("accepted_hmos").array().notNull().default(sql`'{}'`),
   latitude: doublePrecision("latitude"),
   longitude: doublePrecision("longitude"),
   verified: boolean("verified").notNull().default(false),

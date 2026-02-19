@@ -306,6 +306,9 @@ export interface IStorage {
   getCommentsByHospitalId(hospitalId: number): Promise<HospitalComment[]>;
   createHospitalComment(comment: InsertHospitalComment): Promise<HospitalComment>;
   deleteHospitalComment(id: number, userId: string): Promise<void>;
+
+  // HMO providers methods
+  getDistinctHmoProviders(): Promise<string[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2763,6 +2766,16 @@ export class DatabaseStorage implements IStorage {
     await db.delete(hospitalComments).where(
       and(eq(hospitalComments.id, id), eq(hospitalComments.userId, userId))
     );
+  }
+
+  async getDistinctHmoProviders(): Promise<string[]> {
+    const result = await db.execute(sql`
+      SELECT DISTINCT unnest(accepted_hmos) AS hmo 
+      FROM hospitals 
+      WHERE array_length(accepted_hmos, 1) > 0
+      ORDER BY hmo
+    `);
+    return (result as any).rows.map((r: any) => r.hmo);
   }
 }
 

@@ -46,14 +46,6 @@ import { useToast } from "@/hooks/use-toast";
 
 const hospitalImages = [luthHospitalImage, neuropsychHospitalImage, orthoHospitalImage];
 
-const INSURANCE_PROVIDERS = [
-  "NHIS",
-  "HMO Nigeria",
-  "AXA Mansard",
-  "Leadway Health",
-  "Hygeia HMO",
-  "Reliance HMO",
-];
 
 const FACILITY_ICONS: Record<string, any> = {
   "Emergency": Ambulance,
@@ -1015,13 +1007,16 @@ export default function HospitalDetails() {
 
                   {/* Insurance Accepted */}
                   <div>
-                    <h4 className="font-semibold text-slate-900 mb-3">Insurance Accepted</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {INSURANCE_PROVIDERS.slice(0, 4).map(provider => (
-                        <Badge key={provider} variant="outline" className="text-xs">{provider}</Badge>
-                      ))}
-                    </div>
-                    <button className="text-xs text-emerald-600 hover:underline mt-2">View all insurance providers</button>
+                    <h4 className="font-semibold text-slate-900 mb-3">Insurance / HMO Accepted</h4>
+                    {hospital.acceptedHmos && hospital.acceptedHmos.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {hospital.acceptedHmos.map(provider => (
+                          <Badge key={provider} variant="outline" className="text-xs" data-testid={`badge-hmo-${provider.toLowerCase().replace(/\s+/g, '-')}`}>{provider}</Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-500">No HMO information available yet. <Link href="/suggest-hospital" className="text-emerald-600 hover:underline">Help us update this listing</Link></p>
+                    )}
                   </div>
 
                   <Separator className="my-5" />

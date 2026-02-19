@@ -282,6 +282,13 @@ export function useCreateHospitalComment(hospitalId: number) {
   });
 }
 
+export function useHmoProviders() {
+  return useQuery<string[]>({
+    queryKey: ["/api/hmo-providers"],
+    staleTime: 1000 * 60 * 60,
+  });
+}
+
 export function useDeleteHospitalComment(hospitalId: number) {
   const queryClient = useQueryClient();
 

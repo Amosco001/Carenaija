@@ -144,6 +144,17 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  app.get("/api/hmo-providers", async (req, res) => {
+    try {
+      res.setHeader("Cache-Control", "public, max-age=3600, s-maxage=7200");
+      const result = await storage.getDistinctHmoProviders();
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching HMO providers:", error);
+      res.status(500).json({ message: "Failed to fetch HMO providers" });
+    }
+  });
+
   app.get("/api/hospitals", async (req, res) => {
     try {
       res.setHeader("Cache-Control", "public, max-age=300, s-maxage=600");
