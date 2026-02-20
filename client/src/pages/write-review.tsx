@@ -128,7 +128,53 @@ export default function WriteReview() {
   );
 
   const totalSteps = type === "patient" ? 4 : 3;
-  const progress = (step / totalSteps) * 100;
+
+  const defaultName = user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email?.split("@")[0] || "";
+
+  const patientForm = useForm<PatientFormData>({
+    resolver: zodResolver(patientReviewSchema),
+    defaultValues: {
+      hospitalId: selectedHospitalId,
+      reviewerName: defaultName,
+      reviewerRole: "Patient",
+      isAnonymous: false,
+      rating: 0,
+      cleanliness: 0,
+      staffAttitude: 0,
+      facilities: 0,
+      verifiedVisit: false,
+      wouldRecommend: true,
+      title: "",
+      reviewText: "",
+    },
+    mode: "onChange",
+  });
+
+  const employeeForm = useForm<EmployeeFormData>({
+    resolver: zodResolver(employeeReviewSchema),
+    defaultValues: {
+      hospitalId: selectedHospitalId,
+      reviewerName: defaultName,
+      isAnonymous: true,
+      employmentStatus: "Current",
+      rating: 0,
+      workLifeBalance: 0,
+      compensation: 0,
+      management: 0,
+      careerGrowth: 0,
+      wouldRecommend: true,
+      title: "",
+      reviewText: "",
+      pros: "",
+      cons: "",
+      position: "",
+    },
+    mode: "onChange",
+  });
+
+  const patientValues = patientForm.watch();
+  const employeeValues = employeeForm.watch();
+  const reviewTextLength = patientValues.reviewText?.length || 0;
 
   if (!user) {
     return (
@@ -177,761 +223,710 @@ export default function WriteReview() {
     );
   }
 
-  const PatientForm = () => {
-    const form = useForm<PatientFormData>({
-      resolver: zodResolver(patientReviewSchema),
-      defaultValues: {
+  const onPatientSubmit = async (data: PatientFormData) => {
+    try {
+      await createPatientReview.mutateAsync({
+        ...data,
         hospitalId: selectedHospitalId,
-        reviewerName: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email?.split("@")[0] || "",
-        reviewerRole: "Patient",
-        isAnonymous: false,
-        rating: 0,
-        cleanliness: 0,
-        staffAttitude: 0,
-        facilities: 0,
-        verifiedVisit: false,
-        wouldRecommend: true,
-        title: "",
-        reviewText: "",
-      },
-      mode: "onChange",
-    });
-
-    const watchedValues = form.watch();
-    const reviewTextLength = watchedValues.reviewText?.length || 0;
-
-    const onSubmit = async (data: PatientFormData) => {
-      try {
-        await createPatientReview.mutateAsync({
-          ...data,
-          hospitalId: selectedHospitalId,
-        });
-        setSubmitSuccess(true);
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to submit review. Please try again.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = e.target.files;
-      if (!files) return;
-      
-      const newImages: string[] = [];
-      Array.from(files).slice(0, 5 - uploadedImages.length).forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          if (e.target?.result) {
-            setUploadedImages(prev => [...prev, e.target!.result as string].slice(0, 5));
-          }
-        };
-        reader.readAsDataURL(file);
       });
-    };
+      setSubmitSuccess(true);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to submit review. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
-    const removeImage = (index: number) => {
-      setUploadedImages(prev => prev.filter((_, i) => i !== index));
-    };
+  const onEmployeeSubmit = async (data: EmployeeFormData) => {
+    try {
+      await createEmployeeReview.mutateAsync({
+        ...data,
+        hospitalId: selectedHospitalId,
+      });
+      setSubmitSuccess(true);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to submit review. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
-    const canProceed = () => {
-      switch (step) {
-        case 1:
-          return selectedHospitalId > 0 && watchedValues.reviewerRole;
-        case 2:
-          return watchedValues.rating >= 1;
-        case 3:
-          return watchedValues.title?.length >= 5 && reviewTextLength >= 50;
-        case 4:
-          return true;
-        default:
-          return false;
-      }
-    };
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    
+    Array.from(files).slice(0, 5 - uploadedImages.length).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        if (ev.target?.result) {
+          setUploadedImages(prev => [...prev, ev.target!.result as string].slice(0, 5));
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
 
-    const renderStep = () => {
-      switch (step) {
-        case 1:
-          return (
-            <div className="space-y-6">
-              <div className="space-y-3">
-                <Label className="text-base font-semibold">Select Hospital</Label>
-                <Popover open={hospitalOpen} onOpenChange={setHospitalOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={hospitalOpen}
-                      className="w-full justify-between h-12"
-                      data-testid="select-hospital"
-                    >
-                      {selectedHospital ? (
-                        <span className="flex items-center gap-2">
-                          <Building2 className="w-4 h-4 text-emerald-600" />
-                          {selectedHospital.name}
-                        </span>
-                      ) : (
-                        "Search for a hospital..."
-                      )}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search hospitals..." />
-                      <CommandList>
-                        <CommandEmpty>No hospital found.</CommandEmpty>
-                        <CommandGroup>
-                          {allHospitals.slice(0, 50).map((h) => (
-                            <CommandItem
-                              key={h.id}
-                              value={h.name}
-                              onSelect={() => {
-                                setSelectedHospitalId(h.id);
-                                form.setValue("hospitalId", h.id);
-                                setHospitalOpen(false);
-                              }}
-                            >
-                              <Check
-                                className={cn("mr-2 h-4 w-4", selectedHospitalId === h.id ? "opacity-100" : "opacity-0")}
-                              />
-                              <div>
-                                <div className="font-medium">{h.name}</div>
-                                <div className="text-xs text-slate-500">{h.lga}, {h.state}</div>
-                              </div>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                {form.formState.errors.hospitalId && (
-                  <p className="text-xs text-red-500 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" /> {form.formState.errors.hospitalId.message}
-                  </p>
-                )}
-              </div>
+  const removeImage = (index: number) => {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+  };
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-base font-semibold">Your Name</Label>
-                  <div className="flex items-center gap-2">
-                    <Controller
-                      control={form.control}
-                      name="isAnonymous"
-                      render={({ field }) => (
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={(checked) => {
-                            field.onChange(checked);
-                            if (checked) {
-                              form.setValue("reviewerName", "Anonymous");
-                            } else {
-                              form.setValue("reviewerName", user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email?.split("@")[0] || "");
-                            }
-                          }}
-                          data-testid="switch-anonymous"
-                        />
-                      )}
-                    />
-                    <Label className="text-sm text-slate-600 cursor-pointer">Post anonymously</Label>
-                  </div>
-                </div>
-                {!watchedValues.isAnonymous ? (
-                  <Input
-                    placeholder="Enter your name"
-                    {...form.register("reviewerName")}
-                    data-testid="input-name"
+  const canProceed = () => {
+    switch (step) {
+      case 1:
+        return selectedHospitalId > 0 && patientValues.reviewerRole;
+      case 2:
+        return patientValues.rating >= 1;
+      case 3:
+        return (patientValues.title?.length || 0) >= 5 && reviewTextLength >= 50;
+      case 4:
+        return true;
+      default:
+        return false;
+    }
+  };
+
+  const renderPatientStep = () => {
+    switch (step) {
+      case 1:
+        return (
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Select Hospital</Label>
+              <Popover open={hospitalOpen} onOpenChange={setHospitalOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={hospitalOpen}
+                    className="w-full justify-between h-12"
+                    data-testid="select-hospital"
+                  >
+                    {selectedHospital ? (
+                      <span className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-emerald-600" />
+                        {selectedHospital.name}
+                      </span>
+                    ) : (
+                      "Search for a hospital..."
+                    )}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search hospitals..." />
+                    <CommandList>
+                      <CommandEmpty>No hospital found.</CommandEmpty>
+                      <CommandGroup>
+                        {allHospitals.slice(0, 50).map((h) => (
+                          <CommandItem
+                            key={h.id}
+                            value={h.name}
+                            onSelect={() => {
+                              setSelectedHospitalId(h.id);
+                              patientForm.setValue("hospitalId", h.id);
+                              setHospitalOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn("mr-2 h-4 w-4", selectedHospitalId === h.id ? "opacity-100" : "opacity-0")}
+                            />
+                            <div>
+                              <div className="font-medium">{h.name}</div>
+                              <div className="text-xs text-slate-500">{h.lga}, {h.state}</div>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {patientForm.formState.errors.hospitalId && (
+                <p className="text-xs text-red-500 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" /> {patientForm.formState.errors.hospitalId.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-base font-semibold">Your Name</Label>
+                <div className="flex items-center gap-2">
+                  <Controller
+                    control={patientForm.control}
+                    name="isAnonymous"
+                    render={({ field }) => (
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          if (checked) {
+                            patientForm.setValue("reviewerName", "Anonymous");
+                          } else {
+                            patientForm.setValue("reviewerName", defaultName);
+                          }
+                        }}
+                        data-testid="switch-anonymous"
+                      />
+                    )}
                   />
-                ) : (
-                  <div className="flex items-center gap-2 p-3 bg-slate-100 rounded-lg text-slate-500 text-sm">
-                    <Users className="w-4 h-4" />
-                    Your review will be posted as "Anonymous"
+                  <Label className="text-sm text-slate-600 cursor-pointer">Post anonymously</Label>
+                </div>
+              </div>
+              {!patientValues.isAnonymous ? (
+                <Input
+                  placeholder="Enter your name"
+                  {...patientForm.register("reviewerName")}
+                  data-testid="input-name"
+                />
+              ) : (
+                <div className="flex items-center gap-2 p-3 bg-slate-100 rounded-lg text-slate-500 text-sm">
+                  <Users className="w-4 h-4" />
+                  Your review will be posted as "Anonymous"
+                </div>
+              )}
+              {patientForm.formState.errors.reviewerName && (
+                <p className="text-xs text-red-500">{patientForm.formState.errors.reviewerName.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">I am writing this review as a:</Label>
+              <Controller
+                control={patientForm.control}
+                name="reviewerRole"
+                render={({ field }) => (
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    className="grid grid-cols-1 gap-3"
+                  >
+                    {[
+                      { value: "Patient", label: "Patient", desc: "I received care here" },
+                      { value: "Family Member", label: "Family Member", desc: "I accompanied a patient" },
+                      { value: "Visitor", label: "Visitor", desc: "I visited someone" },
+                    ].map(role => (
+                      <label
+                        key={role.value}
+                        className={cn(
+                          "flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all",
+                          field.value === role.value ? "border-emerald-500 bg-emerald-50" : "border-slate-200 hover:border-slate-300"
+                        )}
+                      >
+                        <RadioGroupItem value={role.value} id={`role-${role.value}`} />
+                        <div>
+                          <div className="font-medium">{role.label}</div>
+                          <div className="text-sm text-slate-500">{role.desc}</div>
+                        </div>
+                      </label>
+                    ))}
+                  </RadioGroup>
+                )}
+              />
+            </div>
+          </div>
+        );
+
+      case 2:
+        return (
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">Overall Rating *</Label>
+              <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-lg">
+                <Controller
+                  control={patientForm.control}
+                  name="rating"
+                  render={({ field }) => (
+                    <StarRating
+                      rating={field.value}
+                      readonly={false}
+                      onChange={field.onChange}
+                      size={40}
+                    />
+                  )}
+                />
+                <span className="text-2xl font-bold text-slate-900">
+                  {patientValues.rating > 0 ? patientValues.rating.toFixed(0) : "-"}/5
+                </span>
+              </div>
+              {patientForm.formState.errors.rating && (
+                <p className="text-xs text-red-500">{patientForm.formState.errors.rating.message}</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[
+                { name: "cleanliness" as const, label: "Cleanliness", icon: Sparkles },
+                { name: "staffAttitude" as const, label: "Staff Friendliness", icon: Users },
+                { name: "facilities" as const, label: "Facilities", icon: Building },
+              ].map(category => (
+                <div key={category.name} className="space-y-2 p-4 bg-slate-50 rounded-lg">
+                  <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                    <category.icon className="w-4 h-4" />
+                    {category.label}
                   </div>
-                )}
-                {form.formState.errors.reviewerName && (
-                  <p className="text-xs text-red-500">{form.formState.errors.reviewerName.message}</p>
-                )}
+                  <Controller
+                    control={patientForm.control}
+                    name={category.name}
+                    render={({ field }) => (
+                      <StarRating
+                        rating={field.value || 0}
+                        readonly={false}
+                        onChange={field.onChange}
+                        size={24}
+                      />
+                    )}
+                  />
+                </div>
+              ))}
+              <div className="space-y-2 p-4 bg-slate-50 rounded-lg">
+                <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                  <Clock className="w-4 h-4" />
+                  Wait Time
+                </div>
+                <Select onValueChange={(v) => patientForm.setValue("waitTime", v)} value={patientValues.waitTime || ""}>
+                  <SelectTrigger data-testid="select-wait-time">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Less than 15 min">Less than 15 min</SelectItem>
+                    <SelectItem value="15-30 min">15-30 min</SelectItem>
+                    <SelectItem value="30-60 min">30-60 min</SelectItem>
+                    <SelectItem value="1-2 hours">1-2 hours</SelectItem>
+                    <SelectItem value="More than 2 hours">More than 2 hours</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 3:
+        return (
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Review Title *</Label>
+              <Input
+                placeholder="Summarize your experience in a few words"
+                maxLength={100}
+                {...patientForm.register("title")}
+                data-testid="input-title"
+              />
+              <div className="flex justify-between text-xs text-slate-500">
+                <span>{patientForm.formState.errors.title?.message || "A catchy title helps others find your review"}</span>
+                <span className={(patientValues.title?.length || 0) > 90 ? "text-amber-500" : ""}>
+                  {patientValues.title?.length || 0}/100
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Your Review *</Label>
+              <Textarea
+                placeholder="Share the details of your experience. What was good? What could be improved?"
+                className="min-h-[180px]"
+                maxLength={1000}
+                {...patientForm.register("reviewText")}
+                data-testid="textarea-review"
+              />
+              <div className="flex justify-between text-xs">
+                <span className={reviewTextLength < 50 ? "text-red-500" : "text-slate-500"}>
+                  {reviewTextLength < 50 ? `${50 - reviewTextLength} more characters needed` : "Great! Your review is detailed enough"}
+                </span>
+                <span className={reviewTextLength > 900 ? "text-amber-500" : "text-slate-500"}>
+                  {reviewTextLength}/1000
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Visit Date (Optional)</Label>
+                <Input
+                  type="date"
+                  max={new Date().toISOString().split("T")[0]}
+                  {...patientForm.register("visitDate")}
+                  data-testid="input-visit-date"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Department/Specialty</Label>
+                <Select onValueChange={(v) => patientForm.setValue("specialty", v)} value={patientValues.specialty || ""}>
+                  <SelectTrigger data-testid="select-specialty">
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SPECIALTIES.map(s => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 4:
+        return (
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Upload Photos (Optional)</Label>
+              <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-emerald-400 transition-colors">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  id="photo-upload"
+                  disabled={uploadedImages.length >= 5}
+                />
+                <label htmlFor="photo-upload" className="cursor-pointer">
+                  <Camera className="w-10 h-10 text-slate-400 mx-auto mb-2" />
+                  <p className="text-sm text-slate-600">Click to upload photos</p>
+                  <p className="text-xs text-slate-400 mt-1">Max 5 images, JPG or PNG</p>
+                </label>
+              </div>
+              {uploadedImages.length > 0 && (
+                <div className="flex gap-2 flex-wrap">
+                  {uploadedImages.map((img, i) => (
+                    <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden group">
+                      <img src={img} alt="" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(i)}
+                        className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                      >
+                        <X className="w-5 h-5 text-white" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-lg">
+                <Controller
+                  control={patientForm.control}
+                  name="verifiedVisit"
+                  render={({ field }) => (
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      id="verified-visit"
+                      data-testid="checkbox-verified"
+                    />
+                  )}
+                />
+                <label htmlFor="verified-visit" className="cursor-pointer">
+                  <div className="font-medium text-slate-900">I confirm this is a genuine visit</div>
+                  <div className="text-sm text-slate-500">I actually visited this hospital and my review is based on real experience</div>
+                </label>
               </div>
 
-              <div className="space-y-3">
-                <Label className="text-base font-semibold">I am writing this review as a:</Label>
+              <div className="p-4 bg-slate-50 rounded-lg">
+                <Label className="text-base font-semibold mb-4 block">Would you recommend this hospital?</Label>
                 <Controller
-                  control={form.control}
-                  name="reviewerRole"
+                  control={patientForm.control}
+                  name="wouldRecommend"
                   render={({ field }) => (
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="grid grid-cols-1 gap-3"
-                    >
-                      {[
-                        { value: "Patient", label: "Patient", desc: "I received care here" },
-                        { value: "Family Member", label: "Family Member", desc: "I accompanied a patient" },
-                        { value: "Visitor", label: "Visitor", desc: "I visited someone" },
-                      ].map(role => (
-                        <label
-                          key={role.value}
-                          className={cn(
-                            "flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all",
-                            field.value === role.value ? "border-emerald-500 bg-emerald-50" : "border-slate-200 hover:border-slate-300"
-                          )}
-                        >
-                          <RadioGroupItem value={role.value} id={`role-${role.value}`} />
-                          <div>
-                            <div className="font-medium">{role.label}</div>
-                            <div className="text-sm text-slate-500">{role.desc}</div>
-                          </div>
-                        </label>
-                      ))}
-                    </RadioGroup>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => field.onChange(true)}
+                        className={cn(
+                          "flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border-2 transition-all",
+                          field.value === true ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 hover:border-slate-300"
+                        )}
+                        data-testid="button-recommend-yes"
+                      >
+                        <ThumbsUp className="w-5 h-5" />
+                        <span className="font-medium">Yes</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => field.onChange(false)}
+                        className={cn(
+                          "flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border-2 transition-all",
+                          field.value === false ? "border-red-500 bg-red-50 text-red-700" : "border-slate-200 hover:border-slate-300"
+                        )}
+                        data-testid="button-recommend-no"
+                      >
+                        <ThumbsDown className="w-5 h-5" />
+                        <span className="font-medium">No</span>
+                      </button>
+                    </div>
                   )}
                 />
               </div>
             </div>
-          );
-
-        case 2:
-          return (
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <Label className="text-base font-semibold">Overall Rating *</Label>
-                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-lg">
-                  <Controller
-                    control={form.control}
-                    name="rating"
-                    render={({ field }) => (
-                      <StarRating
-                        rating={field.value}
-                        readonly={false}
-                        onChange={field.onChange}
-                        size={40}
-                      />
-                    )}
-                  />
-                  <span className="text-2xl font-bold text-slate-900">
-                    {watchedValues.rating > 0 ? watchedValues.rating.toFixed(0) : "-"}/5
-                  </span>
-                </div>
-                {form.formState.errors.rating && (
-                  <p className="text-xs text-red-500">{form.formState.errors.rating.message}</p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {[
-                  { name: "cleanliness" as const, label: "Cleanliness", icon: Sparkles },
-                  { name: "staffAttitude" as const, label: "Staff Friendliness", icon: Users },
-                  { name: "facilities" as const, label: "Facilities", icon: Building },
-                ].map(category => (
-                  <div key={category.name} className="space-y-2 p-4 bg-slate-50 rounded-lg">
-                    <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                      <category.icon className="w-4 h-4" />
-                      {category.label}
-                    </div>
-                    <Controller
-                      control={form.control}
-                      name={category.name}
-                      render={({ field }) => (
-                        <StarRating
-                          rating={field.value || 0}
-                          readonly={false}
-                          onChange={field.onChange}
-                          size={24}
-                        />
-                      )}
-                    />
-                  </div>
-                ))}
-                <div className="space-y-2 p-4 bg-slate-50 rounded-lg">
-                  <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                    <Clock className="w-4 h-4" />
-                    Wait Time
-                  </div>
-                  <Select onValueChange={(v) => form.setValue("waitTime", v)}>
-                    <SelectTrigger data-testid="select-wait-time">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Less than 15 min">Less than 15 min</SelectItem>
-                      <SelectItem value="15-30 min">15-30 min</SelectItem>
-                      <SelectItem value="30-60 min">30-60 min</SelectItem>
-                      <SelectItem value="1-2 hours">1-2 hours</SelectItem>
-                      <SelectItem value="More than 2 hours">More than 2 hours</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-          );
-
-        case 3:
-          return (
-            <div className="space-y-6">
-              <div className="space-y-3">
-                <Label className="text-base font-semibold">Review Title *</Label>
-                <Input
-                  placeholder="Summarize your experience in a few words"
-                  maxLength={100}
-                  {...form.register("title")}
-                  data-testid="input-title"
-                />
-                <div className="flex justify-between text-xs text-slate-500">
-                  <span>{form.formState.errors.title?.message || "A catchy title helps others find your review"}</span>
-                  <span className={watchedValues.title?.length > 90 ? "text-amber-500" : ""}>
-                    {watchedValues.title?.length || 0}/100
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <Label className="text-base font-semibold">Your Review *</Label>
-                <Textarea
-                  placeholder="Share the details of your experience. What was good? What could be improved?"
-                  className="min-h-[180px]"
-                  maxLength={1000}
-                  {...form.register("reviewText")}
-                  data-testid="textarea-review"
-                />
-                <div className="flex justify-between text-xs">
-                  <span className={reviewTextLength < 50 ? "text-red-500" : "text-slate-500"}>
-                    {reviewTextLength < 50 ? `${50 - reviewTextLength} more characters needed` : "Great! Your review is detailed enough"}
-                  </span>
-                  <span className={reviewTextLength > 900 ? "text-amber-500" : "text-slate-500"}>
-                    {reviewTextLength}/1000
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Visit Date (Optional)</Label>
-                  <Input
-                    type="date"
-                    max={new Date().toISOString().split("T")[0]}
-                    {...form.register("visitDate")}
-                    data-testid="input-visit-date"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Department/Specialty</Label>
-                  <Select onValueChange={(v) => form.setValue("specialty", v)}>
-                    <SelectTrigger data-testid="select-specialty">
-                      <SelectValue placeholder="Select department" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SPECIALTIES.map(s => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-          );
-
-        case 4:
-          return (
-            <div className="space-y-6">
-              <div className="space-y-3">
-                <Label className="text-base font-semibold">Upload Photos (Optional)</Label>
-                <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-emerald-400 transition-colors">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleImageUpload}
-                    className="hidden"
-                    id="photo-upload"
-                    disabled={uploadedImages.length >= 5}
-                  />
-                  <label htmlFor="photo-upload" className="cursor-pointer">
-                    <Camera className="w-10 h-10 text-slate-400 mx-auto mb-2" />
-                    <p className="text-sm text-slate-600">Click to upload photos</p>
-                    <p className="text-xs text-slate-400 mt-1">Max 5 images, JPG or PNG</p>
-                  </label>
-                </div>
-                {uploadedImages.length > 0 && (
-                  <div className="flex gap-2 flex-wrap">
-                    {uploadedImages.map((img, i) => (
-                      <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden group">
-                        <img src={img} alt="" className="w-full h-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(i)}
-                          className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-                        >
-                          <X className="w-5 h-5 text-white" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-lg">
-                  <Controller
-                    control={form.control}
-                    name="verifiedVisit"
-                    render={({ field }) => (
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        id="verified-visit"
-                        data-testid="checkbox-verified"
-                      />
-                    )}
-                  />
-                  <label htmlFor="verified-visit" className="cursor-pointer">
-                    <div className="font-medium text-slate-900">I confirm this is a genuine visit</div>
-                    <div className="text-sm text-slate-500">I actually visited this hospital and my review is based on real experience</div>
-                  </label>
-                </div>
-
-                <div className="p-4 bg-slate-50 rounded-lg">
-                  <Label className="text-base font-semibold mb-4 block">Would you recommend this hospital?</Label>
-                  <Controller
-                    control={form.control}
-                    name="wouldRecommend"
-                    render={({ field }) => (
-                      <div className="flex gap-3">
-                        <button
-                          type="button"
-                          onClick={() => field.onChange(true)}
-                          className={cn(
-                            "flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border-2 transition-all",
-                            field.value === true ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 hover:border-slate-300"
-                          )}
-                          data-testid="button-recommend-yes"
-                        >
-                          <ThumbsUp className="w-5 h-5" />
-                          <span className="font-medium">Yes</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => field.onChange(false)}
-                          className={cn(
-                            "flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border-2 transition-all",
-                            field.value === false ? "border-red-500 bg-red-50 text-red-700" : "border-slate-200 hover:border-slate-300"
-                          )}
-                          data-testid="button-recommend-no"
-                        >
-                          <ThumbsDown className="w-5 h-5" />
-                          <span className="font-medium">No</span>
-                        </button>
-                      </div>
-                    )}
-                  />
-                </div>
-              </div>
-            </div>
-          );
-      }
-    };
-
-    const renderPreview = () => (
-      <div className="space-y-6">
-        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-          <h3 className="font-semibold text-emerald-800 flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5" /> Review Preview
-          </h3>
-          <p className="text-sm text-emerald-700 mt-1">Review your submission before posting</p>
-        </div>
-
-        <Card>
-          <CardContent className="pt-6 space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                <span className="font-semibold text-emerald-700">
-                  {watchedValues.reviewerName?.charAt(0).toUpperCase() || "A"}
-                </span>
-              </div>
-              <div className="flex-1">
-                <div className="font-semibold">{watchedValues.reviewerName || "Anonymous"}</div>
-                <div className="text-sm text-slate-500">{watchedValues.reviewerRole}</div>
-              </div>
-              <div className="flex items-center gap-1">
-                {Array.from({ length: 5 }, (_, i) => (
-                  <Star key={i} className={cn("w-5 h-5", i < watchedValues.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300")} />
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-lg">{watchedValues.title || "No title"}</h4>
-              <p className="text-slate-600 mt-2">{watchedValues.reviewText || "No review text"}</p>
-            </div>
-
-            {uploadedImages.length > 0 && (
-              <div className="flex gap-2">
-                {uploadedImages.map((img, i) => (
-                  <img key={i} src={img} alt="" className="w-16 h-16 rounded object-cover" />
-                ))}
-              </div>
-            )}
-
-            <div className="flex items-center gap-4 text-sm text-slate-500 pt-2 border-t">
-              <span className="flex items-center gap-1">
-                <Building2 className="w-4 h-4" />
-                {selectedHospital?.name}
-              </span>
-              {watchedValues.visitDate && (
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-4 h-4" />
-                  {new Date(watchedValues.visitDate).toLocaleDateString()}
-                </span>
-              )}
-              {watchedValues.wouldRecommend ? (
-                <span className="text-emerald-600 flex items-center gap-1">
-                  <ThumbsUp className="w-4 h-4" /> Recommends
-                </span>
-              ) : (
-                <span className="text-red-600 flex items-center gap-1">
-                  <ThumbsDown className="w-4 h-4" /> Doesn't recommend
-                </span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-
-    return (
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        {showPreview ? renderPreview() : renderStep()}
-
-        <div className="flex gap-3 mt-8">
-          {step > 1 && !showPreview && (
-            <Button type="button" variant="outline" onClick={() => setStep(s => s - 1)} className="flex-1">
-              Back
-            </Button>
-          )}
-          {showPreview && (
-            <Button type="button" variant="outline" onClick={() => setShowPreview(false)} className="flex-1">
-              Edit Review
-            </Button>
-          )}
-          
-          {!showPreview && step < totalSteps && (
-            <Button
-              type="button"
-              onClick={() => setStep(s => s + 1)}
-              disabled={!canProceed()}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-              data-testid="button-next"
-            >
-              Continue
-            </Button>
-          )}
-          
-          {!showPreview && step === totalSteps && (
-            <Button
-              type="button"
-              onClick={() => setShowPreview(true)}
-              disabled={!canProceed()}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-              data-testid="button-preview"
-            >
-              Preview Review
-            </Button>
-          )}
-
-          {showPreview && (
-            <Button
-              type="submit"
-              disabled={createPatientReview.isPending}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-              data-testid="button-submit"
-            >
-              {createPatientReview.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                "Submit Review"
-              )}
-            </Button>
-          )}
-        </div>
-      </form>
-    );
+          </div>
+        );
+    }
   };
 
-  const EmployeeForm = () => {
-    const form = useForm<EmployeeFormData>({
-      resolver: zodResolver(employeeReviewSchema),
-      defaultValues: {
-        hospitalId: selectedHospitalId,
-        reviewerName: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email?.split("@")[0] || "",
-        isAnonymous: true,
-        employmentStatus: "Current",
-        rating: 0,
-        workLifeBalance: 0,
-        compensation: 0,
-        management: 0,
-        careerGrowth: 0,
-        wouldRecommend: true,
-        title: "",
-        reviewText: "",
-        pros: "",
-        cons: "",
-        position: "",
-      },
-      mode: "onChange",
-    });
+  const renderPatientPreview = () => (
+    <div className="space-y-6">
+      <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+        <h3 className="font-semibold text-emerald-800 flex items-center gap-2">
+          <CheckCircle2 className="w-5 h-5" /> Review Preview
+        </h3>
+        <p className="text-sm text-emerald-700 mt-1">Review your submission before posting</p>
+      </div>
 
-    const watchedValues = form.watch();
-
-    const onSubmit = async (data: EmployeeFormData) => {
-      try {
-        await createEmployeeReview.mutateAsync({
-          ...data,
-          hospitalId: selectedHospitalId,
-        });
-        setSubmitSuccess(true);
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to submit review. Please try again.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    return (
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="text-base font-semibold">Your Name</Label>
-            <div className="flex items-center gap-2">
-              <Controller
-                control={form.control}
-                name="isAnonymous"
-                render={({ field }) => (
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={(checked) => {
-                      field.onChange(checked);
-                      if (checked) {
-                        form.setValue("reviewerName", "Anonymous");
-                      } else {
-                        form.setValue("reviewerName", user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email?.split("@")[0] || "");
-                      }
-                    }}
-                    data-testid="switch-anonymous-employee"
-                  />
-                )}
-              />
-              <Label className="text-sm text-slate-600 cursor-pointer">Post anonymously</Label>
+      <Card>
+        <CardContent className="pt-6 space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+              <span className="font-semibold text-emerald-700">
+                {patientValues.reviewerName?.charAt(0).toUpperCase() || "A"}
+              </span>
+            </div>
+            <div className="flex-1">
+              <div className="font-semibold">{patientValues.reviewerName || "Anonymous"}</div>
+              <div className="text-sm text-slate-500">{patientValues.reviewerRole}</div>
+            </div>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: 5 }, (_, i) => (
+                <Star key={i} className={cn("w-5 h-5", i < patientValues.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300")} />
+              ))}
             </div>
           </div>
-          {!watchedValues.isAnonymous ? (
-            <Input
-              placeholder="Enter your name"
-              {...form.register("reviewerName")}
-              data-testid="input-name-employee"
-            />
-          ) : (
-            <div className="flex items-center gap-2 p-3 bg-slate-100 rounded-lg text-slate-500 text-sm">
-              <Users className="w-4 h-4" />
-              Your review will be posted as "Anonymous"
+
+          <div>
+            <h4 className="font-semibold text-lg">{patientValues.title || "No title"}</h4>
+            <p className="text-slate-600 mt-2">{patientValues.reviewText || "No review text"}</p>
+          </div>
+
+          {uploadedImages.length > 0 && (
+            <div className="flex gap-2">
+              {uploadedImages.map((img, i) => (
+                <img key={i} src={img} alt="" className="w-16 h-16 rounded object-cover" />
+              ))}
             </div>
+          )}
+
+          <div className="flex items-center gap-4 text-sm text-slate-500 pt-2 border-t">
+            <span className="flex items-center gap-1">
+              <Building2 className="w-4 h-4" />
+              {selectedHospital?.name}
+            </span>
+            {patientValues.visitDate && (
+              <span className="flex items-center gap-1">
+                <Calendar className="w-4 h-4" />
+                {new Date(patientValues.visitDate).toLocaleDateString()}
+              </span>
+            )}
+            {patientValues.wouldRecommend ? (
+              <span className="text-emerald-600 flex items-center gap-1">
+                <ThumbsUp className="w-4 h-4" /> Recommends
+              </span>
+            ) : (
+              <span className="text-red-600 flex items-center gap-1">
+                <ThumbsDown className="w-4 h-4" /> Doesn't recommend
+              </span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const renderPatientForm = () => (
+    <form onSubmit={patientForm.handleSubmit(onPatientSubmit)}>
+      {showPreview ? renderPatientPreview() : renderPatientStep()}
+
+      <div className="flex gap-3 mt-8">
+        {step > 1 && !showPreview && (
+          <Button type="button" variant="outline" onClick={() => setStep(s => s - 1)} className="flex-1">
+            Back
+          </Button>
+        )}
+        {showPreview && (
+          <Button type="button" variant="outline" onClick={() => setShowPreview(false)} className="flex-1">
+            Edit Review
+          </Button>
+        )}
+        
+        {!showPreview && step < totalSteps && (
+          <Button
+            type="button"
+            onClick={() => setStep(s => s + 1)}
+            disabled={!canProceed()}
+            className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+            data-testid="button-next"
+          >
+            Continue
+          </Button>
+        )}
+        
+        {!showPreview && step === totalSteps && (
+          <Button
+            type="button"
+            onClick={() => setShowPreview(true)}
+            disabled={!canProceed()}
+            className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+            data-testid="button-preview"
+          >
+            Preview Review
+          </Button>
+        )}
+
+        {showPreview && (
+          <Button
+            type="submit"
+            disabled={createPatientReview.isPending}
+            className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+            data-testid="button-submit"
+          >
+            {createPatientReview.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              "Submit Review"
+            )}
+          </Button>
+        )}
+      </div>
+    </form>
+  );
+
+  const renderEmployeeForm = () => (
+    <form onSubmit={employeeForm.handleSubmit(onEmployeeSubmit)} className="space-y-6">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label className="text-base font-semibold">Your Name</Label>
+          <div className="flex items-center gap-2">
+            <Controller
+              control={employeeForm.control}
+              name="isAnonymous"
+              render={({ field }) => (
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={(checked) => {
+                    field.onChange(checked);
+                    if (checked) {
+                      employeeForm.setValue("reviewerName", "Anonymous");
+                    } else {
+                      employeeForm.setValue("reviewerName", defaultName);
+                    }
+                  }}
+                  data-testid="switch-anonymous-employee"
+                />
+              )}
+            />
+            <Label className="text-sm text-slate-600 cursor-pointer">Post anonymously</Label>
+          </div>
+        </div>
+        {!employeeValues.isAnonymous ? (
+          <Input
+            placeholder="Enter your name"
+            {...employeeForm.register("reviewerName")}
+            data-testid="input-name-employee"
+          />
+        ) : (
+          <div className="flex items-center gap-2 p-3 bg-slate-100 rounded-lg text-slate-500 text-sm">
+            <Users className="w-4 h-4" />
+            Your review will be posted as "Anonymous"
+          </div>
+        )}
+      </div>
+
+      <div className="grid gap-4">
+        <div className="space-y-2">
+          <Label>Job Title *</Label>
+          <Input placeholder="e.g. Nurse, Doctor, Registrar" {...employeeForm.register("position")} />
+          {employeeForm.formState.errors.position && (
+            <p className="text-xs text-red-500">{employeeForm.formState.errors.position.message}</p>
           )}
         </div>
 
-        <div className="grid gap-4">
-          <div className="space-y-2">
-            <Label>Job Title *</Label>
-            <Input placeholder="e.g. Nurse, Doctor, Registrar" {...form.register("position")} />
-            {form.formState.errors.position && (
-              <p className="text-xs text-red-500">{form.formState.errors.position.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label>Employment Status</Label>
-            <Controller
-              control={form.control}
-              name="employmentStatus"
-              render={({ field }) => (
-                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
-                  <label className="flex items-center gap-2">
-                    <RadioGroupItem value="Current" />
-                    Current Employee
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <RadioGroupItem value="Former" />
-                    Former Employee
-                  </label>
-                </RadioGroup>
-              )}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <Label className="text-base font-semibold">Overall Rating *</Label>
-          <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-lg">
-            <Controller
-              control={form.control}
-              name="rating"
-              render={({ field }) => (
-                <StarRating rating={field.value} readonly={false} onChange={field.onChange} size={36} />
-              )}
-            />
-          </div>
-        </div>
-
         <div className="space-y-2">
-          <Label>Review Title *</Label>
-          <Input placeholder="Sum up your experience" maxLength={100} {...form.register("title")} />
-        </div>
-
-        <div className="space-y-2">
-          <Label>Your Review *</Label>
-          <Textarea placeholder="Describe your experience working here..." className="min-h-[120px]" {...form.register("reviewText")} />
-        </div>
-
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Pros *</Label>
-            <Textarea placeholder="What's great about working here?" {...form.register("pros")} />
-          </div>
-          <div className="space-y-2">
-            <Label>Cons *</Label>
-            <Textarea placeholder="What could be improved?" {...form.register("cons")} />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg">
+          <Label>Employment Status</Label>
           <Controller
-            control={form.control}
-            name="wouldRecommend"
+            control={employeeForm.control}
+            name="employmentStatus"
             render={({ field }) => (
-              <Switch checked={field.value} onCheckedChange={field.onChange} />
+              <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
+                <label className="flex items-center gap-2">
+                  <RadioGroupItem value="Current" />
+                  Current Employee
+                </label>
+                <label className="flex items-center gap-2">
+                  <RadioGroupItem value="Former" />
+                  Former Employee
+                </label>
+              </RadioGroup>
             )}
           />
-          <Label>I would recommend working here to a friend</Label>
         </div>
+      </div>
 
-        <Button type="submit" className="w-full h-12 bg-emerald-600 hover:bg-emerald-700" disabled={createEmployeeReview.isPending}>
-          {createEmployeeReview.isPending ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Submitting...
-            </>
-          ) : (
-            "Submit Employee Review"
+      <div className="space-y-4">
+        <Label className="text-base font-semibold">Overall Rating *</Label>
+        <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-lg">
+          <Controller
+            control={employeeForm.control}
+            name="rating"
+            render={({ field }) => (
+              <StarRating rating={field.value} readonly={false} onChange={field.onChange} size={36} />
+            )}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Review Title *</Label>
+        <Input placeholder="Sum up your experience" maxLength={100} {...employeeForm.register("title")} />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Your Review *</Label>
+        <Textarea placeholder="Describe your experience working here..." className="min-h-[120px]" {...employeeForm.register("reviewText")} />
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Pros *</Label>
+          <Textarea placeholder="What's great about working here?" {...employeeForm.register("pros")} />
+        </div>
+        <div className="space-y-2">
+          <Label>Cons *</Label>
+          <Textarea placeholder="What could be improved?" {...employeeForm.register("cons")} />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg">
+        <Controller
+          control={employeeForm.control}
+          name="wouldRecommend"
+          render={({ field }) => (
+            <Switch checked={field.value} onCheckedChange={field.onChange} />
           )}
-        </Button>
-      </form>
-    );
-  };
+        />
+        <Label>I would recommend working here to a friend</Label>
+      </div>
+
+      <Button type="submit" className="w-full h-12 bg-emerald-600 hover:bg-emerald-700" disabled={createEmployeeReview.isPending}>
+        {createEmployeeReview.isPending ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Submitting...
+          </>
+        ) : (
+          "Submit Employee Review"
+        )}
+      </Button>
+    </form>
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 py-8" data-testid="page-write-review">
@@ -988,7 +983,7 @@ export default function WriteReview() {
           )}
 
           <CardContent>
-            {type === "patient" ? <PatientForm /> : <EmployeeForm />}
+            {type === "patient" ? renderPatientForm() : renderEmployeeForm()}
           </CardContent>
         </Card>
       </div>
