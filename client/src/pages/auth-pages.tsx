@@ -205,6 +205,9 @@ export default function AuthPage() {
                       Remember me
                     </Label>
                   </div>
+                  <Link href="/forgot-password" className="text-sm text-emerald-600 hover:text-emerald-700 hover:underline font-medium" data-testid="link-forgot-password">
+                    Forgot password?
+                  </Link>
                 </div>
               )}
 

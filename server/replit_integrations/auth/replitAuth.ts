@@ -2,8 +2,11 @@ import session from "express-session";
 import type { Express, RequestHandler } from "express";
 import connectPg from "connect-pg-simple";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { z } from "zod";
 import { authStorage } from "./storage";
+import { storage } from "../../storage";
+import { emailTemplates, sendEmail } from "../../services/email";
 
 declare module "express-session" {
   interface SessionData {
@@ -144,6 +147,77 @@ export async function setupAuth(app: Express) {
       res.clearCookie("connect.sid");
       res.redirect("/");
     });
+  });
+
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const schema = z.object({
+        email: z.string().email("Please enter a valid email address"),
+      });
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: parsed.error.errors[0].message });
+      }
+
+      const { email } = parsed.data;
+      const user = await authStorage.getUserByEmail(email);
+
+      res.json({ message: "If an account with that email exists, we've sent password reset instructions." });
+
+      if (!user) return;
+
+      const token = crypto.randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+      await storage.createVerificationToken({
+        userId: user.id,
+        token,
+        type: "password_reset",
+        expiresAt,
+      });
+
+      const APP_URL = process.env.REPLIT_DEPLOYMENT_URL || "https://carenaija.replit.app";
+      const resetUrl = `${APP_URL}/reset-password?token=${token}`;
+
+      const template = emailTemplates.passwordReset({
+        userName: user.firstName || undefined,
+        resetUrl,
+      });
+
+      await sendEmail(user.email!, template.subject, template.html, template.text);
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({ message: "Something went wrong. Please try again." });
+    }
+  });
+
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const schema = z.object({
+        token: z.string().min(1, "Reset token is required"),
+        password: z.string().min(8, "Password must be at least 8 characters"),
+      });
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: parsed.error.errors[0].message });
+      }
+
+      const { token, password } = parsed.data;
+
+      const tokenRecord = await storage.getVerificationToken(token, "password_reset");
+      if (!tokenRecord || tokenRecord.consumedAt) {
+        return res.status(400).json({ message: "This reset link is invalid or has expired. Please request a new one." });
+      }
+
+      const passwordHash = await bcrypt.hash(password, 12);
+      await authStorage.updateUserPassword(tokenRecord.userId, passwordHash);
+      await storage.consumeVerificationToken(tokenRecord.id);
+
+      res.json({ message: "Your password has been reset successfully. You can now log in with your new password." });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ message: "Something went wrong. Please try again." });
+    }
   });
 }
 

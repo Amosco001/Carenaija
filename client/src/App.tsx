@@ -41,6 +41,8 @@ const HealthCategoryPage = lazy(() => import("@/pages/health-category"));
 const HealthDiseasesPage = lazy(() => import("@/pages/health-diseases"));
 const HealthDiseasePage = lazy(() => import("@/pages/health-disease"));
 const AuthPage = lazy(() => import("@/pages/auth-pages"));
+const ForgotPasswordPage = lazy(() => import("@/pages/forgot-password"));
+const ResetPasswordPage = lazy(() => import("@/pages/reset-password"));
 const CityHospitalsPage = lazy(() => import("@/pages/city-hospitals"));
 const SpecialtyPage = lazy(() => import("@/pages/specialty"));
 
@@ -59,6 +61,8 @@ function Router() {
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/login" component={AuthPage} />
+          <Route path="/forgot-password" component={ForgotPasswordPage} />
+          <Route path="/reset-password" component={ResetPasswordPage} />
           <Route path="/search" component={SearchPage} />
           <Route path="/hospitals/:state/:slug" component={HospitalDetails} />
           <Route path="/hospitals/:state/:slug/reviews" component={HospitalDetails} />
