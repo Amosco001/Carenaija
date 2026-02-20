@@ -19,7 +19,7 @@ import {
   Navigation, ExternalLink, Loader2, Star, ChevronRight, Share2, 
   Facebook, Twitter, Linkedin, Mail, Copy, Check, Heart, Thermometer,
   Pill, Microscope, Ambulance, Building2, Users, Calendar, ThumbsUp,
-  Home, ChevronLeft, ImageIcon
+  Home, ChevronLeft, ImageIcon, MessageSquarePlus
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -504,6 +504,34 @@ export default function HospitalDetails() {
           </div>
         </header>
 
+        {/* Review Incentive Banner for low-review hospitals */}
+        {(hospital.totalReviews || 0) <= 3 && (
+          <div className="container mx-auto px-4 pt-6">
+            <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-xl p-5 text-white flex flex-col sm:flex-row items-center justify-between gap-4" data-testid="review-incentive-banner">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                  <MessageSquarePlus className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">
+                    {(hospital.totalReviews || 0) === 0
+                      ? "Be the first to review this hospital!"
+                      : `Only ${hospital.totalReviews} review${hospital.totalReviews === 1 ? "" : "s"} — help others by adding yours`}
+                  </h3>
+                  <p className="text-emerald-100 text-sm">
+                    Your review helps thousands of Nigerians find quality healthcare. Takes just 2 minutes.
+                  </p>
+                </div>
+              </div>
+              <Link href={`/write-review/patient/${hospital.id}`}>
+                <Button size="lg" className="bg-white text-emerald-700 hover:bg-emerald-50 font-semibold whitespace-nowrap gap-2" data-testid="button-banner-review">
+                  <Star className="w-5 h-5" /> Write a Review
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Main Content */}
         <div className="container mx-auto px-4 py-8">
           <div className="grid lg:grid-cols-[1fr_350px] gap-8">
@@ -749,24 +777,38 @@ export default function HospitalDetails() {
                         </div>
                       ))
                     ) : (
-                      <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed">
-                        <Stethoscope className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-slate-900">No patient reviews yet</h3>
-                        <p className="text-slate-500 max-w-sm mx-auto mt-2">Be the first to share your experience.</p>
+                      <div className="text-center py-10 bg-gradient-to-br from-emerald-50 to-slate-50 rounded-xl border-2 border-dashed border-emerald-200" data-testid="empty-patient-reviews">
+                        <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <MessageSquarePlus className="w-8 h-8 text-emerald-600" />
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-900 mb-2">Be the First to Review!</h3>
+                        <p className="text-slate-600 max-w-md mx-auto mb-2">
+                          No one has reviewed {hospital.name} yet. Your experience could help thousands of Nigerians make better healthcare decisions.
+                        </p>
+                        <p className="text-sm text-emerald-600 font-medium mb-5">It only takes 2 minutes</p>
                         <Link href={`/write-review/patient/${hospital.id}`}>
-                          <Button className="mt-4 bg-emerald-600 hover:bg-emerald-700">Write a Review</Button>
+                          <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-base px-8 h-12 gap-2" data-testid="button-first-patient-review">
+                            <Star className="w-5 h-5" /> Write the First Review
+                          </Button>
                         </Link>
                       </div>
                     )}
                   </TabsContent>
 
                   <TabsContent value="employees" className="space-y-6 mt-0">
-                    <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed">
-                      <Briefcase className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-slate-900">No employee reviews yet</h3>
-                      <p className="text-slate-500 max-w-sm mx-auto mt-2">Work here? Share your experience.</p>
+                    <div className="text-center py-10 bg-gradient-to-br from-blue-50 to-slate-50 rounded-xl border-2 border-dashed border-blue-200" data-testid="empty-employee-reviews">
+                      <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Briefcase className="w-8 h-8 text-blue-600" />
+                      </div>
+                      <h3 className="text-xl font-bold text-slate-900 mb-2">Work Here? Share Your Experience!</h3>
+                      <p className="text-slate-600 max-w-md mx-auto mb-2">
+                        Help other healthcare professionals by sharing what it's like to work at {hospital.name}. Your review is anonymous by default.
+                      </p>
+                      <p className="text-sm text-blue-600 font-medium mb-5">100% anonymous reviews</p>
                       <Link href={`/write-review/employee/${hospital.id}`}>
-                        <Button className="mt-4" variant="outline">Write Employee Review</Button>
+                        <Button size="lg" variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50 text-base px-8 h-12 gap-2" data-testid="button-first-employee-review">
+                          <Briefcase className="w-5 h-5" /> Write Employee Review
+                        </Button>
                       </Link>
                     </div>
                   </TabsContent>

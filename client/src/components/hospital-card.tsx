@@ -1,12 +1,14 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Star, ShieldCheck, Scale, Check, Sparkles } from "lucide-react";
+import { MapPin, Star, ShieldCheck, Scale, Check, Sparkles, MessageSquarePlus } from "lucide-react";
 import { useComparison } from "@/lib/comparison-context";
 import { toast } from "sonner";
 import type { Hospital } from "@shared/schema";
 import { getHospitalUrl } from "@shared/schema";
+import { QuickRatePrompt, InlineQuickStars } from "@/components/quick-rate-prompt";
 
 interface HospitalCardProps {
   hospital: Hospital;
@@ -17,10 +19,15 @@ interface HospitalCardProps {
 export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalCardProps) {
   const { addToCompare, removeFromCompare, isInCompare, canAddMore } = useComparison();
   const inCompare = isInCompare(hospital.id);
+  const [showQuickRate, setShowQuickRate] = useState(false);
   
   const isRecentlyUpdated = hospital.updatedAt 
     ? (Date.now() - new Date(hospital.updatedAt).getTime()) < 7 * 24 * 60 * 60 * 1000 
     : false;
+
+  const totalReviews = hospital.totalReviews || 0;
+  const hasNoReviews = totalReviews === 0;
+  const hasFewReviews = totalReviews > 0 && totalReviews <= 5;
 
   const handleCompareClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -41,6 +48,10 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
     }
   };
 
+  const handleQuickStarClick = (rating: number) => {
+    setShowQuickRate(true);
+  };
+
   const getRatingStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
       <Star 
@@ -55,6 +66,13 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
       <div className="relative group">
         <Link href={getHospitalUrl(hospital)} data-testid={`card-hospital-${hospital.id}`}>
           <Card className="overflow-hidden border-slate-200 hover:border-emerald-300 hover:shadow-lg transition-all duration-300 h-full">
+            {showQuickRate && (
+              <QuickRatePrompt
+                hospitalId={hospital.id}
+                hospitalName={hospital.name}
+                onClose={() => setShowQuickRate(false)}
+              />
+            )}
             <div className="h-48 overflow-hidden relative">
               <img 
                 src={imageUrl} 
@@ -78,6 +96,18 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
               <div className="absolute top-3 right-3 bg-white/95 backdrop-blur px-2 py-1 rounded-md shadow-sm">
                 <span className="text-xs font-semibold text-emerald-700">{hospital.ownership}</span>
               </div>
+              {hasNoReviews && (
+                <div className="absolute bottom-3 left-3 right-3">
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowQuickRate(true); }}
+                    className="w-full bg-white/95 backdrop-blur text-emerald-700 text-xs font-semibold py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 hover:bg-emerald-50 transition-colors shadow-sm"
+                    data-testid={`button-first-review-${hospital.id}`}
+                  >
+                    <MessageSquarePlus className="w-3.5 h-3.5" />
+                    Be the first to review!
+                  </button>
+                </div>
+              )}
             </div>
             <CardContent className="p-5">
               <h3 className="font-bold text-lg text-slate-900 mb-2 line-clamp-2 group-hover:text-emerald-700 transition-colors">
@@ -88,14 +118,25 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
                 {hospital.lga}, {hospital.state}
               </div>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1">
-                  {getRatingStars(hospital.averageRating || 4)}
-                  <span className="text-sm text-slate-500 ml-1">({hospital.totalReviews || 0})</span>
-                </div>
+                {hasNoReviews ? (
+                  <span className="text-xs text-slate-400 italic">No reviews yet</span>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    {getRatingStars(hospital.averageRating || 0)}
+                    <span className="text-sm text-slate-500 ml-1">({totalReviews})</span>
+                  </div>
+                )}
                 {hospital.bedCapacity && (
                   <span className="text-xs text-slate-500">{hospital.bedCapacity} beds</span>
                 )}
               </div>
+              {(hasNoReviews || hasFewReviews) && (
+                <InlineQuickStars
+                  hospitalId={hospital.id}
+                  totalReviews={totalReviews}
+                  onStarClick={handleQuickStarClick}
+                />
+              )}
             </CardContent>
           </Card>
         </Link>
@@ -131,6 +172,13 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
           className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group hover:border-emerald-300 cursor-pointer"
           data-testid={`card-hospital-${hospital.id}`}
         >
+          {showQuickRate && (
+            <QuickRatePrompt
+              hospitalId={hospital.id}
+              hospitalName={hospital.name}
+              onClose={() => setShowQuickRate(false)}
+            />
+          )}
           <div className="flex flex-col sm:flex-row">
             <div className="sm:w-48 h-40 sm:h-auto relative overflow-hidden flex-shrink-0">
               <img
@@ -151,6 +199,18 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
                   </div>
                 )}
               </div>
+              {hasNoReviews && (
+                <div className="absolute bottom-2 left-2 right-2">
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowQuickRate(true); }}
+                    className="w-full bg-white/95 backdrop-blur text-emerald-700 text-[10px] font-bold py-1.5 px-2 rounded flex items-center justify-center gap-1 hover:bg-emerald-50 transition-colors shadow-sm"
+                    data-testid={`button-first-review-list-${hospital.id}`}
+                  >
+                    <MessageSquarePlus className="w-3 h-3" />
+                    Be the first to review!
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="flex-1 p-4 sm:p-5">
@@ -171,8 +231,14 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
                 </div>
 
                 <div className="flex items-center gap-1">
-                  {getRatingStars(hospital.averageRating || 0)}
-                  <span className="text-sm text-slate-500 ml-1">({hospital.totalReviews || 0})</span>
+                  {hasNoReviews ? (
+                    <span className="text-xs text-slate-400 italic">No reviews yet</span>
+                  ) : (
+                    <>
+                      {getRatingStars(hospital.averageRating || 0)}
+                      <span className="text-sm text-slate-500 ml-1">({totalReviews})</span>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -204,6 +270,14 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
                   Read Reviews & Details →
                 </span>
               </div>
+
+              {(hasNoReviews || hasFewReviews) && (
+                <InlineQuickStars
+                  hospitalId={hospital.id}
+                  totalReviews={totalReviews}
+                  onStarClick={handleQuickStarClick}
+                />
+              )}
             </div>
           </div>
         </div>
