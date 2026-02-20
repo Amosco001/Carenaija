@@ -301,8 +301,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       }
 
       const userId = req.userId;
+      const body = { ...req.body };
+      if (body.visitDate === "") body.visitDate = null;
+      if (body.waitTime === "") body.waitTime = null;
       const validatedData = insertPatientReviewSchema.parse({
-        ...req.body,
+        ...body,
         hospitalId,
         userId,
       });
