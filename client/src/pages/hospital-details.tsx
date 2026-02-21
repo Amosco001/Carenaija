@@ -39,6 +39,7 @@ import orthoHospitalImage from "@assets/generated_images/orthopaedic_hospital_ig
 import { SwipeGallery } from "@/components/swipe-gallery";
 import { ClickToCall, ClickToCallIcon } from "@/components/click-to-call";
 import { ReportReviewModal } from "@/components/report-review-modal";
+import { ProfileStrength } from "@/components/profile-strength";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/lib/auth";
@@ -1008,6 +1009,9 @@ export default function HospitalDetails() {
 
             {/* Sidebar */}
             <aside className="space-y-6">
+              {/* Profile Strength */}
+              <ProfileStrength hospital={hospital} />
+
               {/* Contact Card */}
               <Card className="sticky top-24">
                 <CardContent className="p-6">
