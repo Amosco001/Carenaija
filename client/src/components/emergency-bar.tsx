@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { Phone, X, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
+import { Phone, X, AlertTriangle } from "lucide-react";
 
 const EMERGENCY_CONTACTS = [
   { name: "National Emergency", number: "112", description: "All emergencies" },
   { name: "Lagos Emergency", number: "767", description: "Lagos State" },
-  { name: "Lagos Emergency", number: "112", description: "Lagos State" },
   { name: "FRSC", number: "122", description: "Road accidents" },
   { name: "Fire Service", number: "01-7944929", description: "Fire emergencies" },
   { name: "Police", number: "199", description: "Crime & security" },
@@ -13,108 +12,71 @@ const EMERGENCY_CONTACTS = [
   { name: "Poison Center", number: "01-7743929", description: "Poisoning" },
 ];
 
-const TOP_CONTACTS = EMERGENCY_CONTACTS.slice(0, 4);
-
 export function EmergencyBar() {
-  const [dismissed, setDismissed] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-
-  if (dismissed) {
-    return (
-      <button
-        onClick={() => setDismissed(false)}
-        className="fixed bottom-4 right-4 z-50 bg-red-600 text-white p-3 rounded-full shadow-lg hover:bg-red-700 transition-colors"
-        aria-label="Show emergency contacts"
-        data-testid="emergency-bar-reopen"
-      >
-        <Phone className="h-5 w-5" />
-      </button>
-    );
-  }
-
-  const contactsToShow = expanded ? EMERGENCY_CONTACTS : TOP_CONTACTS;
+  const [open, setOpen] = useState(false);
 
   return (
-    <div className="bg-red-700 text-white relative z-50" data-testid="emergency-bar">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center gap-2 py-1.5">
-          <div className="flex items-center gap-1.5 shrink-0">
-            <AlertTriangle className="h-3.5 w-3.5 text-red-200" />
-            <span className="text-xs font-bold uppercase tracking-wider text-red-100 hidden sm:inline">
-              Emergency
-            </span>
-          </div>
-
-          <div className="h-4 w-px bg-red-500 shrink-0 hidden sm:block" />
-
-          <div className="flex-1 overflow-x-auto scrollbar-hide">
-            <div className="flex items-center gap-3 md:gap-4">
-              {contactsToShow.map((contact) => (
-                <a
-                  key={contact.name + contact.number}
-                  href={`tel:${contact.number.replace(/[^0-9+]/g, "")}`}
-                  className="flex items-center gap-1.5 shrink-0 group hover:bg-red-600/50 rounded-md px-2 py-0.5 transition-colors"
-                  data-testid={`emergency-contact-${contact.number}`}
-                >
-                  <Phone className="h-3 w-3 text-red-300 group-hover:text-white" />
-                  <span className="text-xs whitespace-nowrap">
-                    <span className="font-medium">{contact.name}:</span>{" "}
-                    <span className="font-bold">{contact.number}</span>
-                  </span>
-                </a>
-              ))}
+    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2" data-testid="emergency-bar">
+      {open && (
+        <div className="bg-white rounded-xl shadow-2xl border border-red-200 w-72 sm:w-80 overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-200">
+          <div className="bg-red-700 px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-white">
+              <AlertTriangle className="h-4 w-4" />
+              <span className="font-bold text-sm">Emergency Contacts</span>
             </div>
+            <button
+              onClick={() => setOpen(false)}
+              className="text-white/80 hover:text-white p-0.5 rounded transition-colors"
+              aria-label="Close emergency contacts"
+              data-testid="emergency-bar-close"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className="p-1 hover:bg-red-600/50 rounded transition-colors hidden sm:flex items-center gap-1"
-              aria-label={expanded ? "Show fewer contacts" : "Show more contacts"}
-              data-testid="emergency-bar-toggle"
-            >
-              {expanded ? (
-                <ChevronUp className="h-3.5 w-3.5" />
-              ) : (
-                <ChevronDown className="h-3.5 w-3.5" />
-              )}
-              <span className="text-[10px] uppercase tracking-wider">
-                {expanded ? "Less" : "More"}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setDismissed(true)}
-              className="p-1 hover:bg-red-600/50 rounded transition-colors"
-              aria-label="Dismiss emergency bar"
-              data-testid="emergency-bar-dismiss"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
+          <div className="max-h-80 overflow-y-auto">
+            {EMERGENCY_CONTACTS.map((contact) => (
+              <a
+                key={contact.name + contact.number}
+                href={`tel:${contact.number.replace(/[^0-9+]/g, "")}`}
+                className="flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors border-b border-gray-100 last:border-b-0"
+                data-testid={`emergency-contact-${contact.number}`}
+              >
+                <div className="bg-red-100 p-2 rounded-full shrink-0">
+                  <Phone className="h-4 w-4 text-red-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-900">{contact.name}</p>
+                  <p className="text-xs text-gray-500">{contact.description}</p>
+                </div>
+                <span className="text-sm font-bold text-red-700 shrink-0">{contact.number}</span>
+              </a>
+            ))}
+          </div>
+          <div className="bg-gray-50 px-4 py-2 text-center">
+            <p className="text-[11px] text-gray-400">Tap a number to call directly</p>
           </div>
         </div>
+      )}
 
-        {expanded && (
-          <div className="border-t border-red-600 pb-2 pt-1 sm:hidden">
-            <div className="grid grid-cols-2 gap-1">
-              {EMERGENCY_CONTACTS.slice(4).map((contact) => (
-                <a
-                  key={contact.name + contact.number}
-                  href={`tel:${contact.number.replace(/[^0-9+]/g, "")}`}
-                  className="flex items-center gap-1.5 hover:bg-red-600/50 rounded-md px-2 py-1 transition-colors"
-                  data-testid={`emergency-contact-${contact.number}`}
-                >
-                  <Phone className="h-3 w-3 text-red-300" />
-                  <span className="text-xs whitespace-nowrap">
-                    <span className="font-medium">{contact.name}:</span>{" "}
-                    <span className="font-bold">{contact.number}</span>
-                  </span>
-                </a>
-              ))}
-            </div>
+      <button
+        onClick={() => setOpen(!open)}
+        className={`p-3.5 rounded-full shadow-lg transition-all duration-200 ${
+          open
+            ? "bg-gray-600 hover:bg-gray-700"
+            : "bg-red-600 hover:bg-red-700 hover:scale-105"
+        }`}
+        aria-label={open ? "Close emergency contacts" : "Show emergency contacts"}
+        data-testid="emergency-bar-toggle"
+      >
+        {open ? (
+          <X className="h-5 w-5 text-white" />
+        ) : (
+          <div className="relative">
+            <Phone className="h-5 w-5 text-white" />
+            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-white rounded-full animate-pulse" />
           </div>
         )}
-      </div>
+      </button>
     </div>
   );
 }
