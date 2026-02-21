@@ -1926,3 +1926,161 @@ export const healthBookmarksRelations = relations(healthBookmarks, ({ one }) => 
     references: [healthArticles.id],
   }),
 }));
+
+// ========== DIAGNOSTIC CENTERS ==========
+
+export const diagnosticCenters = pgTable("diagnostic_centers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug"),
+  description: text("description"),
+  address: text("address").notNull(),
+  city: text("city"),
+  lga: text("lga").notNull(),
+  state: text("state").notNull(),
+  phone: text("phone"),
+  email: text("email"),
+  website: text("website"),
+  operatingHours: text("operating_hours"),
+  ownership: text("ownership").notNull().default("Private"),
+  services: text("services").array().notNull().default(sql`'{}'`),
+  accreditations: text("accreditations").array().notNull().default(sql`'{}'`),
+  latitude: doublePrecision("latitude"),
+  longitude: doublePrecision("longitude"),
+  averageRating: doublePrecision("average_rating").default(0),
+  totalReviews: integer("total_reviews").default(0),
+  homeService: boolean("home_service").notNull().default(false),
+  onlineResults: boolean("online_results").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("IDX_diagnostic_centers_name").on(table.name),
+  index("IDX_diagnostic_centers_slug").on(table.slug),
+  index("IDX_diagnostic_centers_state").on(table.state),
+  index("IDX_diagnostic_centers_city").on(table.city),
+]);
+
+export const insertDiagnosticCenterSchema = createInsertSchema(diagnosticCenters).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertDiagnosticCenter = z.infer<typeof insertDiagnosticCenterSchema>;
+export type DiagnosticCenter = typeof diagnosticCenters.$inferSelect;
+
+export function generateDiagnosticCenterSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
+}
+
+// ========== DIAGNOSTIC TESTS ==========
+
+export const diagnosticTests = pgTable("diagnostic_tests", {
+  id: serial("id").primaryKey(),
+  centerId: integer("center_id").notNull().references(() => diagnosticCenters.id),
+  testName: text("test_name").notNull(),
+  category: text("category").notNull(),
+  description: text("description"),
+  sampleType: text("sample_type"),
+  preparationNotes: text("preparation_notes"),
+  turnaroundTime: text("turnaround_time"),
+  priceMin: integer("price_min"),
+  priceMax: integer("price_max"),
+  currency: text("currency").notNull().default("NGN"),
+  insuranceAccepted: boolean("insurance_accepted").notNull().default(false),
+  homeCollection: boolean("home_collection").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_diagnostic_tests_center").on(table.centerId),
+  index("IDX_diagnostic_tests_category").on(table.category),
+  index("IDX_diagnostic_tests_name").on(table.testName),
+]);
+
+export const insertDiagnosticTestSchema = createInsertSchema(diagnosticTests).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertDiagnosticTest = z.infer<typeof insertDiagnosticTestSchema>;
+export type DiagnosticTest = typeof diagnosticTests.$inferSelect;
+
+// ========== PHYSICIANS ==========
+
+export const physicians = pgTable("physicians", {
+  id: serial("id").primaryKey(),
+  fullName: text("full_name").notNull(),
+  slug: text("slug"),
+  title: text("title").notNull().default("Dr."),
+  gender: text("gender"),
+  specialty: text("specialty").notNull(),
+  subspecialty: text("subspecialty"),
+  qualifications: text("qualifications").array().notNull().default(sql`'{}'`),
+  bio: text("bio"),
+  yearsOfExperience: integer("years_of_experience"),
+  consultationFee: integer("consultation_fee"),
+  currency: text("currency").notNull().default("NGN"),
+  phone: text("phone"),
+  email: text("email"),
+  languages: text("languages").array().notNull().default(sql`'{}'`),
+  acceptingNewPatients: boolean("accepting_new_patients").notNull().default(true),
+  teleconsultation: boolean("teleconsultation").notNull().default(false),
+  averageRating: doublePrecision("average_rating").default(0),
+  totalReviews: integer("total_reviews").default(0),
+  city: text("city"),
+  state: text("state").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("IDX_physicians_name").on(table.fullName),
+  index("IDX_physicians_slug").on(table.slug),
+  index("IDX_physicians_specialty").on(table.specialty),
+  index("IDX_physicians_state").on(table.state),
+  index("IDX_physicians_city").on(table.city),
+]);
+
+export const insertPhysicianSchema = createInsertSchema(physicians).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertPhysician = z.infer<typeof insertPhysicianSchema>;
+export type Physician = typeof physicians.$inferSelect;
+
+export function generatePhysicianSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
+}
+
+// ========== PHYSICIAN AFFILIATIONS ==========
+
+export const physicianAffiliations = pgTable("physician_affiliations", {
+  id: serial("id").primaryKey(),
+  physicianId: integer("physician_id").notNull().references(() => physicians.id),
+  hospitalId: integer("hospital_id").notNull().references(() => hospitals.id),
+  role: text("role").default("Consultant"),
+  department: text("department"),
+  availableDays: text("available_days").array().notNull().default(sql`'{}'`),
+  availableHours: text("available_hours"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("IDX_affiliations_physician").on(table.physicianId),
+  index("IDX_affiliations_hospital").on(table.hospitalId),
+]);
+
+export const insertPhysicianAffiliationSchema = createInsertSchema(physicianAffiliations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertPhysicianAffiliation = z.infer<typeof insertPhysicianAffiliationSchema>;
+export type PhysicianAffiliation = typeof physicianAffiliations.$inferSelect;
