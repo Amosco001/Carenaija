@@ -40,6 +40,7 @@ import { SwipeGallery } from "@/components/swipe-gallery";
 import { ClickToCall, ClickToCallIcon } from "@/components/click-to-call";
 import { ReportReviewModal } from "@/components/report-review-modal";
 import { ProfileStrength } from "@/components/profile-strength";
+import { useHospitalPhysicians } from "@/hooks/usePhysicians";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/lib/auth";
@@ -70,6 +71,7 @@ export default function HospitalDetails() {
   const { data: allHospitals = [] } = useHospitals();
   const { data: patientReviews = [], isLoading: reviewsLoading } = usePatientReviews(hospitalId);
   const { data: comments = [], isLoading: commentsLoading } = useHospitalComments(hospitalId);
+  const { data: hospitalPhysicians = [] } = useHospitalPhysicians(hospitalId);
   const createComment = useCreateHospitalComment(hospitalId);
   const deleteComment = useDeleteHospitalComment(hospitalId);
   const { user } = useAuth();
@@ -815,6 +817,49 @@ export default function HospitalDetails() {
                   </TabsContent>
                 </Tabs>
               </section>
+
+              {/* Physicians at this Hospital */}
+              {hospitalPhysicians.length > 0 && (
+                <section className="bg-white rounded-xl border p-6" data-testid="section-physicians">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                      <Stethoscope className="h-5 w-5 text-emerald-600" />
+                      Physicians at this Hospital
+                    </h2>
+                    <Badge variant="secondary">{hospitalPhysicians.length} doctor{hospitalPhysicians.length !== 1 ? 's' : ''}</Badge>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {hospitalPhysicians.slice(0, 6).map((doc) => (
+                      <Link key={doc.id} href={`/physicians/${doc.slug || doc.id}`}>
+                        <Card className="hover:shadow-md transition-shadow cursor-pointer" data-testid={`card-hospital-physician-${doc.id}`}>
+                          <CardContent className="p-4">
+                            <div className="flex items-start gap-3">
+                              <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                                <Stethoscope className="h-5 w-5 text-emerald-600" />
+                              </div>
+                              <div className="min-w-0">
+                                <h4 className="font-medium text-sm">{doc.title} {doc.fullName}</h4>
+                                <p className="text-xs text-emerald-600 font-medium">{doc.specialty}</p>
+                                <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                                  <Badge variant="outline" className="text-[10px] py-0">{doc.role}</Badge>
+                                  {doc.yearsOfExperience && <span>{doc.yearsOfExperience}yr exp</span>}
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    ))}
+                  </div>
+                  {hospitalPhysicians.length > 6 && (
+                    <div className="text-center mt-4">
+                      <Link href={`/physicians?hospitalId=${hospitalId}`}>
+                        <Button variant="outline" size="sm">View all {hospitalPhysicians.length} physicians</Button>
+                      </Link>
+                    </div>
+                  )}
+                </section>
+              )}
 
               {/* Quick Comments / Recommendations */}
               <section className="bg-white rounded-xl border p-6" data-testid="section-comments">

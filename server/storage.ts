@@ -142,6 +142,18 @@ import {
   hospitalComments,
   type HospitalComment,
   type InsertHospitalComment,
+  diagnosticCenters,
+  diagnosticTests,
+  physicians,
+  physicianAffiliations,
+  type DiagnosticCenter,
+  type InsertDiagnosticCenter,
+  type DiagnosticTest,
+  type InsertDiagnosticTest,
+  type Physician,
+  type InsertPhysician,
+  type PhysicianAffiliation,
+  type InsertPhysicianAffiliation,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, ilike, or, desc, count, gte, inArray } from "drizzle-orm";
@@ -306,6 +318,22 @@ export interface IStorage {
   getCommentsByHospitalId(hospitalId: number): Promise<HospitalComment[]>;
   createHospitalComment(comment: InsertHospitalComment): Promise<HospitalComment>;
   deleteHospitalComment(id: number, userId: string): Promise<void>;
+
+  // Diagnostic Centers
+  getDiagnosticCenters(params?: { state?: string; city?: string; search?: string; page?: number; limit?: number }): Promise<PaginatedResult<DiagnosticCenter>>;
+  getDiagnosticCenterById(id: number): Promise<DiagnosticCenter | undefined>;
+  getDiagnosticCenterBySlug(slug: string): Promise<DiagnosticCenter | undefined>;
+  getTestsByCenterId(centerId: number): Promise<DiagnosticTest[]>;
+  searchDiagnosticTests(params: { category?: string; search?: string; minPrice?: number; maxPrice?: number }): Promise<(DiagnosticTest & { centerName: string; centerCity: string; centerState: string })[]>;
+
+  // Physicians
+  getPhysicians(params?: { specialty?: string; city?: string; state?: string; hospitalId?: number; search?: string; page?: number; limit?: number }): Promise<PaginatedResult<Physician>>;
+  getPhysicianById(id: number): Promise<Physician | undefined>;
+  getPhysicianBySlug(slug: string): Promise<Physician | undefined>;
+  getPhysicianAffiliations(physicianId: number): Promise<(PhysicianAffiliation & { hospitalName: string; hospitalCity: string; hospitalState: string })[]>;
+  getPhysiciansByHospitalId(hospitalId: number): Promise<(Physician & { role: string; department: string | null })[]>;
+  getPhysicianSpecialties(): Promise<string[]>;
+  getPhysicianCities(): Promise<string[]>;
 
   // HMO providers methods
   getDistinctHmoProviders(): Promise<string[]>;
@@ -2776,6 +2804,217 @@ export class DatabaseStorage implements IStorage {
       ORDER BY hmo
     `);
     return (result as any).rows.map((r: any) => r.hmo);
+  }
+
+  // ========== DIAGNOSTIC CENTERS ==========
+
+  async getDiagnosticCenters(params?: { state?: string; city?: string; search?: string; page?: number; limit?: number }): Promise<PaginatedResult<DiagnosticCenter>> {
+    const page = params?.page || 1;
+    const limit = params?.limit || 20;
+    const offset = (page - 1) * limit;
+    
+    const conditions = [];
+    if (params?.state) conditions.push(eq(diagnosticCenters.state, params.state));
+    if (params?.city) conditions.push(eq(diagnosticCenters.city, params.city));
+    if (params?.search) conditions.push(ilike(diagnosticCenters.name, `%${params.search}%`));
+    
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+    
+    const [totalResult] = await db.select({ count: count() }).from(diagnosticCenters).where(where);
+    const total = totalResult?.count || 0;
+    
+    const data = await db.select().from(diagnosticCenters)
+      .where(where)
+      .orderBy(diagnosticCenters.name)
+      .limit(limit)
+      .offset(offset);
+    
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async getDiagnosticCenterById(id: number): Promise<DiagnosticCenter | undefined> {
+    const [center] = await db.select().from(diagnosticCenters).where(eq(diagnosticCenters.id, id));
+    return center;
+  }
+
+  async getDiagnosticCenterBySlug(slug: string): Promise<DiagnosticCenter | undefined> {
+    const [center] = await db.select().from(diagnosticCenters).where(eq(diagnosticCenters.slug, slug));
+    return center;
+  }
+
+  async getTestsByCenterId(centerId: number): Promise<DiagnosticTest[]> {
+    return db.select().from(diagnosticTests)
+      .where(eq(diagnosticTests.centerId, centerId))
+      .orderBy(diagnosticTests.category, diagnosticTests.testName);
+  }
+
+  async searchDiagnosticTests(params: { category?: string; search?: string; minPrice?: number; maxPrice?: number }): Promise<(DiagnosticTest & { centerName: string; centerCity: string; centerState: string })[]> {
+    const conditions = [];
+    if (params.category) conditions.push(eq(diagnosticTests.category, params.category));
+    if (params.search) conditions.push(ilike(diagnosticTests.testName, `%${params.search}%`));
+    if (params.minPrice) conditions.push(gte(diagnosticTests.priceMin, params.minPrice));
+    if (params.maxPrice) conditions.push(sql`${diagnosticTests.priceMax} <= ${params.maxPrice}`);
+    
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+    
+    const results = await db.select({
+      id: diagnosticTests.id,
+      centerId: diagnosticTests.centerId,
+      testName: diagnosticTests.testName,
+      category: diagnosticTests.category,
+      description: diagnosticTests.description,
+      sampleType: diagnosticTests.sampleType,
+      preparationNotes: diagnosticTests.preparationNotes,
+      turnaroundTime: diagnosticTests.turnaroundTime,
+      priceMin: diagnosticTests.priceMin,
+      priceMax: diagnosticTests.priceMax,
+      currency: diagnosticTests.currency,
+      insuranceAccepted: diagnosticTests.insuranceAccepted,
+      homeCollection: diagnosticTests.homeCollection,
+      createdAt: diagnosticTests.createdAt,
+      centerName: diagnosticCenters.name,
+      centerCity: sql<string>`COALESCE(${diagnosticCenters.city}, '')`,
+      centerState: diagnosticCenters.state,
+    }).from(diagnosticTests)
+      .innerJoin(diagnosticCenters, eq(diagnosticTests.centerId, diagnosticCenters.id))
+      .where(where)
+      .orderBy(diagnosticTests.testName);
+    
+    return results as any;
+  }
+
+  // ========== PHYSICIANS ==========
+
+  async getPhysicians(params?: { specialty?: string; city?: string; state?: string; hospitalId?: number; search?: string; page?: number; limit?: number }): Promise<PaginatedResult<Physician>> {
+    const page = params?.page || 1;
+    const limit = params?.limit || 20;
+    const offset = (page - 1) * limit;
+    
+    if (params?.hospitalId) {
+      return this.getPhysiciansByHospitalPaginated(params.hospitalId, page, limit);
+    }
+    
+    const conditions = [];
+    if (params?.specialty) conditions.push(eq(physicians.specialty, params.specialty));
+    if (params?.city) conditions.push(eq(physicians.city, params.city));
+    if (params?.state) conditions.push(eq(physicians.state, params.state));
+    if (params?.search) conditions.push(or(
+      ilike(physicians.fullName, `%${params.search}%`),
+      ilike(physicians.specialty, `%${params.search}%`)
+    ));
+    
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+    
+    const [totalResult] = await db.select({ count: count() }).from(physicians).where(where);
+    const total = totalResult?.count || 0;
+    
+    const data = await db.select().from(physicians)
+      .where(where)
+      .orderBy(physicians.fullName)
+      .limit(limit)
+      .offset(offset);
+    
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  private async getPhysiciansByHospitalPaginated(hospitalId: number, page: number, limit: number): Promise<PaginatedResult<Physician>> {
+    const offset = (page - 1) * limit;
+    const affiliationIds = await db.select({ physicianId: physicianAffiliations.physicianId })
+      .from(physicianAffiliations)
+      .where(eq(physicianAffiliations.hospitalId, hospitalId));
+    
+    const ids = affiliationIds.map(a => a.physicianId);
+    if (ids.length === 0) return { data: [], total: 0, page, limit, totalPages: 0 };
+    
+    const [totalResult] = await db.select({ count: count() }).from(physicians).where(inArray(physicians.id, ids));
+    const total = totalResult?.count || 0;
+    
+    const data = await db.select().from(physicians)
+      .where(inArray(physicians.id, ids))
+      .orderBy(physicians.fullName)
+      .limit(limit)
+      .offset(offset);
+    
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async getPhysicianById(id: number): Promise<Physician | undefined> {
+    const [physician] = await db.select().from(physicians).where(eq(physicians.id, id));
+    return physician;
+  }
+
+  async getPhysicianBySlug(slug: string): Promise<Physician | undefined> {
+    const [physician] = await db.select().from(physicians).where(eq(physicians.slug, slug));
+    return physician;
+  }
+
+  async getPhysicianAffiliations(physicianId: number): Promise<(PhysicianAffiliation & { hospitalName: string; hospitalCity: string; hospitalState: string })[]> {
+    const results = await db.select({
+      id: physicianAffiliations.id,
+      physicianId: physicianAffiliations.physicianId,
+      hospitalId: physicianAffiliations.hospitalId,
+      role: physicianAffiliations.role,
+      department: physicianAffiliations.department,
+      availableDays: physicianAffiliations.availableDays,
+      availableHours: physicianAffiliations.availableHours,
+      createdAt: physicianAffiliations.createdAt,
+      hospitalName: hospitals.name,
+      hospitalCity: sql<string>`COALESCE(${hospitals.city}, '')`,
+      hospitalState: hospitals.state,
+    }).from(physicianAffiliations)
+      .innerJoin(hospitals, eq(physicianAffiliations.hospitalId, hospitals.id))
+      .where(eq(physicianAffiliations.physicianId, physicianId));
+    
+    return results as any;
+  }
+
+  async getPhysiciansByHospitalId(hospitalId: number): Promise<(Physician & { role: string; department: string | null })[]> {
+    const results = await db.select({
+      id: physicians.id,
+      fullName: physicians.fullName,
+      slug: physicians.slug,
+      title: physicians.title,
+      gender: physicians.gender,
+      specialty: physicians.specialty,
+      subspecialty: physicians.subspecialty,
+      qualifications: physicians.qualifications,
+      bio: physicians.bio,
+      yearsOfExperience: physicians.yearsOfExperience,
+      consultationFee: physicians.consultationFee,
+      currency: physicians.currency,
+      phone: physicians.phone,
+      email: physicians.email,
+      languages: physicians.languages,
+      acceptingNewPatients: physicians.acceptingNewPatients,
+      teleconsultation: physicians.teleconsultation,
+      averageRating: physicians.averageRating,
+      totalReviews: physicians.totalReviews,
+      city: physicians.city,
+      state: physicians.state,
+      createdAt: physicians.createdAt,
+      updatedAt: physicians.updatedAt,
+      role: sql<string>`COALESCE(${physicianAffiliations.role}, 'Consultant')`,
+      department: physicianAffiliations.department,
+    }).from(physicianAffiliations)
+      .innerJoin(physicians, eq(physicianAffiliations.physicianId, physicians.id))
+      .where(eq(physicianAffiliations.hospitalId, hospitalId));
+    
+    return results as any;
+  }
+
+  async getPhysicianSpecialties(): Promise<string[]> {
+    const results = await db.selectDistinct({ specialty: physicians.specialty })
+      .from(physicians)
+      .orderBy(physicians.specialty);
+    return results.map(r => r.specialty);
+  }
+
+  async getPhysicianCities(): Promise<string[]> {
+    const results = await db.selectDistinct({ city: physicians.city })
+      .from(physicians)
+      .where(sql`${physicians.city} IS NOT NULL`)
+      .orderBy(physicians.city);
+    return results.map(r => r.city!);
   }
 }
 

@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Menu, X, User as UserIcon, LogOut, Building2, Search, Trophy } from "lucide-react";
+import { Menu, X, User as UserIcon, LogOut, Building2, Search, Trophy, FlaskConical, Stethoscope } from "lucide-react";
 import { useState } from "react";
 import { AchievementNotifications } from "@/components/engagement-profile";
 import { EmergencyBar } from "@/components/emergency-bar";
@@ -42,6 +42,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </Link>
             <Link href="/search" className={`text-sm font-medium transition-colors hover:text-primary ${isActive('/search') ? 'text-primary' : 'text-muted-foreground'}`}>
               Find Hospitals
+            </Link>
+            <Link href="/diagnostic-centers" className={`text-sm font-medium transition-colors hover:text-primary ${isActive('/diagnostic-centers') || location.startsWith('/diagnostic-centers/') ? 'text-primary' : 'text-muted-foreground'}`}>
+              Diagnostics
+            </Link>
+            <Link href="/physicians" className={`text-sm font-medium transition-colors hover:text-primary ${isActive('/physicians') || location.startsWith('/physicians/') ? 'text-primary' : 'text-muted-foreground'}`}>
+              Find Doctors
             </Link>
             <Link href="/health" className={`text-sm font-medium transition-colors hover:text-primary ${isActive('/health') || location.startsWith('/health/') ? 'text-primary' : 'text-muted-foreground'}`}>
               Health Hub
@@ -134,6 +140,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 Find Hospitals
               </Link>
               <Link 
+                href="/diagnostic-centers" 
+                className="mobile-nav-link" 
+                onClick={() => setIsMobileMenuOpen(false)}
+                data-testid="mobile-nav-diagnostics"
+              >
+                <FlaskConical className="h-5 w-5" />
+                Diagnostics
+              </Link>
+              <Link 
+                href="/physicians" 
+                className="mobile-nav-link" 
+                onClick={() => setIsMobileMenuOpen(false)}
+                data-testid="mobile-nav-physicians"
+              >
+                <Stethoscope className="h-5 w-5" />
+                Find Doctors
+              </Link>
+              <Link 
                 href="/health" 
                 className="mobile-nav-link" 
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -207,9 +231,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div>
               <h3 className="font-semibold text-white mb-4">Platform</h3>
               <ul className="space-y-2 text-sm">
-                <li><Link href="/search" className="hover:text-white transition-colors">Find & Compare Hospitals in Nigeria</Link></li>
-                <li><Link href="/hospitals/lagos" className="hover:text-white transition-colors">Best Hospitals in Lagos</Link></li>
-                <li><Link href="/hospitals/abuja" className="hover:text-white transition-colors">Best Hospitals in Abuja</Link></li>
+                <li><Link href="/search" className="hover:text-white transition-colors">Find & Compare Hospitals</Link></li>
+                <li><Link href="/diagnostic-centers" className="hover:text-white transition-colors">Diagnostic Centers</Link></li>
+                <li><Link href="/physicians" className="hover:text-white transition-colors">Find Physicians</Link></li>
                 <li><Link href="/login" className="hover:text-white transition-colors">Write a Hospital Review</Link></li>
               </ul>
             </div>

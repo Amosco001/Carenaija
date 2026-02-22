@@ -45,6 +45,10 @@ const ForgotPasswordPage = lazy(() => import("@/pages/forgot-password"));
 const ResetPasswordPage = lazy(() => import("@/pages/reset-password"));
 const CityHospitalsPage = lazy(() => import("@/pages/city-hospitals"));
 const SpecialtyPage = lazy(() => import("@/pages/specialty"));
+const DiagnosticCentersPage = lazy(() => import("@/pages/diagnostic-centers"));
+const DiagnosticCenterDetailsPage = lazy(() => import("@/pages/diagnostic-center-details"));
+const PhysiciansPage = lazy(() => import("@/pages/physicians"));
+const PhysicianDetailsPage = lazy(() => import("@/pages/physician-details"));
 
 function PageLoader() {
   return (
@@ -93,6 +97,10 @@ function Router() {
           <Route path="/support" component={Support} />
           <Route path="/privacy-policy" component={PrivacyPolicy} />
           <Route path="/terms-of-service" component={TermsOfService} />
+          <Route path="/diagnostic-centers" component={DiagnosticCentersPage} />
+          <Route path="/diagnostic-centers/:idOrSlug" component={DiagnosticCenterDetailsPage} />
+          <Route path="/physicians" component={PhysiciansPage} />
+          <Route path="/physicians/:idOrSlug" component={PhysicianDetailsPage} />
           <Route path="/hospitals/:city" component={CityHospitalsPage} />
           <Route component={NotFound} />
         </Switch>

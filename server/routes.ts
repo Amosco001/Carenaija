@@ -2794,6 +2794,10 @@ Sitemap: ${baseUrl}/sitemap.xml
   // Initialize default badges on startup
   storage.seedDefaultBadges().catch(console.error);
 
+  // Seed diagnostic centers and physicians
+  import("./seed-diagnostic-physicians").then(m => m.seedDiagnosticCentersAndPhysicians().catch(console.error));
+
+
   // Get leaderboard
   app.get("/api/leaderboard", async (req, res) => {
     try {
@@ -3316,6 +3320,146 @@ Sitemap: ${baseUrl}/sitemap.xml
     } catch (error) {
       console.error("Error fetching health categories:", error);
       res.status(500).json({ message: "Failed to fetch health categories" });
+    }
+  });
+
+  // ========== DIAGNOSTIC CENTERS API ==========
+
+  app.get("/api/diagnostic-centers", async (req, res) => {
+    try {
+      const { state, city, search, page, limit } = req.query;
+      const result = await storage.getDiagnosticCenters({
+        state: state as string,
+        city: city as string,
+        search: search as string,
+        page: page ? parseInt(page as string) : undefined,
+        limit: limit ? parseInt(limit as string) : undefined,
+      });
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching diagnostic centers:", error);
+      res.status(500).json({ message: "Failed to fetch diagnostic centers" });
+    }
+  });
+
+  app.get("/api/diagnostic-centers/:idOrSlug", async (req, res) => {
+    try {
+      const param = req.params.idOrSlug;
+      let center;
+      if (/^\d+$/.test(param)) {
+        center = await storage.getDiagnosticCenterById(parseInt(param));
+      } else {
+        center = await storage.getDiagnosticCenterBySlug(param);
+      }
+      if (!center) return res.status(404).json({ message: "Diagnostic center not found" });
+      res.json(center);
+    } catch (error) {
+      console.error("Error fetching diagnostic center:", error);
+      res.status(500).json({ message: "Failed to fetch diagnostic center" });
+    }
+  });
+
+  app.get("/api/diagnostic-centers/:id/tests", async (req, res) => {
+    try {
+      const tests = await storage.getTestsByCenterId(parseInt(req.params.id));
+      res.json(tests);
+    } catch (error) {
+      console.error("Error fetching tests:", error);
+      res.status(500).json({ message: "Failed to fetch tests" });
+    }
+  });
+
+  app.get("/api/diagnostic-tests/search", async (req, res) => {
+    try {
+      const { category, search, minPrice, maxPrice } = req.query;
+      const tests = await storage.searchDiagnosticTests({
+        category: category as string,
+        search: search as string,
+        minPrice: minPrice ? parseInt(minPrice as string) : undefined,
+        maxPrice: maxPrice ? parseInt(maxPrice as string) : undefined,
+      });
+      res.json(tests);
+    } catch (error) {
+      console.error("Error searching tests:", error);
+      res.status(500).json({ message: "Failed to search diagnostic tests" });
+    }
+  });
+
+  // ========== PHYSICIANS API ==========
+
+  app.get("/api/physicians", async (req, res) => {
+    try {
+      const { specialty, city, state, hospitalId, search, page, limit } = req.query;
+      const result = await storage.getPhysicians({
+        specialty: specialty as string,
+        city: city as string,
+        state: state as string,
+        hospitalId: hospitalId ? parseInt(hospitalId as string) : undefined,
+        search: search as string,
+        page: page ? parseInt(page as string) : undefined,
+        limit: limit ? parseInt(limit as string) : undefined,
+      });
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching physicians:", error);
+      res.status(500).json({ message: "Failed to fetch physicians" });
+    }
+  });
+
+  app.get("/api/physicians/specialties", async (_req, res) => {
+    try {
+      const specialties = await storage.getPhysicianSpecialties();
+      res.json(specialties);
+    } catch (error) {
+      console.error("Error fetching specialties:", error);
+      res.status(500).json({ message: "Failed to fetch specialties" });
+    }
+  });
+
+  app.get("/api/physicians/cities", async (_req, res) => {
+    try {
+      const cities = await storage.getPhysicianCities();
+      res.json(cities);
+    } catch (error) {
+      console.error("Error fetching cities:", error);
+      res.status(500).json({ message: "Failed to fetch cities" });
+    }
+  });
+
+  app.get("/api/physicians/:idOrSlug", async (req, res) => {
+    try {
+      const param = req.params.idOrSlug;
+      let physician;
+      if (/^\d+$/.test(param)) {
+        physician = await storage.getPhysicianById(parseInt(param));
+      } else {
+        physician = await storage.getPhysicianBySlug(param);
+      }
+      if (!physician) return res.status(404).json({ message: "Physician not found" });
+      res.json(physician);
+    } catch (error) {
+      console.error("Error fetching physician:", error);
+      res.status(500).json({ message: "Failed to fetch physician" });
+    }
+  });
+
+  app.get("/api/physicians/:id/affiliations", async (req, res) => {
+    try {
+      const affiliations = await storage.getPhysicianAffiliations(parseInt(req.params.id));
+      res.json(affiliations);
+    } catch (error) {
+      console.error("Error fetching affiliations:", error);
+      res.status(500).json({ message: "Failed to fetch affiliations" });
+    }
+  });
+
+  app.get("/api/hospitals/:id/physicians", async (req, res) => {
+    try {
+      const physicians = await storage.getPhysiciansByHospitalId(parseInt(req.params.id));
+      res.json(physicians);
+    } catch (error) {
+      console.error("Error fetching hospital physicians:", error);
+      res.status(500).json({ message: "Failed to fetch hospital physicians" });
     }
   });
 

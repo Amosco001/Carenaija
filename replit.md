@@ -38,6 +38,10 @@ Preferred communication style: Simple, everyday language.
 - **Employee Reviews**: Workplace ratings, salary info, pros/cons
 - **Hospital Suggestions**: User-submitted hospital additions
 - **Claim Requests**: Hospital profile verification requests
+- **Diagnostic Centers**: Lab/imaging centers with services, accreditations, and test pricing
+- **Diagnostic Tests**: Individual tests with pricing, sample types, preparation notes, turnaround times
+- **Physicians**: Doctor profiles with specialty, qualifications, experience, consultation fees
+- **Physician Affiliations**: Links physicians to hospitals with availability schedules
 
 ### Project Structure
 ```
