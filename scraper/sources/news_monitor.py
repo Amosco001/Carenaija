@@ -7,7 +7,7 @@ import requests
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Any
 from bs4 import BeautifulSoup
-from newspaper import Article
+import trafilatura
 
 from scraper.sources.base import BaseScraper
 from scraper.utils import rate_limiter
@@ -140,7 +140,7 @@ class NewsMonitorScraper(BaseScraper):
             return []
     
     def extract_article_content(self, url: str) -> Optional[str]:
-        """Extract full article text using newspaper3k."""
+        """Extract full article text using trafilatura."""
         cache_key = f"article_{hash(url)}"
         if self.use_cache:
             cached = get_cached(cache_key, ttl=86400 * 7)  # 7 day cache
@@ -150,11 +150,11 @@ class NewsMonitorScraper(BaseScraper):
         try:
             rate_limiter.wait(self.source_name, self.rate_limit)
             
-            article = Article(url)
-            article.download()
-            article.parse()
+            downloaded = trafilatura.fetch_url(url)
+            if downloaded is None:
+                return None
             
-            content = article.text
+            content = trafilatura.extract(downloaded)
             if self.use_cache and content:
                 set_cached(cache_key, content)
             
