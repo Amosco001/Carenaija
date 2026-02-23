@@ -37,7 +37,8 @@ Preferred communication style: Simple, everyday language.
 - **Patient Reviews**: Ratings for care quality, cleanliness, staff attitude
 - **Employee Reviews**: Workplace ratings, salary info, pros/cons
 - **Hospital Suggestions**: User-submitted hospital additions
-- **Claim Requests**: Hospital profile verification requests
+- **Claim Requests**: Hospital profile claim/verification requests with admin approval workflow
+- **Hospital Responses**: Official hospital responses to patient/employee reviews (requires claimed profile)
 - **Diagnostic Centers**: Lab/imaging centers with services, accreditations, and test pricing
 - **Diagnostic Tests**: Individual tests with pricing, sample types, preparation notes, turnaround times
 - **Physicians**: Doctor profiles with specialty, qualifications, experience, consultation fees
