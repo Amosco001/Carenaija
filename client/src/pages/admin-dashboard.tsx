@@ -1603,6 +1603,120 @@ function SettingsTab() {
   );
 }
 
+function ClaimRequestsTab() {
+  const queryClient = useQueryClient();
+  const { data: claimRequests = [], isLoading } = useQuery<any[]>({
+    queryKey: ["/api/admin/claim-requests"],
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: string }) => {
+      const res = await fetch(`/api/admin/claim-requests/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error("Failed to update");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/claim-requests"] });
+    },
+  });
+
+  if (isLoading) return <div className="flex justify-center py-12"><RefreshCcw className="w-6 h-6 animate-spin" /></div>;
+
+  const pending = claimRequests.filter((r: any) => r.status === 'pending');
+  const processed = claimRequests.filter((r: any) => r.status !== 'pending');
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Pending Claim Requests ({pending.length})
+          </CardTitle>
+          <CardDescription>Review and approve hospital profile claim requests</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {pending.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">No pending claim requests</p>
+          ) : (
+            <div className="space-y-4">
+              {pending.map((request: any) => (
+                <div key={request.id} className="border rounded-lg p-4" data-testid={`claim-request-${request.id}`}>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-semibold">{request.hospitalName}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {request.fullName} &middot; {request.position}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        <Mail className="inline h-3 w-3 mr-1" />{request.email} &middot; {request.phone}
+                      </p>
+                      {request.additionalInfo && (
+                        <p className="text-sm mt-1 text-muted-foreground italic">{request.additionalInfo}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Submitted {request.createdAt ? format(new Date(request.createdAt), 'MMM d, yyyy') : 'N/A'}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => updateMutation.mutate({ id: request.id, status: 'approved' })}
+                        disabled={updateMutation.isPending}
+                        data-testid={`button-approve-claim-${request.id}`}
+                      >
+                        <CheckCircle className="h-4 w-4 mr-1" /> Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => updateMutation.mutate({ id: request.id, status: 'rejected' })}
+                        disabled={updateMutation.isPending}
+                        data-testid={`button-reject-claim-${request.id}`}
+                      >
+                        <XCircle className="h-4 w-4 mr-1" /> Reject
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {processed.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Processed Requests ({processed.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {processed.map((request: any) => (
+                <div key={request.id} className="flex items-center justify-between border rounded-lg p-3">
+                  <div>
+                    <p className="font-medium text-sm">{request.hospitalName}</p>
+                    <p className="text-xs text-muted-foreground">{request.fullName} &middot; {request.position}</p>
+                  </div>
+                  <Badge variant={request.status === 'approved' ? 'default' : 'destructive'}>
+                    {request.status === 'approved' ? <CheckCircle className="h-3 w-3 mr-1" /> : <XCircle className="h-3 w-3 mr-1" />}
+                    {request.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
 function ActivityLogsTab() {
   const { data: logs = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/admin/activity-logs"],
@@ -2167,6 +2281,10 @@ export default function AdminDashboard() {
               <Settings className="w-4 h-4" />
               Settings
             </TabsTrigger>
+            <TabsTrigger value="claims" className="flex items-center gap-2" data-testid="tab-claims">
+              <Shield className="w-4 h-4" />
+              Claims
+            </TabsTrigger>
             <TabsTrigger value="logs" className="flex items-center gap-2">
               <Activity className="w-4 h-4" />
               Activity
@@ -2209,6 +2327,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="settings">
             <SettingsTab />
+          </TabsContent>
+
+          <TabsContent value="claims">
+            <ClaimRequestsTab />
           </TabsContent>
 
           <TabsContent value="logs">

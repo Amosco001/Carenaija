@@ -201,6 +201,10 @@ export interface IStorage {
   
   createClaimRequest(request: InsertClaimRequest): Promise<ClaimRequest>;
   getClaimRequestsByHospitalId(hospitalId: number): Promise<ClaimRequest[]>;
+  getAllClaimRequests(): Promise<(ClaimRequest & { hospitalName: string })[]>;
+  updateClaimRequestStatus(id: number, status: string): Promise<ClaimRequest | undefined>;
+  getHospitalsClaimedByUser(userId: string): Promise<Hospital[]>;
+  getClaimRequestsByUserId(userId: string): Promise<(ClaimRequest & { hospitalName: string })[]>;
   
   getUserBookmarks(userId: string): Promise<(Bookmark & { hospital: Hospital })[]>;
   addBookmark(userId: string, hospitalId: number): Promise<Bookmark>;
@@ -513,6 +517,67 @@ export class DatabaseStorage implements IStorage {
       .from(claimRequests)
       .where(eq(claimRequests.hospitalId, hospitalId))
       .orderBy(desc(claimRequests.createdAt));
+  }
+
+  async getAllClaimRequests(): Promise<(ClaimRequest & { hospitalName: string })[]> {
+    const results = await db
+      .select({
+        id: claimRequests.id,
+        hospitalId: claimRequests.hospitalId,
+        userId: claimRequests.userId,
+        fullName: claimRequests.fullName,
+        position: claimRequests.position,
+        email: claimRequests.email,
+        phone: claimRequests.phone,
+        verificationDoc: claimRequests.verificationDoc,
+        additionalInfo: claimRequests.additionalInfo,
+        status: claimRequests.status,
+        createdAt: claimRequests.createdAt,
+        hospitalName: hospitals.name,
+      })
+      .from(claimRequests)
+      .innerJoin(hospitals, eq(claimRequests.hospitalId, hospitals.id))
+      .orderBy(desc(claimRequests.createdAt));
+    return results as any;
+  }
+
+  async updateClaimRequestStatus(id: number, status: string): Promise<ClaimRequest | undefined> {
+    const [updated] = await db
+      .update(claimRequests)
+      .set({ status })
+      .where(eq(claimRequests.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getHospitalsClaimedByUser(userId: string): Promise<Hospital[]> {
+    return await db
+      .select()
+      .from(hospitals)
+      .where(eq(hospitals.claimedBy, userId));
+  }
+
+  async getClaimRequestsByUserId(userId: string): Promise<(ClaimRequest & { hospitalName: string })[]> {
+    const results = await db
+      .select({
+        id: claimRequests.id,
+        hospitalId: claimRequests.hospitalId,
+        userId: claimRequests.userId,
+        fullName: claimRequests.fullName,
+        position: claimRequests.position,
+        email: claimRequests.email,
+        phone: claimRequests.phone,
+        verificationDoc: claimRequests.verificationDoc,
+        additionalInfo: claimRequests.additionalInfo,
+        status: claimRequests.status,
+        createdAt: claimRequests.createdAt,
+        hospitalName: hospitals.name,
+      })
+      .from(claimRequests)
+      .innerJoin(hospitals, eq(claimRequests.hospitalId, hospitals.id))
+      .where(eq(claimRequests.userId, userId))
+      .orderBy(desc(claimRequests.createdAt));
+    return results as any;
   }
 
   async getUserBookmarks(userId: string): Promise<(Bookmark & { hospital: Hospital })[]> {

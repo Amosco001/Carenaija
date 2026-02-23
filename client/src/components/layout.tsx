@@ -82,6 +82,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     <UserIcon className="mr-2 h-4 w-4" />
                     <span>Profile</span>
                   </DropdownMenuItem>
+                  <Link href="/hospital-dashboard">
+                    <DropdownMenuItem>
+                      <Building2 className="mr-2 h-4 w-4" />
+                      <span>Hospital Dashboard</span>
+                    </DropdownMenuItem>
+                  </Link>
                   {user.role === 'admin' && (
                      <Link href="/admin">
                        <DropdownMenuItem>
@@ -191,6 +197,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       <span className="text-sm text-muted-foreground">{user.email}</span>
                     </div>
                   </div>
+                  <Link 
+                    href="/hospital-dashboard" 
+                    className="mobile-nav-link" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    data-testid="mobile-nav-hospital-dashboard"
+                  >
+                    <Building2 className="h-5 w-5" />
+                    Hospital Dashboard
+                  </Link>
                   <button 
                     className="mobile-nav-link text-destructive" 
                     onClick={() => { logout(); setIsMobileMenuOpen(false); }}

@@ -495,6 +495,96 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // User claimed hospitals
+  app.get("/api/user/claimed-hospitals", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.userId;
+      const claimedHospitals = await storage.getHospitalsClaimedByUser(userId);
+      res.json(claimedHospitals);
+    } catch (error) {
+      console.error("Error fetching claimed hospitals:", error);
+      res.status(500).json({ message: "Failed to fetch claimed hospitals" });
+    }
+  });
+
+  app.get("/api/user/claim-requests", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.userId;
+      const requests = await storage.getClaimRequestsByUserId(userId);
+      res.json(requests);
+    } catch (error) {
+      console.error("Error fetching claim requests:", error);
+      res.status(500).json({ message: "Failed to fetch claim requests" });
+    }
+  });
+
+  // Hospital owner update their claimed hospital profile
+  app.patch("/api/hospitals/:id/manage", isAuthenticated, async (req: any, res) => {
+    try {
+      const hospitalId = parseInt(req.params.id);
+      const userId = req.userId;
+
+      const hospital = await storage.getHospitalById(hospitalId);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+
+      if (hospital.claimedBy !== userId) {
+        return res.status(403).json({ message: "You are not authorized to manage this hospital" });
+      }
+
+      const allowedFields = ['phone', 'email', 'website', 'operatingHours', 'services', 'facilities', 'bedCapacity', 'acceptedHmos'];
+      const updates: any = {};
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          updates[field] = req.body[field];
+        }
+      }
+
+      const updated = await storage.updateHospital(hospitalId, updates);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating claimed hospital:", error);
+      res.status(500).json({ message: "Failed to update hospital profile" });
+    }
+  });
+
+  // Admin claim request management
+  app.get("/api/admin/claim-requests", isAuthenticated, isAdmin, async (_req, res) => {
+    try {
+      const requests = await storage.getAllClaimRequests();
+      res.json(requests);
+    } catch (error) {
+      console.error("Error fetching claim requests:", error);
+      res.status(500).json({ message: "Failed to fetch claim requests" });
+    }
+  });
+
+  app.patch("/api/admin/claim-requests/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status } = req.body;
+
+      if (!['approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ message: "Status must be 'approved' or 'rejected'" });
+      }
+
+      const claimRequest = await storage.updateClaimRequestStatus(id, status);
+      if (!claimRequest) {
+        return res.status(404).json({ message: "Claim request not found" });
+      }
+
+      if (status === 'approved' && claimRequest.userId) {
+        await storage.updateHospital(claimRequest.hospitalId, { claimedBy: claimRequest.userId } as any);
+      }
+
+      res.json(claimRequest);
+    } catch (error) {
+      console.error("Error updating claim request:", error);
+      res.status(500).json({ message: "Failed to update claim request" });
+    }
+  });
+
   // User bookmarks
   app.get("/api/user/bookmarks", isAuthenticated, async (req: any, res) => {
     try {
