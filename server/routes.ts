@@ -533,13 +533,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(403).json({ message: "You are not authorized to manage this hospital" });
       }
 
-      const allowedFields = ['phone', 'email', 'website', 'operatingHours', 'services', 'facilities', 'bedCapacity', 'acceptedHmos'];
       const updates: any = {};
-      for (const field of allowedFields) {
-        if (req.body[field] !== undefined) {
-          updates[field] = req.body[field];
-        }
-      }
+      if (req.body.phone !== undefined) updates.phone = req.body.phone;
+      if (req.body.email !== undefined) updates.email = req.body.email;
+      if (req.body.website !== undefined) updates.website = req.body.website;
+      if (req.body.operatingHours !== undefined) updates.operatingHours = req.body.operatingHours;
+      if (req.body.services !== undefined) updates.services = req.body.services;
+      if (req.body.facilities !== undefined) updates.facilities = req.body.facilities;
+      if (req.body.bedCapacity !== undefined) updates.bedCapacity = req.body.bedCapacity;
+      if (req.body.acceptedHmos !== undefined) updates.acceptedHmos = req.body.acceptedHmos;
 
       const updated = await storage.updateHospital(hospitalId, updates);
       res.json(updated);
