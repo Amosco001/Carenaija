@@ -2796,6 +2796,7 @@ Sitemap: ${baseUrl}/sitemap.xml
 
   // Seed diagnostic centers and physicians
   import("./seed-diagnostic-physicians").then(m => m.seedDiagnosticCentersAndPhysicians().catch(console.error));
+  import("./seed-pharmacies").then(m => m.seedPharmacies().catch(console.error));
 
 
   // Get leaderboard
@@ -3460,6 +3461,43 @@ Sitemap: ${baseUrl}/sitemap.xml
     } catch (error) {
       console.error("Error fetching hospital physicians:", error);
       res.status(500).json({ message: "Failed to fetch hospital physicians" });
+    }
+  });
+
+  // ========== PHARMACIES API ==========
+
+  app.get("/api/pharmacies", async (req, res) => {
+    try {
+      const { state, city, search, verified, page, limit } = req.query;
+      const result = await storage.getPharmacies({
+        state: state as string,
+        city: city as string,
+        search: search as string,
+        verified: verified === "true" ? true : verified === "false" ? false : undefined,
+        page: page ? parseInt(page as string) : undefined,
+        limit: limit ? parseInt(limit as string) : undefined,
+      });
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching pharmacies:", error);
+      res.status(500).json({ message: "Failed to fetch pharmacies" });
+    }
+  });
+
+  app.get("/api/pharmacies/:idOrSlug", async (req, res) => {
+    try {
+      const param = req.params.idOrSlug;
+      let pharmacy;
+      if (/^\d+$/.test(param)) {
+        pharmacy = await storage.getPharmacyById(parseInt(param));
+      } else {
+        pharmacy = await storage.getPharmacyBySlug(param);
+      }
+      if (!pharmacy) return res.status(404).json({ message: "Pharmacy not found" });
+      res.json(pharmacy);
+    } catch (error) {
+      console.error("Error fetching pharmacy:", error);
+      res.status(500).json({ message: "Failed to fetch pharmacy" });
     }
   });
 

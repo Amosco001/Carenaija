@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Menu, X, User as UserIcon, LogOut, Building2, Search, Trophy, FlaskConical, Stethoscope } from "lucide-react";
+import { Menu, X, User as UserIcon, LogOut, Building2, Search, Trophy, FlaskConical, Stethoscope, Pill } from "lucide-react";
 import { useState } from "react";
 import { AchievementNotifications } from "@/components/engagement-profile";
 import { EmergencyBar } from "@/components/emergency-bar";
@@ -48,6 +48,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </Link>
             <Link href="/physicians" className={`text-sm font-medium transition-colors hover:text-primary ${isActive('/physicians') || location.startsWith('/physicians/') ? 'text-primary' : 'text-muted-foreground'}`}>
               Find Doctors
+            </Link>
+            <Link href="/pharmacies" className={`text-sm font-medium transition-colors hover:text-primary ${isActive('/pharmacies') || location.startsWith('/pharmacies/') ? 'text-primary' : 'text-muted-foreground'}`}>
+              Pharmacies
             </Link>
             <Link href="/health" className={`text-sm font-medium transition-colors hover:text-primary ${isActive('/health') || location.startsWith('/health/') ? 'text-primary' : 'text-muted-foreground'}`}>
               Health Hub
@@ -158,6 +161,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 Find Doctors
               </Link>
               <Link 
+                href="/pharmacies" 
+                className="mobile-nav-link" 
+                onClick={() => setIsMobileMenuOpen(false)}
+                data-testid="mobile-nav-pharmacies"
+              >
+                <Pill className="h-5 w-5" />
+                Pharmacies
+              </Link>
+              <Link 
                 href="/health" 
                 className="mobile-nav-link" 
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -234,6 +246,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <li><Link href="/search" className="hover:text-white transition-colors">Find & Compare Hospitals</Link></li>
                 <li><Link href="/diagnostic-centers" className="hover:text-white transition-colors">Diagnostic Centers</Link></li>
                 <li><Link href="/physicians" className="hover:text-white transition-colors">Find Physicians</Link></li>
+                <li><Link href="/pharmacies" className="hover:text-white transition-colors">Verified Pharmacies</Link></li>
                 <li><Link href="/login" className="hover:text-white transition-colors">Write a Hospital Review</Link></li>
               </ul>
             </div>

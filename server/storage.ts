@@ -154,6 +154,9 @@ import {
   type InsertPhysician,
   type PhysicianAffiliation,
   type InsertPhysicianAffiliation,
+  pharmacies,
+  type Pharmacy,
+  type InsertPharmacy,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, ilike, or, desc, count, gte, inArray } from "drizzle-orm";
@@ -334,6 +337,11 @@ export interface IStorage {
   getPhysiciansByHospitalId(hospitalId: number): Promise<(Physician & { role: string; department: string | null })[]>;
   getPhysicianSpecialties(): Promise<string[]>;
   getPhysicianCities(): Promise<string[]>;
+
+  // Pharmacies
+  getPharmacies(params?: { state?: string; city?: string; search?: string; verified?: boolean; page?: number; limit?: number }): Promise<PaginatedResult<Pharmacy>>;
+  getPharmacyById(id: number): Promise<Pharmacy | undefined>;
+  getPharmacyBySlug(slug: string): Promise<Pharmacy | undefined>;
 
   // HMO providers methods
   getDistinctHmoProviders(): Promise<string[]>;
@@ -3015,6 +3023,42 @@ export class DatabaseStorage implements IStorage {
       .where(sql`${physicians.city} IS NOT NULL`)
       .orderBy(physicians.city);
     return results.map(r => r.city!);
+  }
+  // ========== PHARMACIES ==========
+
+  async getPharmacies(params?: { state?: string; city?: string; search?: string; verified?: boolean; page?: number; limit?: number }): Promise<PaginatedResult<Pharmacy>> {
+    const page = params?.page || 1;
+    const limit = params?.limit || 20;
+    const offset = (page - 1) * limit;
+    
+    const conditions = [];
+    if (params?.state) conditions.push(eq(pharmacies.state, params.state));
+    if (params?.city) conditions.push(eq(pharmacies.city, params.city));
+    if (params?.search) conditions.push(ilike(pharmacies.name, `%${params.search}%`));
+    if (params?.verified !== undefined) conditions.push(eq(pharmacies.isVerified, params.verified));
+    
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+    
+    const [totalResult] = await db.select({ count: count() }).from(pharmacies).where(where);
+    const total = totalResult?.count || 0;
+    
+    const data = await db.select().from(pharmacies)
+      .where(where)
+      .orderBy(pharmacies.name)
+      .limit(limit)
+      .offset(offset);
+    
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async getPharmacyById(id: number): Promise<Pharmacy | undefined> {
+    const [pharmacy] = await db.select().from(pharmacies).where(eq(pharmacies.id, id));
+    return pharmacy;
+  }
+
+  async getPharmacyBySlug(slug: string): Promise<Pharmacy | undefined> {
+    const [pharmacy] = await db.select().from(pharmacies).where(eq(pharmacies.slug, slug));
+    return pharmacy;
   }
 }
 

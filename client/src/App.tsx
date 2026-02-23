@@ -49,6 +49,8 @@ const DiagnosticCentersPage = lazy(() => import("@/pages/diagnostic-centers"));
 const DiagnosticCenterDetailsPage = lazy(() => import("@/pages/diagnostic-center-details"));
 const PhysiciansPage = lazy(() => import("@/pages/physicians"));
 const PhysicianDetailsPage = lazy(() => import("@/pages/physician-details"));
+const PharmaciesPage = lazy(() => import("@/pages/pharmacies"));
+const PharmacyDetailsPage = lazy(() => import("@/pages/pharmacy-details"));
 
 function PageLoader() {
   return (
@@ -101,6 +103,8 @@ function Router() {
           <Route path="/diagnostic-centers/:idOrSlug" component={DiagnosticCenterDetailsPage} />
           <Route path="/physicians" component={PhysiciansPage} />
           <Route path="/physicians/:idOrSlug" component={PhysicianDetailsPage} />
+          <Route path="/pharmacies" component={PharmaciesPage} />
+          <Route path="/pharmacies/:idOrSlug" component={PharmacyDetailsPage} />
           <Route path="/hospitals/:city" component={CityHospitalsPage} />
           <Route component={NotFound} />
         </Switch>

@@ -2084,3 +2084,56 @@ export const insertPhysicianAffiliationSchema = createInsertSchema(physicianAffi
 
 export type InsertPhysicianAffiliation = z.infer<typeof insertPhysicianAffiliationSchema>;
 export type PhysicianAffiliation = typeof physicianAffiliations.$inferSelect;
+
+// ========== PHARMACIES ==========
+
+export const pharmacies = pgTable("pharmacies", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug"),
+  description: text("description"),
+  address: text("address").notNull(),
+  city: text("city"),
+  lga: text("lga").notNull(),
+  state: text("state").notNull(),
+  phone: text("phone"),
+  email: text("email"),
+  website: text("website"),
+  operatingHours: text("operating_hours"),
+  ownership: text("ownership").notNull().default("Private"),
+  services: text("services").array().notNull().default(sql`'{}'`),
+  isVerified: boolean("is_verified").notNull().default(false),
+  is24Hours: boolean("is_24_hours").notNull().default(false),
+  hasDelivery: boolean("has_delivery").notNull().default(false),
+  hasOnlineOrdering: boolean("has_online_ordering").notNull().default(false),
+  acceptsInsurance: boolean("accepts_insurance").notNull().default(false),
+  latitude: doublePrecision("latitude"),
+  longitude: doublePrecision("longitude"),
+  averageRating: doublePrecision("average_rating").default(0),
+  totalReviews: integer("total_reviews").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("IDX_pharmacies_name").on(table.name),
+  index("IDX_pharmacies_slug").on(table.slug),
+  index("IDX_pharmacies_state").on(table.state),
+  index("IDX_pharmacies_city").on(table.city),
+]);
+
+export const insertPharmacySchema = createInsertSchema(pharmacies).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertPharmacy = z.infer<typeof insertPharmacySchema>;
+export type Pharmacy = typeof pharmacies.$inferSelect;
+
+export function generatePharmacySlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
+}
