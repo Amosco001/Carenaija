@@ -42,6 +42,7 @@ Preferred communication style: Simple, everyday language.
 - **Diagnostic Tests**: Individual tests with pricing, sample types, preparation notes, turnaround times
 - **Physicians**: Doctor profiles with specialty, qualifications, experience, consultation fees
 - **Physician Affiliations**: Links physicians to hospitals with availability schedules
+- **Pharmacies**: Verified pharmacy directory with delivery, 24hr service, insurance acceptance, and online ordering features
 
 ### Project Structure
 ```
