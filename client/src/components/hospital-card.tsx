@@ -3,12 +3,13 @@ import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Star, ShieldCheck, Scale, Check, Sparkles, MessageSquarePlus } from "lucide-react";
+import { MapPin, Star, ShieldCheck, Scale, Check, Sparkles, MessageSquarePlus, Building2 } from "lucide-react";
 import { useComparison } from "@/lib/comparison-context";
 import { toast } from "sonner";
 import type { Hospital } from "@shared/schema";
 import { getHospitalUrl } from "@shared/schema";
 import { QuickRatePrompt, InlineQuickStars } from "@/components/quick-rate-prompt";
+import { getHospitalInitials } from "@/lib/hospital-images";
 
 interface HospitalCardProps {
   hospital: Hospital;
@@ -74,12 +75,19 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
               />
             )}
             <div className="h-48 overflow-hidden relative">
-              <img 
-                src={imageUrl} 
-                alt={`${hospital.name} - ${hospital.ownership} hospital in ${hospital.lga}, ${hospital.state} Nigeria`}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                loading="lazy"
-              />
+              {imageUrl ? (
+                <img 
+                  src={imageUrl} 
+                  alt={`${hospital.name} - ${hospital.ownership} hospital in ${hospital.lga}, ${hospital.state} Nigeria`}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-teal-50 flex flex-col items-center justify-center">
+                  <Building2 className="w-10 h-10 text-emerald-300 mb-2" />
+                  <span className="text-2xl font-bold text-emerald-400">{getHospitalInitials(hospital.name)}</span>
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
               <div className="absolute top-3 left-3 flex gap-1.5">
                 {hospital.verified && (
@@ -181,12 +189,19 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
           )}
           <div className="flex flex-col sm:flex-row">
             <div className="sm:w-48 h-40 sm:h-auto relative overflow-hidden flex-shrink-0">
-              <img
-                src={imageUrl}
-                alt={`${hospital.name} - ${hospital.ownership} hospital in ${hospital.lga}, ${hospital.state} Nigeria`}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                loading="lazy"
-              />
+              {imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt={`${hospital.name} - ${hospital.ownership} hospital in ${hospital.lga}, ${hospital.state} Nigeria`}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="w-full h-full min-h-[10rem] bg-gradient-to-br from-emerald-100 to-teal-50 flex flex-col items-center justify-center">
+                  <Building2 className="w-8 h-8 text-emerald-300 mb-1" />
+                  <span className="text-xl font-bold text-emerald-400">{getHospitalInitials(hospital.name)}</span>
+                </div>
+              )}
               <div className="absolute top-2 left-2 flex gap-1">
                 {hospital.verified && (
                   <div className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">

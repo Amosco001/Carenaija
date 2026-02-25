@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getHospitalInitials } from "@/lib/hospital-images";
 
 interface SwipeGalleryProps {
   images: string[];
@@ -71,13 +72,21 @@ export function SwipeGallery({ images, alt = "Gallery image", className }: Swipe
         >
           {images.map((src, index) => (
             <div key={index} className="min-w-full h-full flex-shrink-0">
-              <img
-                src={src}
-                alt={`${alt} ${index + 1}`}
-                className="w-full h-full object-cover"
-                loading={index === 0 ? "eager" : "lazy"}
-                decoding="async"
-              />
+              {src ? (
+                <img
+                  src={src}
+                  alt={`${alt} ${index + 1}`}
+                  className="w-full h-full object-cover"
+                  loading={index === 0 ? "eager" : "lazy"}
+                  decoding="async"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-teal-50 flex flex-col items-center justify-center">
+                  <Building2 className="w-12 h-12 text-emerald-300 mb-2" />
+                  <span className="text-3xl font-bold text-emerald-400">{getHospitalInitials(alt)}</span>
+                  <span className="text-sm text-emerald-500 mt-2">No photo available</span>
+                </div>
+              )}
             </div>
           ))}
         </div>

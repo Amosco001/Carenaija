@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/dialog";
 import NotFound from "@/pages/not-found";
 import { Breadcrumb } from "@/components/breadcrumb";
-import { getHospitalImage, hospitalImages } from "@/lib/hospital-images";
+import { getHospitalImage, getHospitalInitials } from "@/lib/hospital-images";
 import { SwipeGallery } from "@/components/swipe-gallery";
 import { ClickToCall, ClickToCallIcon } from "@/components/click-to-call";
 import { ReportReviewModal } from "@/components/report-review-modal";
@@ -182,11 +182,7 @@ export default function HospitalDetails() {
     : null;
 
   const primaryImage = getHospitalImage(hospital);
-  const galleryImages = [
-    primaryImage,
-    hospitalImages[(hospitalId + 1) % hospitalImages.length],
-    hospitalImages[(hospitalId + 2) % hospitalImages.length],
-  ];
+  const galleryImages = [primaryImage];
 
   const canonicalUrl = `https://www.carenaija.com${getHospitalUrl(hospital)}`;
   
@@ -315,7 +311,7 @@ export default function HospitalDetails() {
         keywords={`${hospital.name} reviews, ${hospital.name} ratings, hospital ${hospital.state}, ${hospital.services.slice(0, 3).join(", ")}, hospital reviews Nigeria, ${hospital.lga} hospitals`}
         canonicalUrl={canonicalUrl}
         ogType="place"
-        ogImage={galleryImages[0]}
+        ogImage={galleryImages[0] || undefined}
       />
       <script
         type="application/ld+json"
@@ -358,12 +354,20 @@ export default function HospitalDetails() {
                 </div>
                 {/* Desktop: Click Gallery */}
                 <div className="hidden lg:block relative rounded-xl overflow-hidden aspect-[4/3] bg-slate-100">
-                  <img
-                    src={galleryImages[selectedImage]}
-                    alt={`${hospital.name} - ${hospital.ownership} healthcare facility in ${hospital.lga}, ${hospital.state} Nigeria`}
-                    className="w-full h-full object-cover"
-                    itemProp="image"
-                  />
+                  {galleryImages[selectedImage] ? (
+                    <img
+                      src={galleryImages[selectedImage]}
+                      alt={`${hospital.name} - ${hospital.ownership} healthcare facility in ${hospital.lga}, ${hospital.state} Nigeria`}
+                      className="w-full h-full object-cover"
+                      itemProp="image"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-teal-50 flex flex-col items-center justify-center">
+                      <Building2 className="w-16 h-16 text-emerald-300 mb-3" />
+                      <span className="text-4xl font-bold text-emerald-400">{getHospitalInitials(hospital.name)}</span>
+                      <span className="text-sm text-emerald-500 mt-2">No photo available</span>
+                    </div>
+                  )}
                   {hospital.verified && (
                     <div className="absolute top-3 left-3 bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-lg">
                       <ShieldCheck className="w-4 h-4" /> Verified
@@ -377,7 +381,13 @@ export default function HospitalDetails() {
                         className={`w-16 h-12 rounded-lg overflow-hidden border-2 transition-all touch-target ${selectedImage === i ? "border-emerald-500 ring-2 ring-emerald-500/50" : "border-white/50 opacity-80 hover:opacity-100"}`}
                         data-testid={`button-gallery-${i}`}
                       >
-                        <img src={img} alt={`${hospital.name} gallery photo ${i + 1}`} className="w-full h-full object-cover" />
+                        {img ? (
+                          <img src={img} alt={`${hospital.name} gallery photo ${i + 1}`} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-emerald-100 flex items-center justify-center">
+                            <Building2 className="w-4 h-4 text-emerald-300" />
+                          </div>
+                        )}
                       </button>
                     ))}
                     <button className="w-16 h-12 rounded-lg bg-black/50 text-white flex items-center justify-center text-xs font-medium">
@@ -1014,7 +1024,14 @@ export default function HospitalDetails() {
                             <CardContent className="p-0">
                               <div className="flex gap-3">
                                 <div className="w-24 h-24 overflow-hidden rounded-l-lg flex-shrink-0">
-                                  <img src={getHospitalImage(h)} alt={`${h.name} - ${h.ownership} hospital in ${h.lga}, ${h.state}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                  {getHospitalImage(h) ? (
+                                    <img src={getHospitalImage(h)} alt={`${h.name} - ${h.ownership} hospital in ${h.lga}, ${h.state}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                  ) : (
+                                    <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-teal-50 flex flex-col items-center justify-center">
+                                      <Building2 className="w-6 h-6 text-emerald-300" />
+                                      <span className="text-xs font-bold text-emerald-400 mt-0.5">{getHospitalInitials(h.name)}</span>
+                                    </div>
+                                  )}
                                 </div>
                                 <div className="py-3 pr-3 flex-1">
                                   <h3 className="font-semibold text-slate-900 line-clamp-1 group-hover:text-emerald-700">{h.name}</h3>

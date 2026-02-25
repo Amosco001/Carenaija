@@ -1,57 +1,28 @@
-import luthHospitalImage from "@assets/generated_images/luth_hospital_lagos_nigeria.png";
-import neuropsychHospitalImage from "@assets/generated_images/neuropsychiatric_hospital_yaba.png";
-import orthoHospitalImage from "@assets/generated_images/orthopaedic_hospital_igbobi.png";
-import reddingtonImage from "@assets/generated_images/reddington_hospital_lagos.png";
-import lagoonImage from "@assets/generated_images/lagoon_hospital_victoria_island.png";
-import stNicholasImage from "@assets/generated_images/st_nicholas_hospital_lagos.png";
-import lasuthImage from "@assets/generated_images/lasuth_hospital_ikeja.png";
-import gbagadaImage from "@assets/generated_images/gbagada_general_hospital.png";
-import evercareImage from "@assets/generated_images/evercare_hospital_lekki.png";
-import ekoImage from "@assets/generated_images/eko_hospital_ikeja.png";
-import duchessImage from "@assets/generated_images/duchess_hospital_ikeja.png";
-import generalHospitalImage from "@assets/generated_images/general_hospital_nigeria.png";
-import fertilityClinicImage from "@assets/generated_images/fertility_clinic_nigeria.png";
-import privateSpecialistImage from "@assets/generated_images/private_specialist_hospital.png";
-import eyeHospitalImage from "@assets/generated_images/eye_hospital_nigeria.png";
-import federalMedicalImage from "@assets/generated_images/federal_medical_centre.png";
-import lagosIslandGeneralImage from "@assets/generated_images/lagos_island_general_hospital.png";
-import surgicalHospitalImage from "@assets/generated_images/surgical_hospital_nigeria.png";
-
 const hospitalImageMap: Record<string, string> = {
-  "luth": luthHospitalImage,
-  "lasuth": lasuthImage,
-  "reddington-vi": reddingtonImage,
-  "lagoon-vi": lagoonImage,
-  "st-nicholas": stNicholasImage,
-  "gbagada-gen": gbagadaImage,
-  "igbobi-ortho": orthoHospitalImage,
-  "fmc-ebute-metta": federalMedicalImage,
-  "eko-hospital": ekoImage,
-  "evercare-lekki": evercareImage,
-  "duchess-ikeja": duchessImage,
-  "general-hospital-lagos": lagosIslandGeneralImage,
-  "general-hospital-ikeja": generalHospitalImage,
-  "general-hospital-ikorodu": generalHospitalImage,
-  "general-hospital-badagry": generalHospitalImage,
-  "general-hospital-epe": generalHospitalImage,
-  "general-hospital-alimosho": generalHospitalImage,
-  "nordica-lagos": fertilityClinicImage,
-  "st-ives-ikeja": fertilityClinicImage,
-  "bridge-clinic-ikeja": fertilityClinicImage,
-  "eye-foundation-ikeja": eyeHospitalImage,
-  "first-consultants": privateSpecialistImage,
-  "paelon-vi": privateSpecialistImage,
-  "kelina-vi": surgicalHospitalImage,
-  "cedarcrest-vi": privateSpecialistImage,
+  "lagos-university-teaching-hospital-luth": "https://luth.gov.ng/static/statue4-3eac85e500a5ff4a3701f7289a40e422.jpg",
+  "lagos-state-university-teaching-hospital-lasuth": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Ikeja_General_Hospital_Nigeria_1972_Designed_by_Michael_Olutusen_Onafowokan_Lagos_State_Govt_022.jpg/800px-Ikeja_General_Hospital_Nigeria_1972_Designed_by_Michael_Olutusen_Onafowokan_Lagos_State_Govt_022.jpg",
+  "reddington-hospital": "https://reddingtonhospital.com/wp-content/uploads/2022/05/04-2-1.jpg",
+  "lagoon-hospitals-victoria-island": "https://www.lagoonhospitals.com/wp-content/uploads/2024/01/cardiology.jpg",
+  "st-nicholas-hospital": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/St._Nicholas_Hospital%2C_Lagos.jpg/800px-St._Nicholas_Hospital%2C_Lagos.jpg",
+  "national-orthopaedic-hospital-igbobi": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Igbobi_autopedic_hospital_Lagos.jpg/800px-Igbobi_autopedic_hospital_Lagos.jpg",
+  "eko-hospital": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/EKO_hospital_Victoria_Island%2CLagos.jpg/800px-EKO_hospital_Victoria_Island%2CLagos.jpg",
+  "duchess-international-hospital": "https://duchesshospital.com/wp-content/uploads/2025/07/Duchess-Hospital-Best-Private-Hospital-of-the-year-2025.jpg",
+  "federal-medical-centre-ebute-metta": "https://fmceb.org/front_assets/img/hero1.jpg",
+  "eye-foundation-hospital": "https://www.eyefoundationhospital.com/assets/img/ikeja.png",
 };
 
-const categoryFallbacks: Record<string, string> = {
-  "Government": generalHospitalImage,
-  "Private": privateSpecialistImage,
-  "Teaching": luthHospitalImage,
-  "Federal": federalMedicalImage,
-  "Specialist": privateSpecialistImage,
-  "Public": generalHospitalImage,
+const nameImageMap: Record<string, string> = {
+  "lagos university teaching hospital": "https://luth.gov.ng/static/statue4-3eac85e500a5ff4a3701f7289a40e422.jpg",
+  "lasuth": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Ikeja_General_Hospital_Nigeria_1972_Designed_by_Michael_Olutusen_Onafowokan_Lagos_State_Govt_022.jpg/800px-Ikeja_General_Hospital_Nigeria_1972_Designed_by_Michael_Olutusen_Onafowokan_Lagos_State_Govt_022.jpg",
+  "reddington": "https://reddingtonhospital.com/wp-content/uploads/2022/05/04-2-1.jpg",
+  "lagoon hospital": "https://www.lagoonhospitals.com/wp-content/uploads/2024/01/cardiology.jpg",
+  "st. nicholas": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/St._Nicholas_Hospital%2C_Lagos.jpg/800px-St._Nicholas_Hospital%2C_Lagos.jpg",
+  "st nicholas": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/St._Nicholas_Hospital%2C_Lagos.jpg/800px-St._Nicholas_Hospital%2C_Lagos.jpg",
+  "orthopaedic hospital": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Igbobi_autopedic_hospital_Lagos.jpg/800px-Igbobi_autopedic_hospital_Lagos.jpg",
+  "eko hospital": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/EKO_hospital_Victoria_Island%2CLagos.jpg/800px-EKO_hospital_Victoria_Island%2CLagos.jpg",
+  "duchess": "https://duchesshospital.com/wp-content/uploads/2025/07/Duchess-Hospital-Best-Private-Hospital-of-the-year-2025.jpg",
+  "federal medical centre": "https://fmceb.org/front_assets/img/hero1.jpg",
+  "eye foundation": "https://www.eyefoundationhospital.com/assets/img/ikeja.png",
 };
 
 export function getHospitalImage(hospital: { id: number; slug?: string | null; name?: string; ownership?: string; type?: string }): string {
@@ -59,33 +30,24 @@ export function getHospitalImage(hospital: { id: number; slug?: string | null; n
     return hospitalImageMap[hospital.slug];
   }
 
-  if (hospital.ownership && categoryFallbacks[hospital.ownership]) {
-    return categoryFallbacks[hospital.ownership];
+  if (hospital.name) {
+    const lowerName = hospital.name.toLowerCase();
+    for (const [key, url] of Object.entries(nameImageMap)) {
+      if (lowerName.includes(key)) {
+        return url;
+      }
+    }
   }
 
-  const idx = hospital.id % allImages.length;
-  return allImages[idx];
+  return "";
 }
 
-const allImages = [
-  luthHospitalImage,
-  reddingtonImage,
-  lagoonImage,
-  stNicholasImage,
-  lasuthImage,
-  gbagadaImage,
-  evercareImage,
-  ekoImage,
-  duchessImage,
-  generalHospitalImage,
-  fertilityClinicImage,
-  privateSpecialistImage,
-  eyeHospitalImage,
-  federalMedicalImage,
-  lagosIslandGeneralImage,
-  surgicalHospitalImage,
-  orthoHospitalImage,
-  neuropsychHospitalImage,
-];
-
-export { allImages as hospitalImages };
+export function getHospitalInitials(name: string): string {
+  return name
+    .replace(/\(.*?\)/g, "")
+    .split(/\s+/)
+    .filter(w => w.length > 2 || w === w.toUpperCase())
+    .slice(0, 2)
+    .map(w => w[0]?.toUpperCase())
+    .join("");
+}
