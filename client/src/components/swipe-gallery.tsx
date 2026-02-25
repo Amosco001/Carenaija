@@ -82,9 +82,9 @@ export function SwipeGallery({ images, alt = "Gallery image", className }: Swipe
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-teal-50 flex flex-col items-center justify-center">
-                  <Building2 className="w-12 h-12 text-emerald-300 mb-2" />
-                  <span className="text-3xl font-bold text-emerald-400">{getHospitalInitials(alt)}</span>
-                  <span className="text-sm text-emerald-500 mt-2">No photo available</span>
+                  <Building2 className="w-12 h-12 text-emerald-500 mb-2" />
+                  <span className="text-3xl font-bold text-emerald-700">{getHospitalInitials(alt)}</span>
+                  <span className="text-sm text-emerald-700 mt-2">No photo available</span>
                 </div>
               )}
             </div>

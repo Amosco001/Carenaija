@@ -84,8 +84,8 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-teal-50 flex flex-col items-center justify-center">
-                  <Building2 className="w-10 h-10 text-emerald-300 mb-2" />
-                  <span className="text-2xl font-bold text-emerald-400">{getHospitalInitials(hospital.name)}</span>
+                  <Building2 className="w-10 h-10 text-emerald-500 mb-2" />
+                  <span className="text-2xl font-bold text-emerald-700">{getHospitalInitials(hospital.name)}</span>
                 </div>
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
@@ -127,7 +127,7 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
               </div>
               <div className="flex items-center justify-between">
                 {hasNoReviews ? (
-                  <span className="text-xs text-slate-400 italic">No reviews yet</span>
+                  <span className="text-xs text-slate-500 italic">No reviews yet</span>
                 ) : (
                   <div className="flex items-center gap-1">
                     {getRatingStars(hospital.averageRating || 0)}
@@ -198,8 +198,8 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
                 />
               ) : (
                 <div className="w-full h-full min-h-[10rem] bg-gradient-to-br from-emerald-100 to-teal-50 flex flex-col items-center justify-center">
-                  <Building2 className="w-8 h-8 text-emerald-300 mb-1" />
-                  <span className="text-xl font-bold text-emerald-400">{getHospitalInitials(hospital.name)}</span>
+                  <Building2 className="w-8 h-8 text-emerald-500 mb-1" />
+                  <span className="text-xl font-bold text-emerald-700">{getHospitalInitials(hospital.name)}</span>
                 </div>
               )}
               <div className="absolute top-2 left-2 flex gap-1">
@@ -247,7 +247,7 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
 
                 <div className="flex items-center gap-1">
                   {hasNoReviews ? (
-                    <span className="text-xs text-slate-400 italic">No reviews yet</span>
+                    <span className="text-xs text-slate-500 italic">No reviews yet</span>
                   ) : (
                     <>
                       {getRatingStars(hospital.averageRating || 0)}

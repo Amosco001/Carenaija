@@ -363,9 +363,9 @@ export default function HospitalDetails() {
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-teal-50 flex flex-col items-center justify-center">
-                      <Building2 className="w-16 h-16 text-emerald-300 mb-3" />
-                      <span className="text-4xl font-bold text-emerald-400">{getHospitalInitials(hospital.name)}</span>
-                      <span className="text-sm text-emerald-500 mt-2">No photo available</span>
+                      <Building2 className="w-16 h-16 text-emerald-500 mb-3" />
+                      <span className="text-4xl font-bold text-emerald-700">{getHospitalInitials(hospital.name)}</span>
+                      <span className="text-sm text-emerald-700 mt-2">No photo available</span>
                     </div>
                   )}
                   {hospital.verified && (
@@ -385,7 +385,7 @@ export default function HospitalDetails() {
                           <img src={img} alt={`${hospital.name} gallery photo ${i + 1}`} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full bg-emerald-100 flex items-center justify-center">
-                            <Building2 className="w-4 h-4 text-emerald-300" />
+                            <Building2 className="w-4 h-4 text-emerald-500" />
                           </div>
                         )}
                       </button>
@@ -413,7 +413,7 @@ export default function HospitalDetails() {
                     </h1>
                     <p className="text-slate-600" itemProp="address">{hospital.address}, {hospital.state} Nigeria</p>
                     {hospital.updatedAt && (
-                      <p className="text-xs text-slate-400 mt-2 flex items-center gap-1" data-testid="text-last-updated">
+                      <p className="text-xs text-slate-500 mt-2 flex items-center gap-1" data-testid="text-last-updated">
                         <Calendar className="w-3 h-3" />
                         Last updated: {new Date(hospital.updatedAt).toLocaleDateString("en-NG", { year: "numeric", month: "long", day: "numeric" })}
                       </p>
@@ -961,7 +961,7 @@ export default function HospitalDetails() {
                     <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
                   </div>
                 ) : comments.length === 0 ? (
-                  <div className="text-center py-8 text-slate-400">
+                  <div className="text-center py-8 text-slate-500">
                     <Users className="w-10 h-10 mx-auto mb-2 opacity-50" />
                     <p className="text-sm">No comments yet. Be the first to share your thoughts!</p>
                   </div>
@@ -986,7 +986,7 @@ export default function HospitalDetails() {
                                   {comment.recommends ? "Recommends" : "Doesn't recommend"}
                                 </Badge>
                               )}
-                              <span className="text-xs text-slate-400">
+                              <span className="text-xs text-slate-500">
                                 {comment.createdAt ? new Date(comment.createdAt).toLocaleDateString() : ""}
                               </span>
                             </div>
@@ -1028,8 +1028,8 @@ export default function HospitalDetails() {
                                     <img src={getHospitalImage(h)} alt={`${h.name} - ${h.ownership} hospital in ${h.lga}, ${h.state}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                                   ) : (
                                     <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-teal-50 flex flex-col items-center justify-center">
-                                      <Building2 className="w-6 h-6 text-emerald-300" />
-                                      <span className="text-xs font-bold text-emerald-400 mt-0.5">{getHospitalInitials(h.name)}</span>
+                                      <Building2 className="w-6 h-6 text-emerald-500" />
+                                      <span className="text-xs font-bold text-emerald-700 mt-0.5">{getHospitalInitials(h.name)}</span>
                                     </div>
                                   )}
                                 </div>

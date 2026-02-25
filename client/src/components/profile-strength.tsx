@@ -151,7 +151,7 @@ export function ProfileStrength({ hospital }: { hospital: Hospital }) {
 
       {missingFields.length > 0 && (
         <div className="mt-4 pt-3 border-t">
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500">
             Complete missing fields to improve visibility and help patients find this hospital.
           </p>
         </div>

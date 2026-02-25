@@ -525,7 +525,7 @@ export default function Home() {
                               {getRatingStars(review.rating)}
                             </div>
                             {recencyText && (
-                              <span className="text-xs text-slate-400 flex items-center gap-1">
+                              <span className="text-xs text-slate-500 flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
                                 {recencyText}
                               </span>
@@ -547,7 +547,7 @@ export default function Home() {
                           </Link>
                         )}
                         {review.helpfulCount > 0 && (
-                          <span className="text-xs text-slate-400">{review.helpfulCount} found helpful</span>
+                          <span className="text-xs text-slate-500">{review.helpfulCount} found helpful</span>
                         )}
                       </div>
                     </CardContent>

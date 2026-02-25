@@ -142,7 +142,7 @@ export function ReviewCard({
                 {getRatingStars(review.rating)}
               </div>
               {recencyText && (
-                <div className="flex items-center gap-1 text-xs text-slate-400">
+                <div className="flex items-center gap-1 text-xs text-slate-500">
                   <Clock className="w-3 h-3" />
                   <span>{recencyText}</span>
                 </div>
@@ -207,7 +207,7 @@ export function ReviewCard({
               </Badge>
             </div>
             <p className="text-sm text-slate-600 mb-2">{hospitalResponse.responseText}</p>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500">
               — {hospitalResponse.responderName}
               {hospitalResponse.responderTitle && `, ${hospitalResponse.responderTitle}`}
               {hospitalResponse.createdAt && ` • ${getRecencyText(hospitalResponse.createdAt)}`}

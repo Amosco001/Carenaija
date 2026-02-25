@@ -181,7 +181,7 @@ export default function Dashboard() {
                                 <span className="text-xs text-slate-500">Patient Review</span>
                               </div>
                             </div>
-                            <span className="text-xs text-slate-400">
+                            <span className="text-xs text-slate-500">
                               {review.createdAt && format(new Date(review.createdAt), "MMM d, yyyy")}
                             </span>
                           </div>
@@ -211,7 +211,7 @@ export default function Dashboard() {
                                 <span className="text-xs text-slate-500">Employee Review • {review.position}</span>
                               </div>
                             </div>
-                            <span className="text-xs text-slate-400">
+                            <span className="text-xs text-slate-500">
                               {review.createdAt && format(new Date(review.createdAt), "MMM d, yyyy")}
                             </span>
                           </div>
