@@ -14,6 +14,10 @@ import {
 
 const app = express();
 
+app.get("/_health", (_req, res) => {
+  res.status(200).send("ok");
+});
+
 app.use(securityMiddleware.httpsRedirect);
 app.use(securityMiddleware.helmet);
 app.use(secureHeaders);
