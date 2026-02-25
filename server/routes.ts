@@ -1826,6 +1826,87 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // Admin: Get all hospital suggestions
+  app.get("/api/admin/hospital-suggestions", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const suggestions = await storage.getAllHospitalSuggestions();
+      res.json(suggestions);
+    } catch (error) {
+      console.error("Error fetching hospital suggestions:", error);
+      res.status(500).json({ message: "Failed to fetch suggestions" });
+    }
+  });
+
+  // Admin: Update suggestion status (reject)
+  app.patch("/api/admin/hospital-suggestions/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status } = req.body;
+      if (!["pending", "approved", "rejected"].includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+      const updated = await storage.updateHospitalSuggestionStatus(id, status);
+      if (!updated) {
+        return res.status(404).json({ message: "Suggestion not found" });
+      }
+
+      await storage.createAdminAuditLog(
+        req.userId,
+        status === "rejected" ? "reject_suggestion" : "update_suggestion",
+        "hospital_suggestion",
+        id,
+        null,
+        { status },
+        `${status === "rejected" ? "Rejected" : "Updated"} hospital suggestion: ${updated.name}`
+      );
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating suggestion:", error);
+      res.status(500).json({ message: "Failed to update suggestion" });
+    }
+  });
+
+  // Admin: Approve suggestion and create hospital
+  app.post("/api/admin/hospital-suggestions/:id/approve", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const suggestions = await storage.getAllHospitalSuggestions();
+      const suggestion = suggestions.find(s => s.id === id);
+      if (!suggestion) {
+        return res.status(404).json({ message: "Suggestion not found" });
+      }
+
+      const hospitalData = {
+        ...req.body,
+        name: req.body.name || suggestion.name,
+        address: req.body.address || suggestion.address,
+        lga: req.body.lga || suggestion.lga,
+        state: req.body.state || suggestion.state,
+        ownership: req.body.ownership || suggestion.ownership,
+        slug: generateHospitalSlug(req.body.name || suggestion.name),
+      };
+
+      const hospital = await storage.createHospital(hospitalData);
+      await storage.updateHospitalSuggestionStatus(id, "approved");
+
+      await storage.createAdminAuditLog(
+        req.userId,
+        "approve_suggestion",
+        "hospital_suggestion",
+        id,
+        null,
+        { hospitalId: hospital.id, hospitalName: hospital.name },
+        `Approved suggestion and created hospital: ${hospital.name}`
+      );
+
+      res.status(201).json(hospital);
+    } catch (error) {
+      console.error("Error approving suggestion:", error);
+      res.status(400).json({ message: "Failed to approve suggestion" });
+    }
+  });
+
   // Create hospital
   app.post("/api/admin/hospitals", isAuthenticated, isAdmin, async (req: any, res) => {
     try {

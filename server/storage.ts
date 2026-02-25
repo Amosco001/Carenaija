@@ -198,6 +198,7 @@ export interface IStorage {
   
   createHospitalSuggestion(suggestion: InsertHospitalSuggestion): Promise<HospitalSuggestion>;
   getAllHospitalSuggestions(): Promise<HospitalSuggestion[]>;
+  updateHospitalSuggestionStatus(id: number, status: string): Promise<HospitalSuggestion | undefined>;
   
   createClaimRequest(request: InsertClaimRequest): Promise<ClaimRequest>;
   getClaimRequestsByHospitalId(hospitalId: number): Promise<ClaimRequest[]>;
@@ -504,6 +505,15 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(hospitalSuggestions)
       .orderBy(desc(hospitalSuggestions.createdAt));
+  }
+
+  async updateHospitalSuggestionStatus(id: number, status: string): Promise<HospitalSuggestion | undefined> {
+    const [updated] = await db
+      .update(hospitalSuggestions)
+      .set({ status })
+      .where(eq(hospitalSuggestions.id, id))
+      .returning();
+    return updated;
   }
 
   async createClaimRequest(request: InsertClaimRequest): Promise<ClaimRequest> {

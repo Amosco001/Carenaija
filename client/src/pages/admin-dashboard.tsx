@@ -2,6 +2,7 @@ import { useState, lazy, Suspense } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const DiscoveredHospitalsTab = lazy(() => import("./admin-discovered-hospitals"));
+const SuggestionsTab = lazy(() => import("./admin-suggestions"));
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { 
@@ -39,7 +40,8 @@ import {
   Send,
   Heart,
   ExternalLink,
-  Globe
+  Globe,
+  Lightbulb
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -2269,6 +2271,10 @@ export default function AdminDashboard() {
               <Heart className="w-4 h-4" />
               Health
             </TabsTrigger>
+            <TabsTrigger value="suggestions" className="flex items-center gap-2" data-testid="tab-suggestions">
+              <Lightbulb className="w-4 h-4" />
+              Suggestions
+            </TabsTrigger>
             <TabsTrigger value="discovery" className="flex items-center gap-2" data-testid="tab-discovery">
               <Globe className="w-4 h-4" />
               Discovery
@@ -2313,6 +2319,12 @@ export default function AdminDashboard() {
 
           <TabsContent value="health">
             <HealthArticlesTab />
+          </TabsContent>
+
+          <TabsContent value="suggestions">
+            <Suspense fallback={<div className="flex justify-center py-12"><RefreshCcw className="w-6 h-6 animate-spin" /></div>}>
+              <SuggestionsTab />
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="discovery">
