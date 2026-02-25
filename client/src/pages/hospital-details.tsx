@@ -33,9 +33,7 @@ import {
 } from "@/components/ui/dialog";
 import NotFound from "@/pages/not-found";
 import { Breadcrumb } from "@/components/breadcrumb";
-import luthHospitalImage from "@assets/generated_images/luth_hospital_lagos_nigeria.png";
-import neuropsychHospitalImage from "@assets/generated_images/neuropsychiatric_hospital_yaba.png";
-import orthoHospitalImage from "@assets/generated_images/orthopaedic_hospital_igbobi.png";
+import { getHospitalImage, hospitalImages } from "@/lib/hospital-images";
 import { SwipeGallery } from "@/components/swipe-gallery";
 import { ClickToCall, ClickToCallIcon } from "@/components/click-to-call";
 import { ReportReviewModal } from "@/components/report-review-modal";
@@ -45,8 +43,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
-
-const hospitalImages = [luthHospitalImage, neuropsychHospitalImage, orthoHospitalImage];
 
 
 const FACILITY_ICONS: Record<string, any> = {
@@ -185,8 +181,9 @@ export default function HospitalDetails() {
     ? `https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d3000!2d${hospital.longitude}!3d${hospital.latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sng!4v1`
     : null;
 
+  const primaryImage = getHospitalImage(hospital);
   const galleryImages = [
-    hospitalImages[hospitalId % hospitalImages.length],
+    primaryImage,
     hospitalImages[(hospitalId + 1) % hospitalImages.length],
     hospitalImages[(hospitalId + 2) % hospitalImages.length],
   ];
@@ -1017,7 +1014,7 @@ export default function HospitalDetails() {
                             <CardContent className="p-0">
                               <div className="flex gap-3">
                                 <div className="w-24 h-24 overflow-hidden rounded-l-lg flex-shrink-0">
-                                  <img src={hospitalImages[i % hospitalImages.length]} alt={`${h.name} - ${h.ownership} hospital in ${h.lga}, ${h.state}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                  <img src={getHospitalImage(h)} alt={`${h.name} - ${h.ownership} hospital in ${h.lga}, ${h.state}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                                 </div>
                                 <div className="py-3 pr-3 flex-1">
                                   <h3 className="font-semibold text-slate-900 line-clamp-1 group-hover:text-emerald-700">{h.name}</h3>

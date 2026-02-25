@@ -7,9 +7,7 @@ import { useHospitals, useAllPatientReviews, useTrustStats, useTestimonials, use
 import { getHospitalUrl } from "@shared/schema";
 import { Link } from "wouter";
 import generatedHeroImage from "@assets/generated_images/modern_nigerian_hospital_exterior_with_friendly_medical_staff_interaction.png";
-import luthHospitalImage from "@assets/generated_images/luth_hospital_lagos_nigeria.png";
-import neuropsychHospitalImage from "@assets/generated_images/neuropsychiatric_hospital_yaba.png";
-import orthoHospitalImage from "@assets/generated_images/orthopaedic_hospital_igbobi.png";
+import { getHospitalImage } from "@/lib/hospital-images";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import useEmblaCarousel from "embla-carousel-react";
@@ -17,8 +15,6 @@ import { SEOHead } from "@/components/seo-head";
 import { SkeletonHospitalCard } from "@/components/skeleton-card";
 import { HospitalCard } from "@/components/hospital-card";
 import { formatDistanceToNow } from "date-fns";
-
-const hospitalImages = [luthHospitalImage, neuropsychHospitalImage, orthoHospitalImage];
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -338,7 +334,7 @@ export default function Home() {
                   >
                     <HospitalCard
                       hospital={hospital}
-                      imageUrl={hospitalImages[index % hospitalImages.length]}
+                      imageUrl={getHospitalImage(hospital)}
                       variant="carousel"
                     />
                   </div>

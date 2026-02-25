@@ -52,7 +52,7 @@ Preferred communication style: Simple, everyday language.
     /components  - Reusable UI components
     /pages       - Route page components
     /hooks       - Custom React hooks
-    /lib         - Utilities, auth, API client
+    /lib         - Utilities, auth, API client, hospital-images mapping
 /server          - Express backend
 /shared          - Shared types and schema
 /migrations      - Database migrations

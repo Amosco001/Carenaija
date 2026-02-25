@@ -20,11 +20,7 @@ import {
   Stethoscope, Shield, Clock, Home, ArrowRight, Loader2, Heart, Baby, Bone, Brain, Eye
 } from "lucide-react";
 import { Breadcrumb } from "@/components/breadcrumb";
-import luthHospitalImage from "@assets/generated_images/luth_hospital_lagos_nigeria.png";
-import neuropsychHospitalImage from "@assets/generated_images/neuropsychiatric_hospital_yaba.png";
-import orthoHospitalImage from "@assets/generated_images/orthopaedic_hospital_igbobi.png";
-
-const hospitalImages = [luthHospitalImage, neuropsychHospitalImage, orthoHospitalImage];
+import { getHospitalImage } from "@/lib/hospital-images";
 
 const NIGERIAN_CITIES: Record<string, { state: string; description: string; neighborhoods: string[] }> = {
   "lagos": {
@@ -288,7 +284,7 @@ export default function CityHospitalsPage() {
             ) : cityHospitals.length > 0 ? (
               <div className="grid gap-4">
                 {cityHospitals.map((hospital, index) => (
-                  <HospitalCard key={hospital.id} hospital={hospital} imageUrl={hospitalImages[index % hospitalImages.length]} variant="list" />
+                  <HospitalCard key={hospital.id} hospital={hospital} imageUrl={getHospitalImage(hospital)} variant="list" />
                 ))}
               </div>
             ) : (

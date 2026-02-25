@@ -27,15 +27,11 @@ import {
 } from "@/components/ui/sheet";
 import { MapPin, Search as SearchIcon, Filter, Navigation, Loader2, ShieldCheck, Star, X, ChevronLeft, ChevronRight, Building2, Clock, Stethoscope, List, Map as MapIcon, Crosshair, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import luthHospitalImage from "@assets/generated_images/luth_hospital_lagos_nigeria.png";
-import neuropsychHospitalImage from "@assets/generated_images/neuropsychiatric_hospital_yaba.png";
-import orthoHospitalImage from "@assets/generated_images/orthopaedic_hospital_igbobi.png";
+import { getHospitalImage } from "@/lib/hospital-images";
 import { SkeletonCard } from "@/components/skeleton-card";
 import { useGeolocation, formatDistance, getGoogleMapsDirectionsUrl } from "@/hooks/useGeolocation";
 import { MapView, StaticMapFallback } from "@/components/map-view";
 import { Breadcrumb } from "@/components/breadcrumb";
-
-const hospitalImages = [luthHospitalImage, neuropsychHospitalImage, orthoHospitalImage];
 
 const RESULTS_PER_PAGE = 20;
 
@@ -727,7 +723,7 @@ export default function SearchPage() {
                   <HospitalCard
                     key={hospital.id}
                     hospital={hospital}
-                    imageUrl={hospitalImages[index % hospitalImages.length]}
+                    imageUrl={getHospitalImage(hospital)}
                     variant="list"
                   />
                 ))}

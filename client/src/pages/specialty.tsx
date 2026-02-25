@@ -8,11 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, MapPin, Search, Stethoscope, Heart, Baby, Bone, Brain, Eye } from "lucide-react";
-import luthHospitalImage from "@assets/generated_images/luth_hospital_lagos_nigeria.png";
-import neuropsychHospitalImage from "@assets/generated_images/neuropsychiatric_hospital_yaba.png";
-import orthoHospitalImage from "@assets/generated_images/orthopaedic_hospital_igbobi.png";
-
-const hospitalImages = [luthHospitalImage, neuropsychHospitalImage, orthoHospitalImage];
+import { getHospitalImage } from "@/lib/hospital-images";
 
 const SPECIALTY_INFO: Record<string, { title: string; description: string; icon: any; relatedTerms: string[] }> = {
   "cardiology": {
@@ -178,7 +174,7 @@ export default function SpecialtyPage() {
             ) : matchingHospitals.length > 0 ? (
               <div className="grid gap-4">
                 {matchingHospitals.map((hospital, index) => (
-                  <HospitalCard key={hospital.id} hospital={hospital} imageUrl={hospitalImages[index % hospitalImages.length]} variant="list" />
+                  <HospitalCard key={hospital.id} hospital={hospital} imageUrl={getHospitalImage(hospital)} variant="list" />
                 ))}
               </div>
             ) : (
