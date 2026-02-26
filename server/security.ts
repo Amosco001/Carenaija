@@ -24,7 +24,7 @@ export const securityMiddleware = {
         connectSrc: ["'self'", "https://maps.googleapis.com", "wss:", "ws:"],
         frameSrc: ["'self'", "https://maps.google.com", "https://www.google.com", "https://*.google.com"],
         objectSrc: ["'none'"],
-        upgradeInsecureRequests: process.env.NODE_ENV === "production" ? [] : null,
+        upgradeInsecureRequests: [],
       },
     },
     crossOriginEmbedderPolicy: false,
@@ -32,7 +32,12 @@ export const securityMiddleware = {
   }),
 
   httpsRedirect: (req: Request, res: Response, next: NextFunction) => {
-    if (process.env.NODE_ENV === "production" && req.headers["x-forwarded-proto"] !== "https") {
+    if (
+      process.env.NODE_ENV === "production" &&
+      req.headers["x-forwarded-proto"] !== "https" &&
+      req.path !== "/_health" &&
+      !req.headers["user-agent"]?.includes("Replit")
+    ) {
       return res.redirect(301, `https://${req.headers.host}${req.url}`);
     }
     next();
