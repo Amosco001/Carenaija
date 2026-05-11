@@ -284,19 +284,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  app.post("/api/hospitals", isAuthenticated, async (req: any, res) => {
-    try {
-      const validatedData = insertHospitalSchema.parse(req.body);
-      if (!validatedData.slug) {
-        validatedData.slug = generateHospitalSlug(validatedData.name);
-      }
-      const hospital = await storage.createHospital(validatedData);
-      res.status(201).json(hospital);
-    } catch (error) {
-      console.error("Error creating hospital:", error);
-      res.status(400).json({ message: "Invalid hospital data" });
-    }
-  });
 
   app.get("/api/reviews/patient", async (req, res) => {
     try {
