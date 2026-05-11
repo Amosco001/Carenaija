@@ -1,5 +1,5 @@
-import { Switch, Route } from "wouter";
-import { lazy, Suspense } from "react";
+import { Switch, Route, useLocation } from "wouter";
+import { lazy, Suspense, useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -10,6 +10,7 @@ import { Layout } from "@/components/layout";
 import { CompareBar } from "@/components/compare-bar";
 import { Loader2 } from "lucide-react";
 import NotFound from "@/pages/not-found";
+import { trackPageView } from "@/lib/analytics";
 
 // Critical pages (eagerly loaded)
 import Home from "@/pages/home";
@@ -61,9 +62,18 @@ function PageLoader() {
   );
 }
 
+function RouteTracker() {
+  const [location] = useLocation();
+  useEffect(() => {
+    trackPageView(location);
+  }, [location]);
+  return null;
+}
+
 function Router() {
   return (
     <Layout>
+      <RouteTracker />
       <Suspense fallback={<PageLoader />}>
         <Switch>
           <Route path="/" component={Home} />

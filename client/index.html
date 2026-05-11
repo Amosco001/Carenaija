@@ -98,8 +98,17 @@
       }
     }
     </script>
-    <!-- Analytics — add your preferred analytics script here (e.g. Plausible or Google Analytics) -->
-    <!-- Example Plausible: <script defer data-domain="carenaija.com" src="https://plausible.io/js/script.js"></script> -->
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-VQW3Z9GBFL"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-VQW3Z9GBFL', {
+        page_path: window.location.pathname,
+        anonymize_ip: true
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>
