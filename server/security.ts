@@ -24,6 +24,7 @@ export const securityMiddleware = {
         connectSrc: ["'self'", "https://maps.googleapis.com", "wss:", "ws:"],
         frameSrc: ["'self'", "https://maps.google.com", "https://www.google.com", "https://*.google.com"],
         objectSrc: ["'none'"],
+        scriptSrcAttr: ["'unsafe-inline'"],
         upgradeInsecureRequests: [],
       },
     },
