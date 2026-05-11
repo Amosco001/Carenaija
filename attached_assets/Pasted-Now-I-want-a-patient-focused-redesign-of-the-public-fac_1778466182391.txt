@@ -1,0 +1,70 @@
+Now I want a patient-focused redesign of the public-facing pages on CareNaija. Keep the existing data models, API routes, and database schema unchanged — this is a UI/UX overhaul, not a backend rewrite.
+
+PRIMARY USER: A Nigerian patient or family member trying to find, evaluate, and choose a hospital. They are often on a phone, sometimes on poor network conditions, and they need to make decisions quickly under stress (sick relative, emergency, pregnancy, chronic condition).
+
+DESIGN PRINCIPLES:
+- Mobile-first. Every layout starts at 360px width and scales up.
+- Trust above all. Patients are skeptical. Show real review counts, verified badges, last-updated timestamps, and source attribution.
+- Speed of decision. A patient should be able to land on the homepage and within 3 taps be looking at a ranked list of hospitals near them.
+- Nigerian context. Use Naira (₦) for all prices. Mention HMOs by name (Hygeia, AXA Mansard, Reliance HMO, Avon, etc). Reference Nigerian states and major cities by name.
+- Calm, clinical, professional. Avoid loud gradients, generic stock photos, and "AI startup" aesthetics. Reference: NHS.uk, Healthgrades, Zocdoc — clean, readable, trustworthy.
+
+PAGES TO REDESIGN (in this order):
+
+1. HOMEPAGE (client/src/pages/home or equivalent):
+   - Hero with one clear value prop: "Find trusted hospitals in Nigeria. Real reviews from real patients."
+   - Prominent search bar with two inputs: condition/specialty/hospital name + location (state or city). On mobile, stacked. On desktop, side-by-side.
+   - Quick-access chips below search: "Hospitals near me", "Emergency rooms", "Maternity", "Pediatrics", "Diagnostic centers", "Pharmacies"
+   - Three trust stats (real numbers from the DB): X verified hospitals, Y patient reviews, Z Nigerian states covered
+   - "Top-rated in [user's state or Lagos as fallback]" — horizontally scrollable card row on mobile, grid on desktop
+   - "Recently reviewed" section
+   - "How CareNaija works" — 3-step explainer with icons (Search → Read reviews → Visit with confidence)
+   - "Browse by state" — clickable map or grid of all 36 states + FCT
+   - Footer with About, Contact, Privacy, Terms, Hospital claim CTA
+
+2. HOSPITAL SEARCH RESULTS PAGE:
+   - Filter sidebar (collapsible on mobile, persistent on desktop): state, city, specialty, HMO/insurance accepted, ownership (public/private/faith-based), rating threshold, distance
+   - Sort dropdown: relevance, highest rated, most reviewed, nearest
+   - Result cards showing: hospital name, photo, star rating + review count, location, accepted HMOs as small badges, top 2-3 specialties, distance if location enabled, "verified" badge if claimed
+   - Map toggle on desktop (split view), full-screen map button on mobile
+   - Infinite scroll or pagination — your choice, but show skeleton loaders
+
+3. HOSPITAL DETAIL PAGE:
+   - Hero with hospital name, address, photo gallery (or single hero photo), overall rating, total review count, "Claimed" badge if applicable, "Last updated" timestamp
+   - Sticky action bar (mobile bottom, desktop top of sidebar): Call, Directions, Visit Website, Save
+   - Tabs or sections: Overview, Patient Reviews, Employee Reviews, Doctors, Services, HMOs accepted, Photos, Map
+   - Patient reviews section with category breakdowns (care quality, cleanliness, staff attitude) shown as horizontal bar charts
+   - Individual review cards with reviewer initial/name, star rating per category, date, review text, helpful count
+   - "Write a review" CTA prominent but not aggressive
+   - "Is this your hospital? Claim it" CTA for hospital owners
+   - Related: "Similar hospitals nearby" at bottom
+
+4. STATE / CITY LANDING PAGES (for SEO):
+   - Auto-generated pages like /hospitals/lagos, /hospitals/abuja, /hospitals/rivers
+   - SEO-optimized H1 ("Best Hospitals in Lagos — Verified Patient Reviews")
+   - Top 10 hospitals in that state with cards
+   - "Hospitals by specialty in [state]" section
+   - Educational copy block (~200 words) about healthcare in that state — keep factual and useful, not keyword-stuffed
+   - Internal links to neighboring states / major cities
+
+5. GLOBAL NAVIGATION:
+   - Sticky top nav: Logo | Hospitals | Diagnostics | Pharmacies | Doctors | (Search icon on mobile, search bar on desktop) | Sign in / Account
+   - Mobile: hamburger that opens a clean slide-in panel — not a hidden mess
+   - Footer: comprehensive, organized into columns (For Patients, For Hospitals, About, Legal)
+
+VISUAL SYSTEM:
+- Primary color: Nigerian green #008751 (already in use) — reserve for primary CTAs and active states only, don't flood the page with it
+- Secondary: a calm neutral palette — slate-50, slate-100 backgrounds, slate-900 text
+- Accent for ratings/stars: warm amber #f59e0b
+- Generous whitespace. Card-based layouts with subtle borders (border-slate-200) instead of heavy shadows.
+- Border radius: rounded-xl on cards, rounded-md on buttons. Consistent throughout.
+- Typography: keep it readable — base size 16px, headings use a clear scale (text-3xl / text-2xl / text-xl / text-lg). Use a quality sans-serif (Inter, Plus Jakarta Sans, or system stack).
+- Use shadcn/ui components everywhere they fit. Don't reinvent buttons, inputs, dialogs, dropdowns.
+- Icons: Lucide React only. Consistent stroke width.
+
+DELIVERABLES:
+- Updated pages above
+- A short style guide doc at /docs/style-guide.md showing the color tokens, type scale, and component usage rules
+- Screenshots at mobile (375px) and desktop (1440px) widths if you can render them
+
+DO NOT touch the admin dashboard, the scraper code, or the database schema in this phase. Pure patient-facing UI.
