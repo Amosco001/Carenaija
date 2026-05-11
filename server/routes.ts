@@ -2,6 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, registerAuthRoutes } from "./replit_integrations/auth";
+import { emailTemplates, sendEmail } from "./services/email";
 import {
   insertHospitalSchema,
   insertPatientReviewSchema,
@@ -1075,9 +1076,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         expiresAt,
       });
 
-      res.json({ 
-        message: "Verification email sent. Please check your inbox.",
+      const APP_URL = process.env.REPLIT_DEPLOYMENT_URL || "https://carenaija.replit.app";
+      const verificationUrl = `${APP_URL}/verify-email?token=${token}`;
+      const template = emailTemplates.verification({
+        userName: user.firstName || undefined,
+        verificationUrl,
       });
+      await sendEmail(user.email!, template.subject, template.html, template.text);
+
+      res.json({ message: "Verification email sent. Please check your inbox." });
     } catch (error) {
       console.error("Error sending verification:", error);
       res.status(500).json({ message: "Failed to send verification" });
@@ -1134,12 +1141,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         expiresAt,
       });
 
-      // In production, send SMS via Twilio here
-      res.json({ 
-        message: "OTP created. Twilio integration required to send SMS.",
-        // Remove this in production:
-        devOtp: otp,
-      });
+      // SMS delivery requires Twilio integration (not yet configured)
+      res.json({ message: "OTP created. Please check your phone for the verification code." });
     } catch (error) {
       console.error("Error sending phone verification:", error);
       res.status(500).json({ message: "Failed to send phone verification" });

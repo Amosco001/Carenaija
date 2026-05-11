@@ -7,6 +7,7 @@ import { z } from "zod";
 import { authStorage } from "./storage";
 import { storage } from "../../storage";
 import { emailTemplates, sendEmail } from "../../services/email";
+import { securityMiddleware, bruteForceProtection, recordLoginAttempt, checkBruteForce } from "../../security";
 
 declare module "express-session" {
   interface SessionData {
@@ -92,7 +93,7 @@ export async function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/auth/login", async (req, res) => {
+  app.post("/api/auth/login", securityMiddleware.authRateLimiter, bruteForceProtection, async (req, res) => {
     try {
       const parsed = loginSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -102,16 +103,39 @@ export async function setupAuth(app: Express) {
       }
 
       const { email, password } = parsed.data;
+      const ip = req.ip || "unknown";
+
+      // Per-account lockout check (by email), separate from the IP-level middleware check
+      const accountCheck = await checkBruteForce(email);
+      if (!accountCheck.allowed) {
+        const remainingTime = Math.ceil((accountCheck.lockedUntil!.getTime() - Date.now()) / 60000);
+        return res.status(429).json({
+          message: `Too many failed attempts. Try again in ${remainingTime} minutes.`,
+        });
+      }
 
       const user = await authStorage.getUserByEmail(email);
       if (!user || !user.passwordHash) {
+        await Promise.all([
+          recordLoginAttempt(email, false),
+          recordLoginAttempt(ip, false),
+        ]);
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
       const isValid = await bcrypt.compare(password, user.passwordHash);
       if (!isValid) {
+        await Promise.all([
+          recordLoginAttempt(email, false),
+          recordLoginAttempt(ip, false),
+        ]);
         return res.status(401).json({ message: "Invalid email or password" });
       }
+
+      await Promise.all([
+        recordLoginAttempt(email, true),
+        recordLoginAttempt(ip, true),
+      ]);
 
       req.session.userId = user.id;
       req.session.save((err) => {
@@ -149,7 +173,7 @@ export async function setupAuth(app: Express) {
     });
   });
 
-  app.post("/api/auth/forgot-password", async (req, res) => {
+  app.post("/api/auth/forgot-password", securityMiddleware.authRateLimiter, bruteForceProtection, async (req, res) => {
     try {
       const schema = z.object({
         email: z.string().email("Please enter a valid email address"),
