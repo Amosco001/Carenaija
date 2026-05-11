@@ -159,7 +159,7 @@ import {
   type InsertPharmacy,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql, ilike, or, desc, count, gte, inArray } from "drizzle-orm";
+import { eq, and, sql, ilike, or, desc, count, gte, inArray, getTableColumns } from "drizzle-orm";
 import memoizee from "memoizee";
 
 const CACHE_TTL = 60000;
@@ -1474,7 +1474,8 @@ export class DatabaseStorage implements IStorage {
     const limit = params?.limit || 50;
     const offset = (page - 1) * limit;
     
-    let query = db.select().from(users).$dynamic();
+    const { passwordHash: _omit, ...safeUserColumns } = getTableColumns(users);
+    let query = db.select(safeUserColumns).from(users).$dynamic();
     let countQuery = db.select({ count: count() }).from(users).$dynamic();
     
     if (params?.search) {
