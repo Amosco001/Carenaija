@@ -16,10 +16,10 @@ import {
 } from "@/components/ui/select";
 import { 
   MapPin, Phone, Globe, ShieldCheck, Clock, Bed, Stethoscope, Briefcase, 
-  Navigation, ExternalLink, Loader2, Star, ChevronRight, Share2, 
+  Navigation, ExternalLink, Star, ChevronRight, Share2, Loader2,
   Facebook, Twitter, Linkedin, Mail, Copy, Check, Heart, Thermometer,
   Pill, Microscope, Ambulance, Building2, Users, Calendar, ThumbsUp,
-  Home, ChevronLeft, ImageIcon, MessageSquarePlus
+  Home, ChevronLeft, ImageIcon, MessageSquarePlus, Flag, MessageCircle
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +43,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
+import { SkeletonHospitalDetails } from "@/components/skeleton-card";
+import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
+import { DetailFAB } from "@/components/floating-action-button";
 
 
 const FACILITY_ICONS: Record<string, any> = {
@@ -72,6 +75,22 @@ export default function HospitalDetails() {
   const deleteComment = useDeleteHospitalComment(hospitalId);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { addHospital } = useRecentlyViewed();
+
+  useEffect(() => {
+    if (hospital) {
+      addHospital({
+        id: hospital.id,
+        name: hospital.name,
+        slug: hospital.slug || String(hospital.id),
+        state: hospital.state,
+        lga: hospital.lga,
+        averageRating: hospital.averageRating ?? null,
+        totalReviews: hospital.totalReviews ?? null,
+        ownership: hospital.ownership,
+      });
+    }
+  }, [hospital?.id]);
   
   const [reviewSort, setReviewSort] = useState("recent");
   const [selectedImage, setSelectedImage] = useState(0);
@@ -143,15 +162,24 @@ export default function HospitalDetails() {
     </div>
   );
 
-  const handleShare = (platform: string) => {
+  const handleShare = async (platform: string) => {
     const url = window.location.href;
     const text = `Check out ${hospital?.name} on CareNaija`;
     
+    // Try native Web Share API first (mobile)
+    if (platform === "native" && navigator.share) {
+      try {
+        await navigator.share({ title: `${hospital?.name} — CareNaija`, text, url });
+        return;
+      } catch {}
+    }
+
     const urls: Record<string, string> = {
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
       twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
       linkedin: `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(url)}&title=${encodeURIComponent(text)}`,
       email: `mailto:?subject=${encodeURIComponent(text)}&body=${encodeURIComponent(url)}`,
+      whatsapp: `https://wa.me/?text=${encodeURIComponent(text + " " + url)}`,
     };
     
     if (platform === "copy") {
@@ -165,8 +193,8 @@ export default function HospitalDetails() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <SkeletonHospitalDetails />
       </div>
     );
   }
@@ -444,7 +472,10 @@ export default function HospitalDetails() {
                         <Button variant="outline" onClick={() => handleShare("email")} className="gap-2">
                           <Mail className="w-4 h-4 text-slate-600" /> Email
                         </Button>
-                        <Button variant="outline" onClick={() => handleShare("copy")} className="gap-2 col-span-2">
+                        <Button variant="outline" onClick={() => handleShare("whatsapp")} className="gap-2">
+                          <MessageCircle className="w-4 h-4 text-green-500" /> WhatsApp
+                        </Button>
+                        <Button variant="outline" onClick={() => handleShare("copy")} className="gap-2">
                           {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
                           {copied ? "Copied!" : "Copy Link"}
                         </Button>
@@ -1145,7 +1176,19 @@ export default function HospitalDetails() {
                     </div>
                   </div>
 
-                  <div className="mt-6 pt-5 border-t">
+                  <div className="mt-4 pt-4 border-t space-y-2">
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      Data sourced from Google Places, Federal Ministry of Health, and community submissions.
+                    </p>
+                    <a
+                      href={`mailto:support@carenaija.com?subject=Report incorrect info: ${encodeURIComponent(hospital.name)}&body=Hospital: ${encodeURIComponent(hospital.name)}%0APage: ${encodeURIComponent(window.location.href)}%0A%0APlease describe the issue:%0A`}
+                      className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-red-600 transition-colors"
+                      data-testid="link-report-info"
+                    >
+                      <Flag className="w-3 h-3" /> Report incorrect information
+                    </a>
+                  </div>
+                  <div className="mt-3 pt-3 border-t">
                     <Link href={`/claim-profile/${hospital.id}`}>
                       <Button variant="ghost" className="w-full text-sm" data-testid="button-claim">
                         Is this your hospital? Claim this profile
@@ -1164,13 +1207,15 @@ export default function HospitalDetails() {
         </div>
 
         {/* Mobile Floating Call Button */}
-        {hospital.phone && (
+        {hospital.phone ? (
           <div className="fixed bottom-6 right-6 lg:hidden z-50">
             <ClickToCallIcon 
               phoneNumber={hospital.phone} 
               className="shadow-lg"
             />
           </div>
+        ) : (
+          <DetailFAB hospitalName={hospital.name} onShare={() => setShareOpen(true)} />
         )}
       </article>
     </>

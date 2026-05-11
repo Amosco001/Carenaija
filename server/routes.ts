@@ -129,6 +129,31 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json({ csrfToken: token });
   });
 
+  // Email signup for new hospital notifications
+  const emailSignups: Array<{ email: string; state: string; createdAt: string }> = [];
+
+  app.post("/api/email-signup", async (req, res) => {
+    try {
+      const { email, state } = req.body;
+      if (!email || typeof email !== "string" || !email.includes("@")) {
+        return res.status(400).json({ message: "Valid email address is required" });
+      }
+      if (!state || typeof state !== "string" || state.length > 100) {
+        return res.status(400).json({ message: "State is required" });
+      }
+      const existing = emailSignups.find(s => s.email.toLowerCase() === email.toLowerCase());
+      if (existing) {
+        return res.status(200).json({ message: "Already subscribed" });
+      }
+      emailSignups.push({ email: email.toLowerCase().trim(), state: state.trim(), createdAt: new Date().toISOString() });
+      console.log(`[email-signup] New signup: ${email} for ${state}`);
+      res.json({ message: "Subscribed successfully" });
+    } catch (error) {
+      console.error("Email signup error:", error);
+      res.status(500).json({ message: "Failed to subscribe" });
+    }
+  });
+
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.userId;

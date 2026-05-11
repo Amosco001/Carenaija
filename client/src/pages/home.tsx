@@ -15,6 +15,9 @@ import { SEOHead } from "@/components/seo-head";
 import { SkeletonHospitalCard } from "@/components/skeleton-card";
 import { HospitalCard } from "@/components/hospital-card";
 import { formatDistanceToNow } from "date-fns";
+import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
+import { HomeFAB } from "@/components/floating-action-button";
+import { EmailSignupBanner } from "@/components/email-signup";
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -25,6 +28,7 @@ export default function Home() {
   const { data: trustStats } = useTrustStats();
   const { data: testimonials = [] } = useTestimonials();
   const { data: trendingHospitals = [] } = useTrendingHospitals();
+  const { items: recentlyViewed } = useRecentlyViewed();
 
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: "start" });
   const [canScrollPrev, setCanScrollPrev] = useState(false);
@@ -711,6 +715,41 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Recently Viewed Hospitals */}
+      {recentlyViewed.length > 0 && (
+        <section className="py-10 bg-slate-50 border-t border-slate-100">
+          <div className="container px-4 mx-auto">
+            <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-slate-500" />
+              Recently Viewed
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+              {recentlyViewed.map(h => (
+                <Link key={h.id} href={`/hospitals/${h.slug}`}>
+                  <div className="bg-white rounded-xl border border-slate-200 hover:border-emerald-300 hover:shadow-sm transition-all p-3 cursor-pointer group" data-testid={`card-recently-viewed-${h.id}`}>
+                    <div className="font-semibold text-sm text-slate-900 group-hover:text-emerald-700 line-clamp-2 mb-1">
+                      {h.name}
+                    </div>
+                    <div className="text-xs text-slate-500 flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />{h.lga}, {h.state}
+                    </div>
+                    {h.averageRating !== null && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                        <span className="text-xs text-slate-600">{(h.averageRating || 0).toFixed(1)}</span>
+                      </div>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Email Signup Banner */}
+      <EmailSignupBanner />
+
       {/* CTA Section - Nigerian Green */}
       <section className="py-20 bg-gradient-to-br from-emerald-700 via-emerald-600 to-green-600 text-white">
         <div className="container px-4 mx-auto text-center">
@@ -734,6 +773,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Mobile FAB */}
+      <HomeFAB />
     </div>
   );
 }

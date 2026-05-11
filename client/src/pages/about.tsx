@@ -238,6 +238,34 @@ export default function About() {
             </div>
           </section>
 
+          <section className="bg-blue-50 rounded-xl p-8">
+            <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <FileCheck className="w-6 h-6 text-blue-600" />
+              Data Sources &amp; Attribution
+            </h2>
+            <p className="text-slate-600 mb-5 text-sm">
+              Hospital information on CareNaija is compiled from multiple trusted sources. We are transparent about where data comes from so you can judge its reliability.
+            </p>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {[
+                { source: "Federal Ministry of Health (FMOH)", detail: "Official hospital registry, licensing data, and facility classifications" },
+                { source: "Google Places", detail: "Location data, contact information, operating hours, and public ratings" },
+                { source: "State Ministry of Health", detail: "State-level facility data and verification status" },
+                { source: "Patient &amp; Employee Submissions", detail: "Crowdsourced reviews, service updates, and staff reports submitted by our community" },
+                { source: "Nigerian Medical Association (NMA)", detail: "Practitioner affiliations and specialty information" },
+                { source: "NHIS &amp; HMO Directories", detail: "Insurance and HMO acceptance lists from provider networks" },
+              ].map(item => (
+                <div key={item.source} className="bg-white rounded-lg p-4 border border-blue-100">
+                  <p className="font-semibold text-slate-900 text-sm mb-1" dangerouslySetInnerHTML={{ __html: item.source }} />
+                  <p className="text-slate-500 text-xs" dangerouslySetInnerHTML={{ __html: item.detail }} />
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-slate-400 mt-4">
+              Data is periodically reviewed and updated. If you spot an error, use the "Report incorrect information" link on any hospital page or email <a href="mailto:support@carenaija.com" className="text-blue-600 hover:underline">support@carenaija.com</a>.
+            </p>
+          </section>
+
           <section>
             <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
               <Clock className="w-6 h-6 text-emerald-600" />

@@ -140,6 +140,28 @@ export default function SearchPage() {
     [hospitals]
   );
 
+  // Simple fuzzy match using Levenshtein distance
+  function levenshtein(a: string, b: string): number {
+    const m = a.length, n = b.length;
+    const dp: number[][] = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+      }
+    }
+    return dp[m][n];
+  }
+
+  function fuzzyMatch(query: string, target: string): boolean {
+    const q = query.toLowerCase();
+    const t = target.toLowerCase();
+    if (t.includes(q)) return true;
+    if (q.length < 4) return false;
+    const maxDist = Math.floor(q.length / 4);
+    return levenshtein(q, t.slice(0, q.length)) <= maxDist;
+  }
+
   const suggestions = useMemo(() => {
     if (!searchQuery || searchQuery.length < 2) return [];
     const query = searchQuery.toLowerCase();
@@ -257,6 +279,26 @@ export default function SearchPage() {
     (currentPage - 1) * RESULTS_PER_PAGE,
     currentPage * RESULTS_PER_PAGE
   );
+
+  const didYouMean = useMemo(() => {
+    if (!searchQuery || searchQuery.length < 3 || filteredHospitals.length > 0) return null;
+    const query = searchQuery.toLowerCase();
+    const candidates = [
+      ...hospitals.map(h => h.name),
+      ...allStates.filter(s => s !== "All"),
+      ...SPECIALTIES_OPTIONS,
+    ];
+    let best: string | null = null;
+    let bestDist = Infinity;
+    for (const c of candidates) {
+      const dist = levenshtein(query, c.toLowerCase().slice(0, query.length + 2));
+      if (dist < bestDist && dist <= Math.max(2, Math.floor(query.length / 3))) {
+        bestDist = dist;
+        best = c;
+      }
+    }
+    return best;
+  }, [searchQuery, filteredHospitals.length, hospitals, allStates]);
 
   const activeFiltersCount = [
     selectedOwnership.length > 0,
@@ -785,15 +827,29 @@ export default function SearchPage() {
                 </p>
               </>
             ) : (
-              <div className="text-center py-16 bg-white rounded-xl border border-dashed">
+              <div className="text-center py-16 bg-white rounded-xl border border-dashed" data-testid="empty-state-no-results">
                 <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
                   <SearchIcon className="h-8 w-8 text-slate-300" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900">No hospitals found</h3>
-                <p className="text-slate-500 max-w-sm mx-auto mt-2">
-                  Try adjusting your filters or search terms.
-                </p>
-                <div className="mt-6 flex justify-center gap-3">
+                {didYouMean ? (
+                  <p className="text-slate-500 max-w-sm mx-auto mt-2">
+                    Did you mean{" "}
+                    <button
+                      className="text-emerald-600 font-semibold hover:underline"
+                      onClick={() => { setSearchQuery(didYouMean); setCurrentPage(1); }}
+                      data-testid="button-did-you-mean"
+                    >
+                      "{didYouMean}"
+                    </button>
+                    ?
+                  </p>
+                ) : (
+                  <p className="text-slate-500 max-w-sm mx-auto mt-2">
+                    Try adjusting your filters or searching by a different name, city, or specialty.
+                  </p>
+                )}
+                <div className="mt-6 flex flex-wrap justify-center gap-3">
                   <Button variant="outline" onClick={clearAllFilters} data-testid="button-clear-all">
                     Clear All Filters
                   </Button>
@@ -803,6 +859,12 @@ export default function SearchPage() {
                     </Button>
                   </Link>
                 </div>
+                <p className="mt-4 text-xs text-slate-400">
+                  Can't find the hospital you're looking for?{" "}
+                  <Link href="/suggest-hospital" className="text-emerald-600 hover:underline">
+                    Help us add it
+                  </Link>
+                </p>
               </div>
             )}
           </div>

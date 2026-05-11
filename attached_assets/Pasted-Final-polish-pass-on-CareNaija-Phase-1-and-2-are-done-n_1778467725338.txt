@@ -1,0 +1,42 @@
+Final polish pass on CareNaija. Phase 1 and 2 are done; now I want measurable improvements to performance, trust, and patient conversion.
+
+TASKS:
+
+1. CORE WEB VITALS:
+   - Run Lighthouse against the homepage and a hospital detail page
+   - Target: LCP under 2.5s, CLS under 0.1, INP under 200ms on mobile
+   - Identify and fix the biggest issues: oversized images, render-blocking resources, unused JavaScript, etc.
+
+2. TRUST SIGNALS:
+   - Add a "Verified by CareNaija" badge system that appears on hospitals with claimed and confirmed profiles
+   - Show data source attribution on hospital pages: "Information from Google Places, Federal Ministry of Health, and patient submissions"
+   - Add a small "Report incorrect information" link on every hospital page
+   - Add an About page section explaining the review verification process
+
+3. PATIENT CONVERSION:
+   - Add a persistent floating action on mobile: "Find a hospital" if on homepage, "Save" / "Share" on detail pages
+   - Implement share buttons (native Web Share API on mobile, copy-link + WhatsApp + Twitter on desktop)
+   - Add "Recently viewed hospitals" stored in localStorage and shown on the homepage when applicable
+   - Add a simple email signup: "Get notified when new hospitals are added in your state"
+
+4. SEARCH IMPROVEMENTS:
+   - Add autocomplete to the main search input that searches hospitals, conditions, and locations as you type
+   - Add typo tolerance (use a fuzzy match library or Postgres trigram search)
+   - Surface "Did you mean..." for likely misspellings
+
+5. ERROR & EMPTY STATES:
+   - Design a friendly 404 page that suggests popular searches
+   - Design proper empty states for "no results" with suggested alternatives
+   - Make sure all loading states use skeleton loaders, not spinners
+
+6. PWA BASELINE:
+   - Add a manifest.json so patients can "Add to Home Screen"
+   - Add a basic service worker for offline access to recently viewed hospitals
+   - Icons for various device sizes
+
+7. FINAL ACCESSIBILITY AUDIT:
+   - Run axe DevTools on the redesigned pages
+   - Fix every serious and critical issue
+   - Test keyboard navigation through all interactive elements
+
+Report back with: Lighthouse scores before and after, a list of conversion features added, and any decisions you need from me.
