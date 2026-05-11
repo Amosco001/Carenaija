@@ -552,6 +552,8 @@ export default function HelpCenter() {
                       src={video.thumbnail} 
                       alt={video.title}
                       className="w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
                     />
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <div className="h-16 w-16 rounded-full bg-white/90 flex items-center justify-center">

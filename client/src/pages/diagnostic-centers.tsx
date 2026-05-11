@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, MapPin, Phone, Clock, Star, Home, Wifi, ChevronLeft, ChevronRight, FlaskConical, Building2 } from "lucide-react";
+import { SEOHead } from "@/components/seo-head";
 
 const NIGERIAN_STATES = ["FCT", "Lagos", "Rivers", "Oyo", "Kano", "Enugu", "Edo", "Ogun", "Osun", "Plateau", "Akwa Ibom", "Borno", "Cross River", "Imo"];
 
@@ -25,6 +26,12 @@ export default function DiagnosticCentersPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <SEOHead
+        title="Diagnostic Centers & Labs in Nigeria"
+        description="Find accredited diagnostic centers and laboratories in Nigeria. Compare test prices, services, and turnaround times across Lagos, Abuja and nationwide."
+        keywords="diagnostic centers Nigeria, labs Nigeria, medical tests Lagos, blood tests Nigeria, imaging centers Nigeria"
+        canonicalUrl="https://www.carenaija.com/diagnostic-centers"
+      />
       <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-12">
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-2 text-blue-100 text-sm mb-4">

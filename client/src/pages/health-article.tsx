@@ -380,6 +380,8 @@ export default function HealthArticlePage() {
                     src={article.coverImageUrl}
                     alt={article.coverImageAlt || article.title}
                     className="w-full rounded-lg object-cover max-h-96"
+                    loading="lazy"
+                    decoding="async"
                   />
                   {article.coverImageAlt && (
                     <figcaption className="text-sm text-muted-foreground mt-2 text-center">

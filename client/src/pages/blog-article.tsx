@@ -151,6 +151,8 @@ function RelatedArticleCard({ article }: { article: BlogArticle }) {
               src={article.coverImageUrl}
               alt={article.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              loading="lazy"
+              decoding="async"
             />
           </div>
         )}
@@ -411,6 +413,8 @@ export default function BlogArticlePage() {
               alt={article.coverImageAlt || article.title}
               className="w-full rounded-xl shadow-lg"
               data-testid="article-featured-image"
+              loading="lazy"
+              decoding="async"
             />
           </div>
         )}

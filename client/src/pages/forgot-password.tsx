@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, ArrowLeft, Mail } from "lucide-react";
+import { SEOHead } from "@/components/seo-head";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -39,6 +40,11 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex flex-col">
+      <SEOHead
+        title="Reset Password"
+        description="Reset your CareNaija account password."
+        noIndex={true}
+      />
       <header className="border-b bg-white/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/">

@@ -1,0 +1,52 @@
+I want you to fix foundational issues across the CareNaija codebase before we touch design. Do NOT redesign anything yet — only the fixes below.
+
+CONTEXT:
+- Stack: React + Vite + TypeScript + Tailwind CSS v4 + shadcn/ui (New York), Wouter router, TanStack Query, Express backend, Drizzle ORM + PostgreSQL
+- Domain: carenaija.com
+- Main audience: patients in Nigeria searching for hospitals
+- Site is accessed on roughly equal mix of mobile and desktop
+
+TASKS — complete all of these and report what you changed:
+
+1. SEO META FIXES (in client/index.html or wherever <head> is configured):
+   - Replace meta `google-site-verification` value "YOUR_VERIFICATION_CODE_HERE" — either remove the tag entirely, or pause and ask me for the real code
+   - Change meta `twitter:site` from "@replit" to remove it (we don't have a Twitter handle yet) — do NOT leave @replit
+   - Replace og:image and twitter:image URLs that point to "prompt-helper--dramosco.replit.app/opengraph.jpg" — they should point to https://www.carenaija.com/opengraph.jpg. If that image doesn't exist in /client/public, create a placeholder note in the task list so I can add it.
+   - Remove `maximum-scale=5` from the viewport meta tag — it's an accessibility issue and prevents users from zooming on mobile. Keep `width=device-width, initial-scale=1.0`.
+   - Audit ALL page-level meta tags (title, description, og tags) and make sure every route has a unique, patient-focused title and description using react-helmet-async or similar. If a head manager isn't installed, install react-helmet-async and wrap App in HelmetProvider.
+
+2. STRUCTURED DATA (JSON-LD):
+   - Add Organization schema to the homepage
+   - Add LocalBusiness + MedicalOrganization schema to each individual hospital detail page (use the hospital's actual name, address, geo coordinates, phone, rating, review count from the database)
+   - Add BreadcrumbList schema to all sub-pages
+   - Add AggregateRating + Review schema to hospital pages with reviews
+
+3. SITEMAP & ROBOTS:
+   - Generate a dynamic sitemap.xml served by the Express server at /sitemap.xml that includes the homepage, all hospital detail pages, all diagnostic center pages, all physician pages, all pharmacy pages, all state landing pages, and any static pages
+   - Create a robots.txt at /robots.txt that allows all crawlers and references the sitemap
+
+4. PERFORMANCE QUICK WINS:
+   - Audit the Vite config and confirm code splitting per route is enabled (React.lazy + Suspense for page components)
+   - Add `loading="lazy"` and `decoding="async"` to all <img> tags below the fold
+   - Add width and height attributes to all images to prevent layout shift
+   - Confirm images are served in modern formats (WebP/AVIF) where possible — if not, add a vite plugin or note where conversion should happen
+   - Add a font preload hint for the primary font if any web fonts are used
+   - Add `<link rel="preconnect">` for any third-party origins (Google Maps, Google Places, fonts)
+
+5. ACCESSIBILITY BASELINE:
+   - Run through the codebase and confirm all interactive elements have accessible names (aria-label or visible text)
+   - All form inputs have associated <label> elements
+   - All images have alt text (descriptive, not empty, except for purely decorative)
+   - Focus states are visible (don't rely on browser default if Tailwind has reset them)
+   - Color contrast meets WCAG AA (especially the Nigerian green #008751 on white)
+
+6. ANALYTICS & SEARCH CONSOLE READINESS:
+   - If Google Analytics or Plausible isn't installed, install Plausible (privacy-friendly, free trial) or ask me which I prefer
+   - Make sure the head is ready for Google Search Console verification — leave a clearly labeled comment where the verification meta tag should go
+
+DO NOT change any visual design, colors, layouts, or component structure in this phase. Only configuration, metadata, performance plumbing, and accessibility fixes.
+
+When done, give me:
+- A checklist of what you changed
+- A list of any files you couldn't fix and why
+- A list of any decisions you'd like me to make (e.g. which analytics tool, OG image source)

@@ -1025,7 +1025,7 @@ export default function HospitalDetails() {
                               <div className="flex gap-3">
                                 <div className="w-24 h-24 overflow-hidden rounded-l-lg flex-shrink-0">
                                   {getHospitalImage(h) ? (
-                                    <img src={getHospitalImage(h)} alt={`${h.name} - ${h.ownership} hospital in ${h.lga}, ${h.state}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                    <img src={getHospitalImage(h)} alt={`${h.name} - ${h.ownership} hospital in ${h.lga}, ${h.state}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" loading="lazy" decoding="async" />
                                   ) : (
                                     <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-teal-50 flex flex-col items-center justify-center">
                                       <Building2 className="w-6 h-6 text-emerald-500" />

@@ -22,7 +22,7 @@ export function SEOHead({
   keywords = DEFAULT_KEYWORDS,
   canonicalUrl,
   ogType = "website",
-  ogImage = "/attached_assets/hero-hospital.png",
+  ogImage = "https://www.carenaija.com/opengraph.jpg",
   noIndex = false,
   structuredData,
 }: SEOHeadProps) {

@@ -69,6 +69,8 @@ function ArticleCard({ article }: { article: HealthArticle }) {
             src={article.coverImageUrl}
             alt={article.coverImageAlt || article.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+            decoding="async"
           />
         </div>
       )}
@@ -123,6 +125,8 @@ function FeaturedArticle({ article }: { article: HealthArticle }) {
               src={article.coverImageUrl}
               alt={article.coverImageAlt || article.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              loading="lazy"
+              decoding="async"
             />
           </div>
         )}

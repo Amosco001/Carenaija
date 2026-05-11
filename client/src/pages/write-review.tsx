@@ -6,6 +6,7 @@ import * as z from "zod";
 import { useAuth } from "@/lib/auth";
 import { useHospital } from "@/hooks/useHospital";
 import { getHospitalUrl } from "@shared/schema";
+import { SEOHead } from "@/components/seo-head";
 import { useHospitals, useCreatePatientReview, useCreateEmployeeReview } from "@/hooks/useHospitals";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -930,6 +931,11 @@ export default function WriteReview() {
 
   return (
     <div className="min-h-screen bg-slate-50 py-8" data-testid="page-write-review">
+      <SEOHead
+        title={selectedHospital ? `Write a Review for ${selectedHospital.name}` : "Write a Hospital Review"}
+        description="Share your experience at a Nigerian hospital. Your honest review helps other patients make informed healthcare decisions."
+        noIndex={true}
+      />
       <div className="container mx-auto px-4 max-w-2xl">
         <Link href={selectedHospital ? getHospitalUrl(selectedHospital) : "/search"}>
           <span className="text-sm text-slate-500 hover:text-emerald-600 flex items-center gap-1 mb-4">

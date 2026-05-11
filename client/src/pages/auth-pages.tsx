@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Eye, EyeOff } from "lucide-react";
+import { SEOHead } from "@/components/seo-head";
 
 export default function AuthPage() {
   const { user, isLoading, login, register, getReturnUrl, clearReturnUrl } = useAuth();
@@ -69,6 +70,11 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex flex-col">
+      <SEOHead
+        title={isSignUp ? "Create Account" : "Sign In"}
+        description="Sign in or create your CareNaija account to write hospital reviews and access personalised features."
+        noIndex={true}
+      />
       <header className="border-b bg-white/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/">

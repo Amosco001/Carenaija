@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, MapPin, Phone, Clock, Star, Truck, ShieldCheck, ChevronLeft, ChevronRight, Pill, Globe, ShoppingCart } from "lucide-react";
+import { SEOHead } from "@/components/seo-head";
 
 const NIGERIAN_STATES = ["FCT", "Lagos", "Rivers", "Oyo", "Kano", "Enugu", "Edo", "Ogun", "Osun", "Plateau", "Akwa Ibom", "Cross River", "Imo", "Delta", "Kaduna"];
 
@@ -25,6 +26,12 @@ export default function PharmaciesPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <SEOHead
+        title="Find Pharmacies in Nigeria"
+        description="Locate verified pharmacies across Nigeria. Filter by state, delivery service, 24-hour availability, and insurance acceptance."
+        keywords="pharmacies Nigeria, pharmacy Lagos, pharmacy Abuja, 24 hour pharmacy Nigeria, online pharmacy Nigeria"
+        canonicalUrl="https://www.carenaija.com/pharmacies"
+      />
       <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white py-12">
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-2 text-green-100 text-sm mb-4">

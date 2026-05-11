@@ -642,7 +642,7 @@ function UsersTab() {
                   <td className="p-3">
                     <div className="flex items-center gap-3">
                       {user.profileImageUrl ? (
-                        <img src={user.profileImageUrl} className="w-8 h-8 rounded-full" alt="" />
+                        <img src={user.profileImageUrl} className="w-8 h-8 rounded-full" alt={`${user.username || user.email} profile photo`} />
                       ) : (
                         <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
                           <User className="w-4 h-4 text-emerald-600" />

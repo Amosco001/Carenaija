@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, MapPin, GraduationCap, Clock, Star, Phone, Video, UserCheck, ChevronLeft, ChevronRight, Stethoscope, Users } from "lucide-react";
+import { SEOHead } from "@/components/seo-head";
 
 function formatPrice(amount: number | null | undefined): string {
   if (!amount) return "N/A";
@@ -32,6 +33,12 @@ export default function PhysiciansPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <SEOHead
+        title="Find Doctors & Physicians in Nigeria"
+        description="Search for qualified physicians and specialists in Nigeria. Compare doctors by specialty, location, qualifications, and consultation fees."
+        keywords="doctors in Nigeria, physicians Nigeria, find specialist Nigeria, medical doctors Lagos Abuja"
+        canonicalUrl="https://www.carenaija.com/physicians"
+      />
       <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-12">
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-2 text-emerald-100 text-sm mb-4">
