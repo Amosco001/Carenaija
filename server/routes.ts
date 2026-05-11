@@ -31,6 +31,11 @@ function getClientIp(req: Request): string {
   return req.socket?.remoteAddress || "unknown";
 }
 
+function stripPassword<T extends Record<string, any>>(user: T): Omit<T, "passwordHash"> {
+  const { passwordHash, ...safe } = user as any;
+  return safe as Omit<T, "passwordHash">;
+}
+
 async function isAdmin(req: any, res: Response, next: NextFunction) {
   if (!req.userId) {
     return res.status(401).json({ message: "Unauthorized" });
@@ -161,8 +166,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      const { passwordHash, ...safeUser } = user as any;
-      res.json(safeUser);
+      res.json(stripPassword(user));
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -681,7 +685,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const userId = req.userId;
       const { firstName, lastName, location } = req.body;
       const user = await storage.updateUserProfile(userId, { firstName, lastName, location });
-      res.json(user);
+      res.json(stripPassword(user));
     } catch (error) {
       console.error("Error updating profile:", error);
       res.status(500).json({ message: "Failed to update profile" });
@@ -1071,11 +1075,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         expiresAt,
       });
 
-      // In production, send email here. For now, return token for testing
       res.json({ 
-        message: "Verification token created. In production, an email would be sent.",
-        // Remove this in production:
-        devToken: token,
+        message: "Verification email sent. Please check your inbox.",
       });
     } catch (error) {
       console.error("Error sending verification:", error);
@@ -1681,7 +1682,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         page: page ? parseInt(page as string) : 1,
         limit: limit ? parseInt(limit as string) : 50,
       });
-      res.json(result);
+      res.json({ ...result, users: result.users.map(stripPassword) });
     } catch (error) {
       console.error("Error fetching users:", error);
       res.status(500).json({ message: "Failed to fetch users" });
@@ -1728,7 +1729,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         `Changed role from ${previousUser?.role} to ${role}`
       );
       
-      res.json(updated);
+      res.json(stripPassword(updated));
     } catch (error) {
       console.error("Error updating user role:", error);
       res.status(500).json({ message: "Failed to update role" });
@@ -1762,7 +1763,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         `Suspended user: ${reason}`
       );
       
-      res.json(updated);
+      res.json(stripPassword(updated));
     } catch (error) {
       console.error("Error suspending user:", error);
       res.status(500).json({ message: "Failed to suspend user" });
@@ -1787,7 +1788,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         'Removed user suspension'
       );
       
-      res.json(updated);
+      res.json(stripPassword(updated));
     } catch (error) {
       console.error("Error unsuspending user:", error);
       res.status(500).json({ message: "Failed to unsuspend user" });
