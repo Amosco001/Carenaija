@@ -14,6 +14,9 @@ import {
   generateHospitalSlug,
 } from "@shared/schema";
 import { notificationService } from "./services/notification";
+import { dispatchReviewThankYous } from "./services/review-thank-you";
+import { normalizePhone, sendSms } from "./services/sms";
+import { registerReviewEngagementRoutes } from "./review-engagement-routes";
 import crypto from "crypto";
 import { 
   securityMiddleware, 
@@ -124,6 +127,7 @@ async function calculateSpamScore(reviewText: string, clientIp: string): Promise
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   await setupAuth(app);
+  registerReviewEngagementRoutes(app);
 
   app.use(setCsrfToken);
 
@@ -328,6 +332,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       });
 
       const review = await storage.createPatientReview(validatedData);
+      dispatchReviewThankYous();
 
       // Trigger notifications asynchronously
       (async () => {
@@ -383,6 +388,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       });
 
       const review = await storage.createEmployeeReview(validatedData);
+      dispatchReviewThankYous();
 
       // Trigger notifications asynchronously
       (async () => {
@@ -750,6 +756,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       };
 
       const review = await storage.createPatientReview(reviewData);
+      dispatchReviewThankYous();
 
       // Track IP activity
       await storage.trackIp(clientIp, userId, "create_review", "patient_review", review.id);
@@ -856,6 +863,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       }
 
       const updatedReview = await storage.updateReviewModerationStatus(reviewId, status, adminUserId);
+      if (status === "approved") dispatchReviewThankYous();
 
       // Create audit log
       await storage.createAdminAuditLog(
@@ -1104,32 +1112,33 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  // Request phone verification (placeholder for Twilio)
+  // Send phone verification through the connected Twilio account.
   app.post("/api/auth/send-phone-verification", isAuthenticated, securityMiddleware.authRateLimiter, async (req: any, res) => {
     try {
       const userId = req.userId;
-      const { phoneNumber } = req.body;
+      const phoneNumber = normalizePhone(req.body.phoneNumber);
 
       if (!phoneNumber) {
-        return res.status(400).json({ message: "Phone number is required" });
+        return res.status(400).json({ message: "Use a valid international phone number, e.g. +234..." });
       }
 
-      // Store phone number on user
-      await storage.updateUserProfile(userId, { phoneNumber });
+      // Any change to the phone invalidates verification and previous OTPs.
+      await storage.updateUserProfile(userId, { phoneNumber, phoneVerifiedAt: null });
+      await storage.invalidatePhoneVerificationTokens(userId);
 
       // Generate OTP
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otp = crypto.randomInt(100000, 1000000).toString();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
       await storage.createVerificationToken({
         userId,
-        token: otp,
+        token: crypto.createHash("sha256").update(`${userId}:${phoneNumber}:${otp}`).digest("hex"),
         type: "phone",
         expiresAt,
       });
 
-      // SMS delivery requires Twilio integration (not yet configured)
-      res.json({ message: "OTP created. Please check your phone for the verification code." });
+      await sendSms(phoneNumber, `Your CareNaija verification code is ${otp}. It expires in 10 minutes. Do not share this code.`);
+      res.json({ message: "Verification code sent. Check your phone." });
     } catch (error) {
       console.error("Error sending phone verification:", error);
       res.status(500).json({ message: "Failed to send phone verification" });
@@ -1137,16 +1146,18 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // Verify phone OTP
-  app.post("/api/auth/verify-phone", isAuthenticated, async (req: any, res) => {
+  app.post("/api/auth/verify-phone", isAuthenticated, securityMiddleware.authRateLimiter, async (req: any, res) => {
     try {
       const userId = req.userId;
       const { otp } = req.body;
 
-      if (!otp) {
+      if (typeof otp !== "string" || !/^\d{6}$/.test(otp)) {
         return res.status(400).json({ message: "OTP is required" });
       }
 
-      const verificationToken = await storage.getVerificationToken(otp, "phone");
+      const user = await storage.getUser(userId);
+      const tokenHash = crypto.createHash("sha256").update(`${userId}:${user?.phoneNumber}:${otp}`).digest("hex");
+      const verificationToken = await storage.getVerificationToken(tokenHash, "phone");
       if (!verificationToken || verificationToken.consumedAt || verificationToken.userId !== userId) {
         return res.status(400).json({ message: "Invalid or expired OTP" });
       }
@@ -1493,13 +1504,21 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const userId = req.userId;
       const data = insertEmailPreferencesSchema.partial().parse(req.body);
+      // Preference updates must not reassign ownership or mutate delivery bookkeeping.
+      const { userId: _userId, ...safeData } = data;
+      if (safeData.reviewThankYouSms === true) {
+        const user = await storage.getUser(userId);
+        if (!user?.phoneVerifiedAt || !user.phoneNumber) {
+          return res.status(400).json({ message: "Verify your phone number before enabling review thank-you SMS." });
+        }
+      }
       
       let prefs = await storage.getEmailPreferences(userId);
       if (!prefs) {
         prefs = await storage.createEmailPreferences(userId);
       }
       
-      const updated = await storage.updateEmailPreferences(userId, data);
+      const updated = await storage.updateEmailPreferences(userId, safeData);
       res.json(updated);
     } catch (error) {
       console.error("Error updating email preferences:", error);

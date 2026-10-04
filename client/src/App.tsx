@@ -54,6 +54,7 @@ const PhysicianDetailsPage = lazy(() => import("@/pages/physician-details"));
 const PharmaciesPage = lazy(() => import("@/pages/pharmacies"));
 const PharmacyDetailsPage = lazy(() => import("@/pages/pharmacy-details"));
 const HospitalDashboard = lazy(() => import("@/pages/hospital-dashboard"));
+const ReviewerPage = lazy(() => import("@/pages/reviewer"));
 
 function PageLoader() {
   return (
@@ -88,6 +89,7 @@ function Router() {
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/hospital-dashboard" component={HospitalDashboard} />
           <Route path="/profile" component={Profile} />
+          <Route path="/reviewer/:userId" component={ReviewerPage} />
           <Route path="/write-review/:type/:id" component={WriteReview} />
           <Route path="/suggest-hospital" component={SuggestHospital} />
           <Route path="/claim-profile/:id" component={ClaimProfile} />

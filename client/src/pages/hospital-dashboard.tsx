@@ -93,6 +93,19 @@ function HospitalManageCard({ hospital }: { hospital: Hospital }) {
     setServices(services.filter(s => s !== service));
   };
 
+  const openReviewPoster = () => {
+    window.open(`/api/hospitals/${hospital.id}/review-poster`, "_blank", "noopener,noreferrer");
+  };
+
+  const copyReviewInvite = async () => {
+    try {
+      await navigator.clipboard.writeText("Share your experience, all honest reviews welcome.");
+      toast({ title: "Invitation copied", description: "Share your experience, all honest reviews welcome." });
+    } catch {
+      toast({ title: "Could not copy invitation", description: "Please copy the text manually.", variant: "destructive" });
+    }
+  };
+
   return (
     <Card className="mb-6" data-testid={`card-managed-hospital-${hospital.id}`}>
       <CardHeader>
@@ -122,6 +135,15 @@ function HospitalManageCard({ hospital }: { hospital: Hospital }) {
       </CardHeader>
 
       <CardContent>
+        <div className="flex flex-wrap items-center gap-2 mb-5 rounded-lg border border-emerald-100 bg-emerald-50/60 p-3">
+          <p className="flex-1 min-w-48 text-sm text-slate-700">Share your experience, all honest reviews welcome.</p>
+          <Button type="button" variant="outline" size="sm" onClick={openReviewPoster} data-testid={`button-review-poster-${hospital.id}`}>
+            Open review poster
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={copyReviewInvite} data-testid={`button-copy-review-invite-${hospital.id}`}>
+            Copy invitation
+          </Button>
+        </div>
         <div className="grid grid-cols-4 gap-4 mb-6">
           <div className="bg-slate-50 p-3 rounded-lg text-center">
             <Star className="h-5 w-5 text-yellow-500 mx-auto mb-1" />

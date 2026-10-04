@@ -794,7 +794,13 @@ export default function HospitalDetails() {
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between gap-2">
-                                <span className="font-semibold text-slate-900">{review.isAnonymous ? "Anonymous" : (review.reviewerName || "Anonymous")}</span>
+                                {!review.isAnonymous && review.userId && (!review.moderationStatus || review.moderationStatus === "approved") ? (
+                                  <Link href={`/reviewer/${encodeURIComponent(review.userId)}`} className="font-semibold text-slate-900 hover:text-emerald-700 hover:underline">
+                                    {review.reviewerName || "Reviewer"}
+                                  </Link>
+                                ) : (
+                                  <span className="font-semibold text-slate-900">{review.isAnonymous ? "Anonymous" : (review.reviewerName || "Anonymous")}</span>
+                                )}
                                 <span className="text-xs text-slate-500">{review.createdAt ? new Date(review.createdAt).toLocaleDateString() : ""}</span>
                               </div>
                               <div className="flex items-center gap-2 mt-1">

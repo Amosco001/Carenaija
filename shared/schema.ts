@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
   index,
+  uniqueIndex,
   jsonb,
   pgTable,
   timestamp,
@@ -858,6 +859,8 @@ export const emailPreferences = pgTable("email_preferences", {
   reviewResponse: boolean("review_response").notNull().default(true),
   weeklyDigest: boolean("weekly_digest").notNull().default(true),
   reviewMilestones: boolean("review_milestones").notNull().default(true),
+  reviewThankYouEmail: boolean("review_thank_you_email").notNull().default(true),
+  reviewThankYouSms: boolean("review_thank_you_sms").notNull().default(false),
   marketingEmails: boolean("marketing_emails").notNull().default(false),
   weeklyDigestDay: integer("weekly_digest_day").notNull().default(1), // 0=Sunday, 1=Monday, etc.
   lastDigestSentAt: timestamp("last_digest_sent_at"),
@@ -931,6 +934,22 @@ export const insertEmailOutboxSchema = createInsertSchema(emailOutbox).omit({
 
 export type InsertEmailOutbox = z.infer<typeof insertEmailOutboxSchema>;
 export type EmailOutbox = typeof emailOutbox.$inferSelect;
+
+// Per-review delivery records: a review receives at most one thank-you per channel.
+export const reviewThankYouDeliveries = pgTable("review_thank_you_deliveries", {
+  id: serial("id").primaryKey(),
+  reviewId: integer("review_id").notNull(),
+  reviewType: text("review_type").notNull(),
+  channel: text("channel").notNull(),
+  status: text("status").notNull().default("pending"),
+  attempts: integer("attempts").notNull().default(0),
+  nextAttemptAt: timestamp("next_attempt_at").notNull().defaultNow(),
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, table => [
+  uniqueIndex("review_thank_you_delivery_unique").on(table.reviewId, table.reviewType, table.channel),
+  index("review_thank_you_delivery_pending").on(table.status, table.nextAttemptAt),
+]);
 
 // User review stats for milestone tracking
 export const userReviewStats = pgTable("user_review_stats", {

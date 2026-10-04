@@ -6,11 +6,14 @@ type User = {
   username?: string;
   firstName?: string;
   lastName?: string;
+  location?: string | null;
   email?: string;
   profileImageUrl?: string;
   isAdmin?: boolean;
   role?: string;
   createdAt?: string;
+  phoneNumber?: string | null;
+  phoneVerifiedAt?: string | null;
 };
 
 type AuthContextType = {

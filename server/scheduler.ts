@@ -2,6 +2,7 @@ import cron from "node-cron";
 import { execFile } from "child_process";
 import path from "path";
 import { log } from "./index";
+import { dispatchReviewThankYous } from "./services/review-thank-you";
 
 let isScraperRunning = false;
 
@@ -52,6 +53,8 @@ export function runScraper(
 }
 
 export function startScheduler() {
+  // Resume only newly queued review thank-yous, never backfill historical reviews.
+  cron.schedule("* * * * *", dispatchReviewThankYous);
   cron.schedule("0 3 * * *", () => {
     log("Running daily hospital discovery", "scheduler");
     runScraper("daily");

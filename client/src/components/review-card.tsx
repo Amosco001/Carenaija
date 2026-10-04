@@ -17,10 +17,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { useVoteReviewHelpful, useRemoveHelpfulVote } from "@/hooks/useHospitals";
 import { cn } from "@/lib/utils";
 import { getHospitalUrl } from "@shared/schema";
+import { Link } from "wouter";
 
 interface ReviewCardProps {
   review: {
     id: number;
+    userId?: string | null;
     reviewerName: string;
     reviewerRole?: string;
     isAnonymous?: boolean;
@@ -126,7 +128,13 @@ export function ReviewCard({
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="font-semibold text-slate-900">{review.isAnonymous ? "Anonymous" : (review.reviewerName || "Anonymous")}</p>
+              {review.userId && !review.isAnonymous ? (
+                <Link href={`/reviewer/${encodeURIComponent(review.userId)}`} className="font-semibold text-slate-900 hover:text-emerald-700 hover:underline">
+                  {review.reviewerName || "Reviewer"}
+                </Link>
+              ) : (
+                <p className="font-semibold text-slate-900">{review.isAnonymous ? "Anonymous" : (review.reviewerName || "Anonymous")}</p>
+              )}
               {review.verifiedVisit && (
                 <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 gap-1 text-xs" data-testid="badge-verified-visit">
                   <CheckCircle2 className="w-3 h-3" />

@@ -2,6 +2,7 @@ import {
   users,
   hospitals,
   patientReviews,
+  reviewThankYouDeliveries,
   employeeReviews,
   hospitalSuggestions,
   claimRequests,
@@ -221,6 +222,7 @@ export interface IStorage {
   createVerificationToken(token: InsertVerificationToken): Promise<VerificationToken>;
   getVerificationToken(token: string, type: string): Promise<VerificationToken | undefined>;
   consumeVerificationToken(tokenId: number): Promise<void>;
+  invalidatePhoneVerificationTokens(userId: string): Promise<void>;
   
   // Review flagging methods
   createReviewFlag(flag: InsertReviewFlag): Promise<ReviewFlag>;
@@ -478,8 +480,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPatientReview(review: InsertPatientReview): Promise<PatientReview> {
-    const [newReview] = await db.insert(patientReviews).values(review).returning();
-    return newReview;
+    return db.transaction(async tx => {
+      const [newReview] = await tx.insert(patientReviews).values(review).returning();
+      if (newReview.moderationStatus === "approved") {
+        await tx.insert(reviewThankYouDeliveries).values(
+          ["email", "sms"].map(channel => ({ reviewId: newReview.id, reviewType: "patient", channel }))
+        ).onConflictDoNothing();
+      }
+      return newReview;
+    });
   }
 
   async getEmployeeReviewsByHospitalId(hospitalId: number): Promise<EmployeeReview[]> {
@@ -491,8 +500,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createEmployeeReview(review: InsertEmployeeReview): Promise<EmployeeReview> {
-    const [newReview] = await db.insert(employeeReviews).values(review).returning();
-    return newReview;
+    return db.transaction(async tx => {
+      const [newReview] = await tx.insert(employeeReviews).values(review).returning();
+      await tx.insert(reviewThankYouDeliveries).values(
+        ["email", "sms"].map(channel => ({ reviewId: newReview.id, reviewType: "employee", channel }))
+      ).onConflictDoNothing();
+      return newReview;
+    });
   }
 
   async createHospitalSuggestion(suggestion: InsertHospitalSuggestion): Promise<HospitalSuggestion> {
@@ -670,6 +684,11 @@ export class DatabaseStorage implements IStorage {
     return newToken;
   }
 
+  async invalidatePhoneVerificationTokens(userId: string): Promise<void> {
+    await db.update(verificationTokens).set({ consumedAt: new Date() })
+      .where(and(eq(verificationTokens.userId, userId), eq(verificationTokens.type, "phone")));
+  }
+
   async getVerificationToken(token: string, type: string): Promise<VerificationToken | undefined> {
     const [result] = await db
       .select()
@@ -725,12 +744,18 @@ export class DatabaseStorage implements IStorage {
 
   // Review Moderation Methods
   async updateReviewModerationStatus(reviewId: number, status: string, reviewedBy: string): Promise<PatientReview> {
-    const [updated] = await db
-      .update(patientReviews)
-      .set({ moderationStatus: status, reviewedBy, reviewedAt: new Date() })
-      .where(eq(patientReviews.id, reviewId))
-      .returning();
-    return updated;
+    return db.transaction(async tx => {
+      const [updated] = await tx.update(patientReviews)
+        .set({ moderationStatus: status, reviewedBy, reviewedAt: new Date() })
+        .where(eq(patientReviews.id, reviewId)).returning();
+      if (!updated) throw new Error("Review not found");
+      if (status === "approved") {
+        await tx.insert(reviewThankYouDeliveries).values(
+          ["email", "sms"].map(channel => ({ reviewId, reviewType: "patient", channel }))
+        ).onConflictDoNothing();
+      }
+      return updated;
+    });
   }
 
   async getReviewsForModeration(status?: string): Promise<PatientReview[]> {

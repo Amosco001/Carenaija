@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,8 @@ import {
 import {
   ChevronLeft, User, Mail, MapPin, Loader2, CheckCircle2, Camera
 } from "lucide-react";
+import { ReviewerStatsPanel } from "@/components/reviewer-settings";
+import { NotificationPreferences } from "@/components/notification-preferences";
 
 const NIGERIAN_STATES = [
   "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno",
@@ -35,7 +37,7 @@ type ProfileFormData = {
 };
 
 export default function Profile() {
-  const { user, isLoading: authLoading, isAuthenticated } = useAuth();
+  const { user, isLoading: authLoading, isAuthenticated, refetchUser } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [saved, setSaved] = useState(false);
@@ -75,8 +77,9 @@ export default function Profile() {
       if (!res.ok) throw new Error("Failed to update profile");
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      await refetchUser();
       setSaved(true);
       toast({ title: "Profile updated successfully" });
       setTimeout(() => setSaved(false), 3000);
@@ -239,6 +242,12 @@ export default function Profile() {
             </button>
           </CardContent>
         </Card>
+        <ReviewerStatsPanel />
+        <NotificationPreferences
+          phoneNumber={user?.phoneNumber || ""}
+          phoneVerified={!!user?.phoneVerifiedAt}
+          onPhoneVerified={refetchUser}
+        />
       </div>
     </div>
   );

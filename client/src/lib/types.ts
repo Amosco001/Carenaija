@@ -26,6 +26,8 @@ export type Hospital = {
 };
 
 export type PatientReview = {
+  isAnonymous?: boolean;
+  moderationStatus?: string;
   id: number;
   hospitalId: number;
   userId: string;
