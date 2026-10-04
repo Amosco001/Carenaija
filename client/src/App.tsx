@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth";
 import { ComparisonProvider } from "@/lib/comparison-context";
+import { GeolocationProvider } from "@/hooks/useGeolocation";
 import { Layout } from "@/components/layout";
 import { CompareBar } from "@/components/compare-bar";
 import { Loader2 } from "lucide-react";
@@ -129,6 +130,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <GeolocationProvider>
         <ComparisonProvider>
           <TooltipProvider>
             <Toaster />
@@ -136,6 +138,7 @@ function App() {
             <CompareBar />
           </TooltipProvider>
         </ComparisonProvider>
+        </GeolocationProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

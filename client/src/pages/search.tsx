@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
 import { Link, useLocation } from "wouter";
 import { useHospitals, useHmoProviders } from "@/hooks/useHospitals";
 import { getHospitalUrl } from "@shared/schema";
@@ -29,11 +29,12 @@ import { MapPin, Search as SearchIcon, Filter, Navigation, Loader2, ShieldCheck,
 import { useToast } from "@/hooks/use-toast";
 import { getHospitalImage } from "@/lib/hospital-images";
 import { SkeletonCard } from "@/components/skeleton-card";
-import { useGeolocation, formatDistance, getGoogleMapsDirectionsUrl } from "@/hooks/useGeolocation";
-import { MapView, StaticMapFallback } from "@/components/map-view";
+import { useGeolocation } from "@/hooks/useGeolocation";
+import { getHospitalDistanceKm } from "@/lib/distance";
 import { Breadcrumb } from "@/components/breadcrumb";
 
 const RESULTS_PER_PAGE = 20;
+const MapView = lazy(() => import("@/components/map-view"));
 
 const FACILITIES_OPTIONS = [
   "Emergency Care",
@@ -77,22 +78,6 @@ const RADIUS_OPTIONS = [
   { value: 50, label: "50 km" },
   { value: 0, label: "Any distance" },
 ];
-
-function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371;
-  const dLat = deg2rad(lat2 - lat1);
-  const dLon = deg2rad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-function deg2rad(deg: number) {
-  return deg * (Math.PI / 180);
-}
 
 export default function SearchPage() {
   const [, setLocation] = useLocation();
@@ -185,32 +170,27 @@ export default function SearchPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, locationQuery, selectedOwnership, selectedState, selectedFacilities, selectedInsurance, minRating, verifiedOnly, sortBy]);
+  }, [searchQuery, locationQuery, selectedOwnership, selectedState, selectedFacilities, selectedInsurance, minRating, verifiedOnly, sortBy, selectedRadius, userLocation]);
 
-  const handleNearMe = () => {
-    requestLocation();
-    setSortBy("distance");
-    if (!hasLocation && !isLocating) {
-      toast({ title: "Finding your location", description: "Please allow location access when prompted" });
+  const handleNearMe = async () => {
+    const location = await requestLocation();
+    if (location) {
+      setSortBy("distance");
+      toast({ title: "Location found", description: "Showing the nearest hospitals first" });
     }
   };
-
-  useEffect(() => {
-    if (hasLocation && sortBy !== "distance") {
-      setSortBy("distance");
-      toast({ title: "Location found", description: "Showing hospitals near you" });
-    }
-  }, [hasLocation]);
 
   useEffect(() => {
     if (locationError) {
       toast({ title: "Location Error", description: locationError, variant: "destructive" });
     }
   }, [locationError]);
+  useEffect(() => {
+    if (!userLocation && sortBy === "distance") setSortBy("rating");
+  }, [userLocation, sortBy]);
 
   const getHospitalDistance = (hospital: Hospital): number | null => {
-    if (!userLocation || !hospital.latitude || !hospital.longitude) return null;
-    return getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, hospital.latitude, hospital.longitude);
+    return getHospitalDistanceKm(hospital, userLocation);
   };
 
   const filteredHospitals = useMemo(() => {
@@ -245,9 +225,9 @@ export default function SearchPage() {
         );
 
       let matchesRadius = true;
-      if (selectedRadius > 0 && userLocation && hospital.latitude && hospital.longitude) {
-        const distance = getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, hospital.latitude, hospital.longitude);
-        matchesRadius = distance <= selectedRadius;
+      if (selectedRadius > 0 && userLocation) {
+        const distance = getHospitalDistanceKm(hospital, userLocation);
+        matchesRadius = distance !== null && distance <= selectedRadius;
       }
 
       return matchesSearch && matchesLocation && matchesOwnership && matchesState && 
@@ -264,8 +244,8 @@ export default function SearchPage() {
           return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
         case "distance":
           if (!userLocation) return 0;
-          const distA = a.latitude && a.longitude ? getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, a.latitude, a.longitude) : Infinity;
-          const distB = b.latitude && b.longitude ? getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, b.latitude, b.longitude) : Infinity;
+          const distA = getHospitalDistanceKm(a, userLocation) ?? Infinity;
+          const distB = getHospitalDistanceKm(b, userLocation) ?? Infinity;
           return distA - distB;
         case "name":
         default:
@@ -647,7 +627,7 @@ export default function SearchPage() {
                   data-testid="button-near-me"
                 >
                   {isLocating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
-                  <span className="hidden sm:inline">Near Me</span>
+                  <span>Hospitals near me</span>
                 </Button>
 
                 {/* Mobile Filter Button */}
@@ -691,15 +671,17 @@ export default function SearchPage() {
                 )}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {/* View Toggle */}
-                <div className="hidden md:flex border rounded-lg overflow-hidden">
+                <div className="flex border rounded-lg overflow-hidden">
                   <Button
                     variant={viewMode === "list" ? "default" : "ghost"}
                     size="sm"
                     className={`rounded-none h-9 ${viewMode === "list" ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
                     onClick={() => setViewMode("list")}
                     data-testid="button-view-list"
+                    aria-label="List view"
+                    aria-pressed={viewMode === "list"}
                   >
                     <List className="w-4 h-4" />
                   </Button>
@@ -709,6 +691,8 @@ export default function SearchPage() {
                     className={`rounded-none h-9 ${viewMode === "map" ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
                     onClick={() => setViewMode("map")}
                     data-testid="button-view-map"
+                    aria-label="Map view"
+                    aria-pressed={viewMode === "map"}
                   >
                     <MapIcon className="w-4 h-4" />
                   </Button>
@@ -759,6 +743,10 @@ export default function SearchPage() {
                   <SkeletonCard key={i} variant="horizontal" />
                 ))}
               </div>
+            ) : filteredHospitals.length > 0 && viewMode === "map" ? (
+              <Suspense fallback={<div className="flex items-center justify-center h-[480px] bg-white rounded-xl border"><Loader2 className="h-8 w-8 animate-spin text-emerald-600" /><span className="sr-only">Loading map</span></div>}>
+                <MapView hospitals={filteredHospitals} userLocation={userLocation} selectedRadius={selectedRadius} />
+              </Suspense>
             ) : paginatedHospitals.length > 0 ? (
               <>
                 {paginatedHospitals.map((hospital, index) => (
@@ -767,6 +755,7 @@ export default function SearchPage() {
                     hospital={hospital}
                     imageUrl={getHospitalImage(hospital)}
                     variant="list"
+                    distanceKm={getHospitalDistance(hospital)}
                   />
                 ))}
 

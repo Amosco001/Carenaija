@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, createContext, useContext, createElement, type ReactNode } from "react";
+import { hasValidCoordinates, type Coordinates } from "@/lib/distance";
+export { getDistanceFromLatLonInKm, formatDistance } from "@/lib/distance";
 
 interface GeolocationState {
   coords: { lat: number; lng: number } | null;
@@ -24,7 +26,8 @@ function getCachedLocation(): CachedLocation | null {
     const data: CachedLocation = JSON.parse(cached);
     const now = Date.now();
     
-    if (now - data.timestamp < CACHE_TTL) {
+    if (hasValidCoordinates({ latitude: data.coords?.lat, longitude: data.coords?.lng }) &&
+        Number.isFinite(data.timestamp) && now >= data.timestamp && now - data.timestamp < CACHE_TTL) {
       return data;
     }
     
@@ -53,7 +56,7 @@ export function clearLocationCache(): void {
   }
 }
 
-export function useGeolocation() {
+function useGeolocationState() {
   const [state, setState] = useState<GeolocationState>({
     coords: null,
     error: null,
@@ -63,24 +66,25 @@ export function useGeolocation() {
   });
 
   useEffect(() => {
-    const cached = getCachedLocation();
-    if (cached) {
-      setState(prev => ({
-        ...prev,
-        coords: cached.coords,
-        lastUpdated: cached.timestamp,
-        permissionState: "granted",
-      }));
-    }
-
+    let active = true;
+    let permission: PermissionStatus | undefined;
     if ("permissions" in navigator) {
       navigator.permissions.query({ name: "geolocation" }).then((result) => {
-        setState(prev => ({ ...prev, permissionState: result.state }));
+        if (!active) return;
+        permission = result;
+        const cached = result.state === "granted" ? getCachedLocation() : null;
+        if (result.state !== "granted") clearLocationCache();
+        setState(prev => ({
+          ...prev,
+          permissionState: result.state,
+          coords: cached?.coords ?? null,
+          lastUpdated: cached?.timestamp ?? null,
+        }));
         result.onchange = () => {
           setState(prev => ({ ...prev, permissionState: result.state }));
-          if (result.state === "denied") {
+          if (result.state !== "granted") {
             clearLocationCache();
-            setState(prev => ({ ...prev, coords: null, error: "Location permission denied" }));
+            setState(prev => ({ ...prev, coords: null, lastUpdated: null }));
           }
         };
       }).catch(() => {
@@ -90,9 +94,13 @@ export function useGeolocation() {
     if (!navigator.geolocation) {
       setState(prev => ({ ...prev, permissionState: "unavailable" }));
     }
+    return () => {
+      active = false;
+      if (permission) permission.onchange = null;
+    };
   }, []);
 
-  const requestLocation = useCallback((forceRefresh = false) => {
+  const requestLocation = useCallback(async (forceRefresh = false): Promise<Coordinates | null> => {
     // Check if geolocation API exists
     if (!navigator.geolocation) {
       setState(prev => ({
@@ -101,24 +109,28 @@ export function useGeolocation() {
         permissionState: "unavailable",
         isLoading: false,
       }));
-      return;
+      return null;
     }
 
     if (!forceRefresh) {
-      const cached = getCachedLocation();
+      const permission = await navigator.permissions?.query({ name: "geolocation" }).catch(() => null);
+      const cached = permission?.state === "granted" ? getCachedLocation() : null;
       if (cached) {
         setState(prev => ({
           ...prev,
           coords: cached.coords,
           lastUpdated: cached.timestamp,
           permissionState: "granted",
+            error: null,
+            isLoading: false,
         }));
-        return;
+        return cached.coords;
       }
     }
 
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
+    return new Promise((resolve) => {
     try {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -136,6 +148,7 @@ export function useGeolocation() {
             permissionState: "granted",
             lastUpdated: Date.now(),
           });
+          resolve(coords);
         },
         (error) => {
           let errorMessage = "Unable to get your location";
@@ -160,7 +173,10 @@ export function useGeolocation() {
             error: errorMessage,
             isLoading: false,
             permissionState,
+            coords: null,
+            lastUpdated: null,
           }));
+          resolve(null);
         },
         {
           enableHighAccuracy: false,
@@ -175,8 +191,12 @@ export function useGeolocation() {
         error: "Location access is blocked by browser security. Please search for hospitals by state or city instead.",
         isLoading: false,
         permissionState: "denied",
+        coords: null,
+        lastUpdated: null,
       }));
+      resolve(null);
     }
+    });
   }, []);
 
   const clearLocation = useCallback(() => {
@@ -198,27 +218,17 @@ export function useGeolocation() {
   };
 }
 
-export function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371;
-  const dLat = deg2rad(lat2 - lat1);
-  const dLon = deg2rad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
+const GeolocationContext = createContext<ReturnType<typeof useGeolocationState> | null>(null);
+
+export function GeolocationProvider({ children }: { children: ReactNode }) {
+  const location = useGeolocationState();
+  return createElement(GeolocationContext.Provider, { value: location }, children);
 }
 
-function deg2rad(deg: number): number {
-  return deg * (Math.PI / 180);
-}
-
-export function formatDistance(km: number): string {
-  if (km < 1) {
-    return `${Math.round(km * 1000)}m`;
-  }
-  return `${km.toFixed(1)}km`;
+export function useGeolocation() {
+  const location = useContext(GeolocationContext);
+  if (!location) throw new Error("useGeolocation must be used within GeolocationProvider");
+  return location;
 }
 
 export function getGoogleMapsDirectionsUrl(

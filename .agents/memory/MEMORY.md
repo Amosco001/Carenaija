@@ -1,1 +1,2 @@
 - [CareNaija change rules](carenaija-project-rules.md) — preserve production UI and follow the user’s required docs and verification checklist.
+- [Location consent](location-consent.md) — opening a map is not a location request; cached coordinates do not establish current consent.

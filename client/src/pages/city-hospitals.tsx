@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, lazy, Suspense } from "react";
 import { useParams, Link } from "wouter";
 import { useHospitals } from "@/hooks/useHospitals";
 import { getHospitalUrl } from "@shared/schema";
@@ -17,10 +17,14 @@ import {
 } from "@/components/ui/select";
 import {
   MapPin, ChevronRight, Building2, Star, Search,
-  Stethoscope, Shield, Clock, Home, ArrowRight, Loader2, Heart, Baby, Bone, Brain, Eye
+  Stethoscope, Shield, Clock, Home, ArrowRight, Loader2, Heart, Baby, Bone, Brain, Eye, Navigation, List, Map as MapIcon
 } from "lucide-react";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { getHospitalImage } from "@/lib/hospital-images";
+import { useGeolocation } from "@/hooks/useGeolocation";
+import { getHospitalDistanceKm } from "@/lib/distance";
+
+const MapView = lazy(() => import("@/components/map-view"));
 
 const NIGERIAN_CITIES: Record<string, { state: string; description: string; neighborhoods: string[] }> = {
   "lagos": {
@@ -72,10 +76,23 @@ export default function CityHospitalsPage() {
   const { data: allHospitals, isLoading } = useHospitals();
   const [sortBy, setSortBy] = useState<string>("rating");
   const [ownershipFilter, setOwnershipFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"list" | "map">("list");
+  const { coords: userLocation, isLoading: isLocating, error: locationError, requestLocation } = useGeolocation();
+  useEffect(() => {
+    if (!userLocation && sortBy === "distance") setSortBy("rating");
+  }, [userLocation, sortBy]);
+  const handleNearMe = async () => {
+    if (await requestLocation()) setSortBy("distance");
+  };
 
   const citySlug = city?.toLowerCase() || "";
-  const cityInfo = NIGERIAN_CITIES[citySlug];
-  const cityName = citySlug === "port-harcourt" ? "Port Harcourt" : citySlug === "benin-city" ? "Benin City" : citySlug.charAt(0).toUpperCase() + citySlug.slice(1);
+  const matchingState = allHospitals?.find(h => h.state.toLowerCase().replace(/\s+/g, "-") === citySlug)?.state;
+  const cityInfo = NIGERIAN_CITIES[citySlug] ?? (matchingState ? {
+    state: matchingState,
+    description: `Compare hospitals listed in ${matchingState}, Nigeria. Read patient reviews and explore the available services to find a hospital that meets your needs.`,
+    neighborhoods: [],
+  } : undefined);
+  const cityName = matchingState ?? citySlug.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
   const stateName = cityInfo?.state || cityName;
 
   const cityHospitals = useMemo(() => {
@@ -97,10 +114,13 @@ export default function CityHospitalsPage() {
         return filtered.sort((a, b) => (b.totalReviews || 0) - (a.totalReviews || 0));
       case "name":
         return filtered.sort((a, b) => a.name.localeCompare(b.name));
+      case "distance":
+        return filtered.sort((a, b) =>
+          (getHospitalDistanceKm(a, userLocation) ?? Infinity) - (getHospitalDistanceKm(b, userLocation) ?? Infinity));
       default:
         return filtered;
     }
-  }, [allHospitals, stateName, citySlug, sortBy, ownershipFilter]);
+  }, [allHospitals, stateName, citySlug, sortBy, ownershipFilter, userLocation]);
 
   const privateCount = cityHospitals.filter(h => h.ownership?.toLowerCase() === "private").length;
   const publicCount = cityHospitals.filter(h => h.ownership?.toLowerCase() !== "private").length;
@@ -111,6 +131,9 @@ export default function CityHospitalsPage() {
   const seoTitle = `Best Hospitals in ${cityName}, Nigeria`;
   const seoDescription = `Find the best hospitals in ${cityName}, Nigeria. Compare ${cityHospitals.length}+ hospital ratings, read verified patient reviews, and discover top-rated private and public hospitals in ${stateName} State.`;
 
+  if (!cityInfo && isLoading) {
+    return <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-emerald-600" /></div>;
+  }
   if (!cityInfo) {
     return (
       <div className="min-h-screen bg-slate-50">
@@ -253,7 +276,23 @@ export default function CityHospitalsPage() {
               <h2 className="text-xl font-bold text-slate-900">
                 Top-Rated Hospitals in {cityName}
               </h2>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <Button onClick={handleNearMe} disabled={isLocating} className="bg-emerald-600 hover:bg-emerald-700" data-testid="button-near-me">
+                  {isLocating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Navigation className="w-4 h-4 mr-2" />}
+                  {isLocating ? "Finding location…" : "Hospitals near me"}
+                </Button>
+                <div className="flex border rounded-lg overflow-hidden">
+                  <Button variant={viewMode === "list" ? "default" : "ghost"} size="sm"
+                    className={`rounded-none ${viewMode === "list" ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
+                    onClick={() => setViewMode("list")} aria-label="List view" aria-pressed={viewMode === "list"} data-testid="button-view-list">
+                    <List className="w-4 h-4" />
+                  </Button>
+                  <Button variant={viewMode === "map" ? "default" : "ghost"} size="sm"
+                    className={`rounded-none ${viewMode === "map" ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
+                    onClick={() => setViewMode("map")} aria-label="Map view" aria-pressed={viewMode === "map"} data-testid="button-view-map">
+                    <MapIcon className="w-4 h-4" />
+                  </Button>
+                </div>
                 <Select value={ownershipFilter} onValueChange={setOwnershipFilter}>
                   <SelectTrigger className="w-[140px]" data-testid="select-ownership">
                     <SelectValue placeholder="All Types" />
@@ -272,19 +311,25 @@ export default function CityHospitalsPage() {
                     <SelectItem value="rating">Highest Rated</SelectItem>
                     <SelectItem value="reviews">Most Reviewed</SelectItem>
                     <SelectItem value="name">Name A-Z</SelectItem>
+                    <SelectItem value="distance" disabled={!userLocation}>Nearest Location</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
+            {locationError && <p role="alert" className="text-sm text-red-600 mb-4">{locationError}</p>}
 
             {isLoading ? (
               <div className="flex justify-center py-16">
                 <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
               </div>
+            ) : cityHospitals.length > 0 && viewMode === "map" ? (
+              <Suspense fallback={<div className="flex justify-center items-center h-[480px] bg-white rounded-xl border"><Loader2 className="h-8 w-8 animate-spin text-emerald-600" /><span className="sr-only">Loading map</span></div>}>
+                <MapView hospitals={cityHospitals} userLocation={userLocation} />
+              </Suspense>
             ) : cityHospitals.length > 0 ? (
               <div className="grid gap-4">
                 {cityHospitals.map((hospital, index) => (
-                  <HospitalCard key={hospital.id} hospital={hospital} imageUrl={getHospitalImage(hospital)} variant="list" />
+                  <HospitalCard key={hospital.id} hospital={hospital} imageUrl={getHospitalImage(hospital)} variant="list" distanceKm={getHospitalDistanceKm(hospital, userLocation)} />
                 ))}
               </div>
             ) : (

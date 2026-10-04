@@ -9,6 +9,8 @@
     "build": "tsx script/build.ts",
     "start": "NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
+    "test:distance": "tsx --test tests/distance.test.ts",
+    "test:nearby": "node scripts/test-nearby.mjs",
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
@@ -52,6 +54,7 @@
     "@types/dompurify": "^3.0.5",
     "@types/google.maps": "^3.58.1",
     "@types/html2canvas": "^0.5.35",
+    "@types/leaflet": "^1.9.22",
     "@types/memoizee": "^0.4.12",
     "@types/node-cron": "^3.0.11",
     "@types/validator": "^13.15.10",
@@ -82,6 +85,7 @@
     "html2canvas": "^1.4.1",
     "input-otp": "^1.4.2",
     "jspdf": "^4.2.0",
+    "leaflet": "^1.9.4",
     "lighthouse": "^12.8.2",
     "lucide-react": "^0.545.0",
     "memoizee": "^0.4.17",

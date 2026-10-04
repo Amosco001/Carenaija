@@ -3,7 +3,9 @@ import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Star, ShieldCheck, Scale, Check, Sparkles, MessageSquarePlus, Building2 } from "lucide-react";
+import { MapPin, Star, ShieldCheck, Scale, Check, Sparkles, MessageSquarePlus, Building2, Navigation } from "lucide-react";
+import { formatDistance, getHospitalDistanceKm } from "@/lib/distance";
+import { useGeolocation } from "@/hooks/useGeolocation";
 import { useComparison } from "@/lib/comparison-context";
 import { toast } from "sonner";
 import type { Hospital } from "@shared/schema";
@@ -15,9 +17,14 @@ interface HospitalCardProps {
   hospital: Hospital;
   imageUrl: string;
   variant?: "carousel" | "list";
+  distanceKm?: number | null;
 }
 
-export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalCardProps) {
+export function HospitalCard({ hospital, imageUrl, variant = "list", distanceKm }: HospitalCardProps) {
+  const { coords } = useGeolocation();
+  const knownDistance = distanceKm ?? getHospitalDistanceKm(hospital, coords);
+  const distance = typeof knownDistance === "number" && Number.isFinite(knownDistance) && knownDistance >= 0
+    ? formatDistance(knownDistance) : null;
   const { addToCompare, removeFromCompare, isInCompare, canAddMore } = useComparison();
   const inCompare = isInCompare(hospital.id);
   const [showQuickRate, setShowQuickRate] = useState(false);
@@ -125,6 +132,11 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
                 <MapPin className="w-4 h-4 mr-1 text-slate-400" />
                 {hospital.lga}, {hospital.state}
               </div>
+               {distance && (
+                 <p className="flex items-center gap-1 text-sm text-emerald-700 mb-3" data-testid={`distance-${hospital.id}`}>
+                   <Navigation className="w-3 h-3" /> {distance} away
+                 </p>
+               )}
               <div className="flex items-center justify-between">
                 {hasNoReviews ? (
                   <span className="text-xs text-slate-500 italic">No reviews yet</span>
@@ -231,7 +243,7 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
             <div className="flex-1 p-4 sm:p-5">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500 mb-1">
                     <Badge variant="outline" className="font-normal text-xs">
                       {hospital.ownership}
                     </Badge>
@@ -239,6 +251,11 @@ export function HospitalCard({ hospital, imageUrl, variant = "list" }: HospitalC
                       <MapPin className="w-3 h-3 mr-1" />
                       {hospital.lga}, {hospital.state}
                     </span>
+                     {distance && (
+                       <span className="flex items-center text-xs text-emerald-700" data-testid={`distance-${hospital.id}`}>
+                         <Navigation className="w-3 h-3 mr-1" /> {distance} away
+                       </span>
+                     )}
                   </div>
                   <h3 className="text-lg font-bold text-slate-900 group-hover:text-emerald-700 transition-colors line-clamp-1" data-testid={`text-hospital-name-${hospital.id}`}>
                     {hospital.name}
