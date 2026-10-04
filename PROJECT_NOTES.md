@@ -48,6 +48,7 @@ Created from the current app patterns with the user's permission.
 - Named patient-review authors on hospital details and named authors in ReviewCard link to public profiles. Anonymous authors have no profile link.
 - Claimed-hospital dashboards open an ownership-protected printable “Share your experience” poster, including a locally generated QR image and Print / Save as PDF. QR targets the hospital's patient-review form. Poster copy welcomes positive, mixed, and negative feedback equally.
 - New outbound links require `PUBLIC_APP_URL` containing the confirmed published HTTPS origin. Until it is configured, delivery records remain pending and poster generation returns an explicit setup error rather than producing a QR for a development domain.
+- The user has now configured the confirmed published address through `PUBLIC_APP_URL`; QR posters and share links use that origin. The app was restarted to load it.
 - Delivery failures or uncertain provider responses are retained for manual inspection, not automatically resent. A committed sending claim prevents a crash from causing an automatic duplicate.
 - Additive database changes are recorded in `migrations/20261004_review_engagement.sql` and applied to development. Apply these additive changes to production through the publishing schema-update process before activating the feature.
 - No rewards or positive-review incentives were added.
@@ -57,9 +58,11 @@ Created from the current app patterns with the user's permission.
 - Seven unit tests passed for profile privacy/totals, neutral share text, HTML escaping, phone normalization, and explicit public URL configuration.
 - One database/API integration test passed for automatic/admin approval queuing, repeated approvals, low-rating eligibility, helpful-vote additions/removals, public/private profile data, anonymous filtering, poster ownership, QR generation, print markup, hospital-name escaping, and missing URL errors. Test records are removed afterward.
 - Browser checks passed using normal login and temporary, cleaned-up test records: public/private counts, anonymous author links, SMS opt-in, invalid-phone errors, claimed-owner poster access, mobile overflow, and no uncaught browser errors.
+- After URL setup, the running app returned a printable poster with a rendered QR image and the correct published-domain review-form link. Signed-in poster rendering was captured and visually checked separately from the public screenshot tool.
 - Screenshot checked the public mobile reviewer-not-found state. A pre-existing analytics-script CSP warning remains outside this feature.
 - Actual outbound email/SMS delivery has not been tested. No messages were sent to real users during verification.
 - Twilio's read-only SDK lookup currently returns HTTP 401 / code 8001, “actor doesn't have any assertions,” before reaching sender discovery. The attached connection is API-key based, so OAuth reauthorization is not applicable. SMS activation is blocked until the existing connection's runtime authorization works.
+- A second supported connector access method returns the same authorization error; no provider credentials were exposed or changed.
 
 ### Changed files and preview checks
 - Server: `server/routes.ts`, `server/storage.ts`, `server/scheduler.ts`, `server/review-engagement-routes.ts`, and `server/services/{review-engagement,review-thank-you,sms}.ts`.

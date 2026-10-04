@@ -57,6 +57,16 @@ try {
   await page.waitForSelector(`[data-testid="button-review-poster-${hospitalId}"]`);
   const posterStatus = await page.evaluate(async hospitalId => (await fetch(`/api/hospitals/${hospitalId}/review-poster`)).status, hospitalId);
   assert.equal(posterStatus, process.env.PUBLIC_APP_URL ? 200 : 503, "poster fails explicitly without a published URL");
+  if (process.env.PUBLIC_APP_URL) {
+    await page.goto(`${origin}/api/hospitals/${hospitalId}/review-poster`, { waitUntil: "networkidle2" });
+    assert.ok(await page.$eval("body", body => body.innerText.includes("positive, mixed, or negative")));
+    const link = await page.$eval("main a", element => element.href);
+    assert.equal(link, `${new URL(process.env.PUBLIC_APP_URL).origin}/write-review/patient/${hospitalId}`);
+    assert.ok(await page.$eval("main img", element => element.complete && element.naturalWidth > 0), "printable QR image renders");
+    await page.setViewport({ width: 800, height: 1100 });
+    await page.screenshot({ path: "/tmp/carenaija-review-poster.png", fullPage: true });
+    await page.setViewport({ width: 390, height: 844 });
+  }
   await page.goto(`${origin}/hospital/${hospitalId}`, { waitUntil: "networkidle2" });
   assert.equal((await page.$$(`a[href="/reviewer/${id}"]`)).length, 1, "only the named review links to a public profile");
   assert.deepEqual(errors, []);

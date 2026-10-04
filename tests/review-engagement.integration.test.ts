@@ -45,7 +45,8 @@ test("approval outbox, helpful votes, profile privacy and poster ownership use r
     assert.equal(reviewerStats(p, e, true).helpfulVotesReceived, 2);
     await storage.removeHelpfulVote(pending.id, "patient", voterId);
     assert.equal(reviewerStats(await storage.getUserPatientReviews(reviewerId), e, true).helpfulVotesReceived, 1);
-    await processReviewThankYous();
+    // Never process another user's queued messages during verification.
+    await processReviewThankYous((await deliveries()).map(delivery => delivery.id));
     assert.ok((await deliveries()).every(d => d.status === "skipped"), "opted-out reviewers never contact a provider");
 
     // This isolated test server supplies test sessions; main app auth is unchanged.

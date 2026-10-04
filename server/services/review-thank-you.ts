@@ -1,4 +1,4 @@
-import { and, eq, lte, sql } from "drizzle-orm";
+import { and, eq, inArray, lte } from "drizzle-orm";
 import { db, pool } from "../db";
 import { storage } from "../storage";
 import { patientReviews, employeeReviews, reviewThankYouDeliveries } from "@shared/schema";
@@ -6,7 +6,8 @@ import { sendEmail } from "./email";
 import { sendSms } from "./sms";
 import { escapeHtml, getPublicAppUrl, whatsappShareUrl } from "./review-engagement";
 
-export async function processReviewThankYous(): Promise<void> {
+export async function processReviewThankYous(onlyDeliveryIds?: number[]): Promise<void> {
+  if (onlyDeliveryIds?.length === 0) return;
   // Session lock plus committed claims: a crash after sending must not resend a thank-you.
   // Failed/ambiguous deliveries require a provider-log check before any manual retry.
   const client = await pool.connect();
@@ -17,7 +18,8 @@ export async function processReviewThankYous(): Promise<void> {
     if (!acquired) return;
     const deliveries = await db.select().from(reviewThankYouDeliveries).where(and(
       eq(reviewThankYouDeliveries.status, "pending"),
-      lte(reviewThankYouDeliveries.nextAttemptAt, new Date())
+      lte(reviewThankYouDeliveries.nextAttemptAt, new Date()),
+      onlyDeliveryIds ? inArray(reviewThankYouDeliveries.id, onlyDeliveryIds) : undefined,
     )).limit(20);
     for (const delivery of deliveries) {
       const table = delivery.reviewType === "patient" ? patientReviews : employeeReviews;

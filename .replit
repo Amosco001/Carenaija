@@ -51,6 +51,7 @@ integrations = ["javascript_database:1.0.0", "javascript_log_in_with_replit:1.0.
 
 [userenv.shared]
 FROM_EMAIL = "olayiwola.amoran@gmail.com"
+PUBLIC_APP_URL = "https://carenaija.com"
 
 [postMerge]
 path = "scripts/post-merge.sh"
