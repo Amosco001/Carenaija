@@ -1,6 +1,6 @@
 ---
 name: Review integrity
-description: Standing CareNaija rule for reviewer incentives and follow-up messaging.
+description: Standing CareNaija rules for reviewer incentives, privacy, and sponsorship independence.
 ---
 
 Never offer rewards in exchange for positive reviews. If rewards are introduced, they must be for any honest review, independent of whether its rating is positive or negative. Thank-you and sharing messages must not pressure reviewers to improve their rating.
@@ -14,3 +14,9 @@ Public reviewer profiles must not expose anonymous contributions, even as aggreg
 **Why:** Healthcare experiences can reveal sensitive information; public counts or account identities could connect an anonymous review to a named reviewer.
 
 **How to apply:** Keep private contribution totals separate from public profile totals, and avoid reviewer identity or review excerpts in outbound share text.
+
+Hospital sponsorship must never change ratings or hide reviews. Paid placement must be clearly labeled "Sponsored".
+
+**Why:** The user requires monetization to remain independent of review integrity; purchasing visibility is not purchasing a better reputation.
+
+**How to apply:** Keep sponsorship eligibility and placement separate from rating calculations, review moderation, review visibility, and organic ranking.
