@@ -1,0 +1,1 @@
+- [CareNaija change rules](carenaija-project-rules.md) — preserve production UI and follow the user’s required docs and verification checklist.

@@ -55,3 +55,6 @@ FROM_EMAIL = "olayiwola.amoran@gmail.com"
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 120000
+
+[objectStorage]
+defaultBucketID = "replit-objstore-a91c695b-7e38-4349-822c-3dff59e32312"
