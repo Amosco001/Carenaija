@@ -70,3 +70,33 @@ Created from the current app patterns with the user's permission.
 - Client: `client/src/App.tsx`, `client/src/lib/{auth.tsx,types.ts}`, profile/reviewer/hospital-dashboard/hospital-details pages, and review-card/reviewer-settings/notification-preferences components.
 - Tests: `tests/review-engagement.test.ts`, `tests/review-engagement.integration.test.ts`, `scripts/test-reviewer-ui.mjs`.
 - Preview: sign in and open `/profile` for private stats and messaging preferences. Open a named hospital-review author for public stats; anonymous authors remain unlinked. Claimed hospital owners can open their poster from `/hospital-dashboard` after the published URL is configured.
+
+## Dependency security maintenance
+- Updated the application and mockup-sandbox Node dependency graphs, plus the Python scraper dependency graph, without changing ratings, reviews, hospital data, or adding monetization.
+- The Node runtime is now 22, with an application engine minimum of 22.12.0. The patched Puppeteer release requires this runtime and no longer pulls in the unpatched `extract-zip` dependency.
+- Removed unused application dependencies `lighthouse` and `fast-glob`. Replaced the sandbox's `fast-glob` discovery with maintained `glob`, retaining private/hidden-file exclusions and deterministic component ordering.
+- Updated Google Cloud Storage, Drizzle ORM, DOMPurify, Vite, PostCSS, Axios, and other affected direct/transitive dependencies. Narrow compatibility-tested overrides cover Google HTTP-client UUID, CSRF cookies, the legacy Drizzle tooling loader's esbuild, and minimatch.
+- Updated Python minimums for aiohttp, Pillow, urllib3, lxml, lxml-html-clean, requests, idna, python-dotenv, and soupsieve, with bounded major versions and a refreshed lockfile. Installed the locked packages in the existing `.pythonlibs` environment, not a new virtual environment.
+
+### Security verification
+- The fresh dependency scanner originally found 246 findings across all scanned dependency graphs, including findings beyond the assigned list. Its final scan (2026-10-05 UTC) reports zero critical, high, moderate, low, or informational findings.
+- `npm audit`: zero vulnerabilities in the main application and in `artifacts/mockup-sandbox`.
+- Clean application `npm ci` succeeded; the resolved esbuild graph matches the overrides. Python dependency compatibility check passed.
+- `npm run test:dependencies`: five passing compatibility tests for Google/browser APIs, CommonJS UUID use, the Drizzle TypeScript loader, valid/invalid CSRF tokens, and nested/private mockup discovery.
+- `npm run test:distance` and `npm run test:review-engagement`: twelve passing tests, including the real development database/API integration test.
+- Production application build passed. Both workflows restarted and serve requests. Reviewer-profile/QR and nearby-hospital browser suites passed after the updates, including normal login, privacy, mobile layouts, consent, map loading, and error states. Public `/search` screenshot checked.
+- Application type checking reports the same ten diagnostic locations/codes as before the dependency updates; no new type errors.
+- Python HTTP-client imports, HTML parsing/cleaning/extraction, and a Pillow image round trip passed without network requests or database writes.
+- Full scraper imports are blocked by an existing source error: `scraper/sources/__init__.py` imports `NIGERIAN_CITIES`, which is not defined in `scraper/sources/google_places.py`. No scraper source files were changed.
+- The sandbox type check has an existing undefined icon identifier in `src/components/mockups/carenaija-hospital/Mobile.tsx`, confirmed in the original source. Its production build timed out during transformation in two bounded attempts; that build is not verified. The sandbox development workflow starts successfully.
+- The existing analytics-script CSP warning remains unchanged.
+
+### Security changed files and preview checks
+- `.replit`: Node 22 runtime.
+- `package.json`, `package-lock.json`: updated application dependencies, removed unused vulnerable dependency chains, runtime requirement, narrow overrides, and the compatibility-test command.
+- `pyproject.toml`, `uv.lock`: safe Python version minimums and reproducible resolution.
+- `artifacts/mockup-sandbox/package.json`, `artifacts/mockup-sandbox/package-lock.json`: updated sandbox dependencies and maintained glob implementation.
+- `artifacts/mockup-sandbox/mockupPreviewPlugin.ts`: equivalent component discovery using the replacement glob library, with stable ordering.
+- `tests/dependency-compatibility.test.mjs`: regression checks for changed library APIs and override compatibility.
+- `PROJECT_NOTES.md` and agent memory: verification results and the non-obvious requirement to verify both locked and installed dependencies after override changes.
+- Preview: open `/search`, use nearby sorting/list/map controls, sign in to `/profile`, and open a claimed hospital's QR poster from its dashboard. No production publishing or database migration occurred.

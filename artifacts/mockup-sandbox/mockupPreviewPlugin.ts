@@ -1,13 +1,13 @@
 import { mkdirSync, writeFileSync } from "fs";
 import path from "path";
-import glob from "fast-glob";
+import { glob } from "glob";
 import chokidar from "chokidar";
 import type { FSWatcher } from "chokidar";
 import type { Plugin } from "vite";
 
 /**
  * Vite plugin that dynamically discovers mockup components and writes them to
- * a generated module under src/.generated. Uses fast-glob for initial
+ * a generated module under src/.generated. Uses glob for initial
  * discovery and a dedicated chokidar watcher (with awaitWriteFinish) for
  * reliable file monitoring.
  *
@@ -62,9 +62,10 @@ export function mockupPreviewPlugin(): Plugin {
     const files = await glob(`${MOCKUPS_DIR}/**/*.tsx`, {
       cwd: root,
       ignore: ["**/_*/**", "**/_*.tsx"],
+      nodir: true,
     });
 
-    return files.map((f) => ({
+    return files.sort().map((f) => ({
       globKey: "./" + f.slice("src/".length),
       importPath: path.posix.relative("src/.generated", f),
     }));

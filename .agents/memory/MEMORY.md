@@ -1,3 +1,4 @@
 - [CareNaija change rules](carenaija-project-rules.md) — preserve production UI and follow the user’s required docs and verification checklist.
 - [Location consent](location-consent.md) — opening a map is not a location request; cached coordinates do not establish current consent.
 - [Review integrity](review-integrity.md) — never condition reviewer rewards or thank-yous on a positive rating.
+- [Dependency override verification](dependency-overrides.md) — verify locked and installed versions; adding an npm override may leave an older nested package.
