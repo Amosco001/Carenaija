@@ -289,7 +289,7 @@ export interface IStorage {
   getHospitalsByState(): Promise<{ state: string; count: number }[]>;
   
   // Extended admin methods
-  getAllUsers(params?: { search?: string; role?: string; status?: 'active' | 'suspended'; page?: number; limit?: number }): Promise<{ users: User[]; total: number }>;
+  getAllUsers(params?: { search?: string; role?: string; status?: 'active' | 'suspended'; page?: number; limit?: number }): Promise<{ users: Omit<User, 'passwordHash'>[]; total: number }>;
   getUserStats(): Promise<{ total: number; admins: number; suspended: number; byRole: Record<string, number> }>;
   updateUserRole(userId: string, role: UserRole): Promise<User>;
   suspendUser(userId: string, reason: string, expiresAt?: Date): Promise<User>;
@@ -1494,7 +1494,7 @@ export class DatabaseStorage implements IStorage {
     status?: 'active' | 'suspended'; 
     page?: number; 
     limit?: number 
-  }): Promise<{ users: User[]; total: number }> {
+  }): Promise<{ users: Omit<User, 'passwordHash'>[]; total: number }> {
     const page = params?.page || 1;
     const limit = params?.limit || 50;
     const offset = (page - 1) * limit;
