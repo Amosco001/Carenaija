@@ -26,7 +26,7 @@ Created from the current app patterns with the user's permission.
 - The existing location page also supports state slugs found in the hospital dataset, keeping its existing page layout.
 - No hospital records or database schema were changed.
 
-## Latest verification
+## Nearby-feature verification (historical)
 - `npm run test:distance`: four passing tests for coordinate validation, distance calculation, formatting, and unknown-distance sorting.
 - `npm run test:nearby`: passing browser checks using the actual hospital API for consent, ordering, lazy loading, real OSM tiles, marker details, revocation, mobile overflow, and location failure states.
 - `npm run build`: passed; separate map JavaScript/CSS chunks confirmed.
@@ -100,3 +100,14 @@ Created from the current app patterns with the user's permission.
 - `tests/dependency-compatibility.test.mjs`: regression checks for changed library APIs and override compatibility.
 - `PROJECT_NOTES.md` and agent memory: verification results and the non-obvious requirement to verify both locked and installed dependencies after override changes.
 - Preview: open `/search`, use nearby sorting/list/map controls, sign in to `/profile`, and open a claimed hospital's QR poster from its dashboard. No production publishing or database migration occurred.
+
+## TypeScript error fixes — current verification
+- Fixed all nine errors recorded in the improvement-plan baseline. `npm run check` now passes with zero errors.
+- `client/src/pages/admin-dashboard.tsx`: profile-photo descriptions use the existing first/last name fields, with email and generic fallbacks, instead of a nonexistent username.
+- `client/src/pages/hospital-dashboard.tsx`: patient and employee cards display the existing `rating` field; patient text uses `reviewText`. Removed unsupported department lookups rather than inventing department data.
+- Existing styling, rating calculations, review queries/filtering, moderation, anonymity handling, and response actions were not changed. No schema changes, fixture records, or publishing were performed.
+- Verification passed: the production application build, seven review-engagement unit tests, four distance tests, and five dependency compatibility tests. Tests ran with database writes blocked.
+- The application workflow restarted successfully. The public hospital-dashboard route shows its expected login requirement; the signed-in dashboard UI was not visually verified.
+- The integration test and reviewer UI script remain on hold because they create and delete development records. No permission to run those write-enabled tests has been granted.
+- Changed files: the two dashboard pages and these project notes.
+- Preview checks: as an admin, open `/admin` and its Users section to check profile-photo descriptions. As a claimed-hospital owner, open `/hospital-dashboard`, select a hospital's Reviews tab, and check patient/employee ratings and patient text.

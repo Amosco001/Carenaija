@@ -328,16 +328,15 @@ function ReviewsList({
                   <div>
                     <div className="flex items-center gap-2">
                       <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="font-medium text-sm">{review.overallRating}/5</span>
+                      <span className="font-medium text-sm">{review.rating}/5</span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {review.visitDate ? `Visited: ${review.visitDate}` : ""}
-                      {review.department ? ` | ${review.department}` : ""}
                     </p>
                   </div>
                   <Badge variant="outline" className="text-xs">Patient</Badge>
                 </div>
-                {review.comment && <p className="text-sm mt-2">{review.comment}</p>}
+                {review.reviewText && <p className="text-sm mt-2">{review.reviewText}</p>}
                 <div className="mt-3">
                   {respondingTo?.id === review.id && respondingTo?.type === 'patient' ? (
                     <div className="space-y-2">
@@ -379,11 +378,8 @@ function ReviewsList({
                   <div>
                     <div className="flex items-center gap-2">
                       <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="font-medium text-sm">{review.overallRating}/5</span>
+                      <span className="font-medium text-sm">{review.rating}/5</span>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {review.department ? `Department: ${review.department}` : ""}
-                    </p>
                   </div>
                   <Badge variant="outline" className="text-xs">Employee</Badge>
                 </div>
